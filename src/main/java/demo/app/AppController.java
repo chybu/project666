@@ -1,5 +1,8 @@
 package demo.app;
 
+import java.util.List;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +33,18 @@ public class AppController {
     }
 
     @GetMapping("/users")
-    public String user_list_page(){
+    public String user_list_page(Model model){
+        List<User> users = userRepository.findAll();
+        model.addAttribute("listUsers", users);
         return "users";
     }
 
     // POST
     @PostMapping("/process_register")
     public String register_user(User user){
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String encodedPassword = encoder.encode(user.getPassword());
+        user.setPassword(encodedPassword);
         userRepository.save(user);
         return "successful_user_registration";
     }

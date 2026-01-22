@@ -1,6 +1,7 @@
 package demo.user;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,7 +17,7 @@ public class CustomUserDetails implements UserDetails{
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
@@ -27,6 +28,10 @@ public class CustomUserDetails implements UserDetails{
     @Override
     public String getUsername() {
         return user.getEmail();
+    }
+
+    public String getCustomUsername(){
+        return user.getUsername();
     }
 
 }
