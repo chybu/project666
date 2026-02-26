@@ -23,5 +23,5 @@ public interface AppointmentService {
 
     Page<Appointment> listAppointment(ListAppointmentRequest request, Pageable pageable);
 
-    Appointment cancelAppointmentByReceptionist(UUID receptionistId, CancelAppointmentRequest request);
+    Appointment cancelAppointment(UUID cancellerId, CancelAppointmentRequest request);
 }

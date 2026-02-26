@@ -80,13 +80,7 @@ public class AppointmentController {
     ){
         CancelAppointmentRequest request = appointmentMapper.fromCancelAppointmentRequestDto(requestDto);
         UUID cancellerId = JwtUtil.getUserId(jwt);
-        RoleEnum role = JwtUtil.getRole(jwt);
-        Appointment appointment;
-
-        switch (role){
-            case RECEPTIONIST -> appointment = appointmentService.cancelAppointmentByReceptionist(cancellerId, request);
-            default -> throw new RoleNotFoundException();
-        }
+        Appointment appointment = appointmentService.cancelAppointment(cancellerId, request);
 
         CancelAppointmentResponseDto responseDto = appointmentMapper.toCancelAppointmentResponseDto(appointment);
         

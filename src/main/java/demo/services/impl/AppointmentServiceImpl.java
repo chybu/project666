@@ -214,15 +214,15 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     @Override
     @Transactional
-    public Appointment cancelAppointmentByReceptionist(UUID receptionistId, CancelAppointmentRequest request) {
+    public Appointment cancelAppointment(UUID cancellerId, CancelAppointmentRequest request) {
         
         LocalDateTime cancelAt = LocalDateTime.now();
         
-        User receptionist = userRepository
-            .findById(receptionistId)
+        User canceller = userRepository
+            .findById(cancellerId)
             .orElseThrow(
                 () -> new UserNotFoundException(
-                    String.format("Receptionist with ID %s not found", receptionistId)
+                    String.format("User with ID %s not found", cancellerId)
                 )
             );
         UUID appointmentId = request.getAppointmentId();
@@ -239,17 +239,23 @@ public class AppointmentServiceImpl implements AppointmentService{
         }
         
         cancelAppointment.setCancelledAt(cancelAt);
-        cancelAppointment.setCanceller(receptionist);
+        cancelAppointment.setCanceller(canceller);
         cancelAppointment.setCancelReason(request.getCancelReason());
         cancelAppointment.setStatus(AppointmentStatusEnum.CANCELLED);
         
         CancellationInitiatorEnum initiator = request.getCancellationInitiator();
         cancelAppointment.setCancellationInitiator(initiator);
         if (
-            CancellationInitiatorEnum.RECEPTIONIST_ON_BEHALF_OF_PATIENT.equals(initiator)
+            (
+                CancellationInitiatorEnum.RECEPTIONIST_ON_BEHALF_OF_PATIENT.equals(initiator)
+                || CancellationInitiatorEnum.PATIENT.equals(initiator)
+            )
             && isLateForFreeCancel(cancelAt, cancelAppointment.getStartTime())
         ){
            billService.generateCancellationFeeBill(cancelAppointment);
+                   
+            // TODO: add sending appointment bill to insurance
+
         }
         
         return appointmentRepository.save(cancelAppointment);
