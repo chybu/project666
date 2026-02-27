@@ -72,7 +72,7 @@ public class AppointmentController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PostMapping
+    @PostMapping("/cancel")
     @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST')")
     public ResponseEntity<CancelAppointmentResponseDto> cancelAppointment(
         @AuthenticationPrincipal Jwt jwt,

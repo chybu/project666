@@ -9,6 +9,7 @@ import demo.domains.CancelAppointmentRequest;
 import demo.domains.CreateAppointmentRequest;
 import demo.domains.ListAppointmentRequest;
 import demo.domains.entities.Appointment;
+import demo.domains.entities.RoleEnum;
 
 public interface AppointmentService {
     Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
@@ -23,5 +24,5 @@ public interface AppointmentService {
 
     Page<Appointment> listAppointment(ListAppointmentRequest request, Pageable pageable);
 
-    Appointment cancelAppointment(UUID cancellerId, CancelAppointmentRequest request);
+    Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
 }

@@ -13,6 +13,7 @@ import demo.exceptions.AppointmentNotFoundException;
 import demo.exceptions.InvalidAppointmentStatusException;
 import demo.exceptions.InvalidAppointmentTypeException;
 import demo.exceptions.MinimumBookingTimeException;
+import demo.exceptions.MismatchedParameterException;
 import demo.exceptions.OverlapAppointmentException;
 import demo.exceptions.RoleNotFoundException;
 import demo.exceptions.TimeNotInWorkingHourException;
@@ -21,6 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MismatchedParameterException.class)
+    public ResponseEntity<ErrorDto> handleOptimisticLockException(MismatchedParameterException ex){
+        log.error("Caught MismatchedParameterException", ex);
+        ErrorDto errorDto = new ErrorDto();
+        errorDto.setErrorMessage("Mismatched parameters");
+        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(OptimisticLockException.class)
     public ResponseEntity<ErrorDto> handleOptimisticLockException(OptimisticLockException ex){

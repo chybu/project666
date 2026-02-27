@@ -27,6 +27,7 @@ import demo.exceptions.TimeNotInWorkingHourException;
 import demo.exceptions.AppointmentNotFoundException;
 import demo.exceptions.InvalidAppointmentStatusException;
 import demo.exceptions.MinimumBookingTimeException;
+import demo.exceptions.MismatchedParameterException;
 import demo.exceptions.OverlapAppointmentException;
 import demo.repositories.UserRepository;
 import demo.repositories.AppointmentRepository;
@@ -214,7 +215,7 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     @Override
     @Transactional
-    public Appointment cancelAppointment(UUID cancellerId, CancelAppointmentRequest request) {
+    public Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request) {
         
         LocalDateTime cancelAt = LocalDateTime.now();
         
@@ -237,13 +238,27 @@ public class AppointmentServiceImpl implements AppointmentService{
         if (!cancelAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
             throw new InvalidAppointmentStatusException(String.format("Invalid status of appoiment with ID %s", appointmentId));
         }
-        
+
+        CancellationInitiatorEnum initiator = request.getCancellationInitiator();
+        if (
+            (
+                CancellationInitiatorEnum.PATIENT.equals(initiator)
+                && !cancellerRole.equals(RoleEnum.PATIENT)
+            )
+            ||
+            (
+                !CancellationInitiatorEnum.PATIENT.equals(initiator)
+                && !cancellerRole.equals(RoleEnum.RECEPTIONIST)
+            )
+        ){
+            throw new MismatchedParameterException();
+        }
+
         cancelAppointment.setCancelledAt(cancelAt);
         cancelAppointment.setCanceller(canceller);
         cancelAppointment.setCancelReason(request.getCancelReason());
         cancelAppointment.setStatus(AppointmentStatusEnum.CANCELLED);
         
-        CancellationInitiatorEnum initiator = request.getCancellationInitiator();
         cancelAppointment.setCancellationInitiator(initiator);
         if (
             (
