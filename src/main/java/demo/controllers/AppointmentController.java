@@ -128,6 +128,7 @@ public class AppointmentController {
         @RequestBody @Valid CreateAppointmentRequestDto requestDto
     ){
 
+        
         return ResponseEntity.ok().build();
 
     }
