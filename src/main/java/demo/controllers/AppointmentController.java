@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,7 +59,7 @@ public class AppointmentController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
-    @PostMapping("/{appointmentId}/confirm")
+    @PutMapping("/{appointmentId}/confirm")
     @PreAuthorize("hasRole('RECEPTIONIST')")
     public ResponseEntity<ConfirmAppointmentResponseDto> confirmAppointment(
         @AuthenticationPrincipal Jwt jwt,
@@ -72,7 +73,7 @@ public class AppointmentController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @PostMapping("/cancel")
+    @PutMapping("/cancel")
     @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST')")
     public ResponseEntity<CancelAppointmentResponseDto> cancelAppointment(
         @AuthenticationPrincipal Jwt jwt,
