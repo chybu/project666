@@ -11,10 +11,19 @@ Make sure the following software is installed:
 - JDK 21
 - Docker & Docker Compose
 - Postman (for API testing)
+- Git
+---
+
+## 2. Clone the Repository
+
+Clone the repository:
+```bash
+git clone https://github.com/chybu/project666
+```
 
 ---
 
-## 2. Start the Application Stack
+## 3. Start the Application Stack
 
 Launch Docker and start all services:
 
@@ -24,7 +33,7 @@ docker-compose up
 
 ---
 
-## 3. Verify Running Services
+## 4. Verify Running Services
 
 Three services will run in Docker containers:
 
@@ -48,7 +57,7 @@ Keycloak handles authentication, authorization, roles, and token management.
 
 ---
 
-# 4. Keycloak Basics (Beginner Friendly)
+# 5. Keycloak Basics (Beginner Friendly)
 
 ### What is Keycloak?
 
@@ -98,7 +107,7 @@ Each client has:
 
 ---
 
-# 5. Keycloak Configuration (Step-by-Step)
+# 6. Keycloak Configuration (Step-by-Step)
 
 ## Step 1: Create a Realm
 
@@ -259,7 +268,7 @@ http://localhost:9090/realms/patient-portal/protocol/openid-connect/logout?redir
 
 ---
 
-# 6. Get JWT Token Using Postman
+# 7. Get JWT Token Using Postman
 
 Import this curl into Postman (replace placeholders):
 
@@ -303,7 +312,7 @@ This JWT contains:
 
 ---
 
-# 7. Available API Endpoints
+# 8. Available API Endpoints
 
 Base URL:
 ```
