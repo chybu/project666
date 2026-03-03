@@ -1,0 +1,30 @@
+@startuml "class diagram"
+
+class Account {
+    - id
+    - email
+    - name
+}
+
+class Patient{}
+
+class Receptionist{}
+
+class Appointment{
+    - id
+    - start
+    - end
+    - status: confirmed, cancelled, completed
+}
+
+Account <|-- Patient
+Account <|-- Receptionist
+
+Patient "1" -- "0..*" Appointment : books/cancels
+Receptionist "1" -- "0..*" Appointment : confirms/books for patient/cancels
+
+Appointment --> Account : createdBy
+Appointment --> Account : confirmedBy
+Appointment --> Account : cancelledBy
+
+@enduml
