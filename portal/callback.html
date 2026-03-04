@@ -54,7 +54,6 @@
     const KEYCLOAK_BASE  = 'http://localhost:9090';
     const REALM          = 'patient-portal';
     const CLIENT_ID      = 'api-testing';
-    // ⚠️  Must match what's registered in Keycloak AND in your login URL
     const REDIRECT_URI   = 'http://localhost:8080/callback.html';
 
     const TOKEN_ENDPOINT = `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`;
@@ -128,16 +127,14 @@
           return;
         }
       } catch (err) {
-        showError('Could not reach Keycloak. Is it running on port 9090?');
+        showError('Could not reach Keycloak.');
         return;
       }
 
-      // Store tokens in sessionStorage (cleared when tab closes)
       sessionStorage.setItem('access_token',  tokenData.access_token);
       sessionStorage.setItem('refresh_token', tokenData.refresh_token || '');
       sessionStorage.setItem('id_token',      tokenData.id_token      || '');
 
-      // Decode and inspect roles
       setStatus('Checking role…');
       const claims = decodeJwt(tokenData.access_token);
       if (!claims) {
