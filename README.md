@@ -312,7 +312,30 @@ This JWT contains:
 
 ---
 
-# 8. Available API Endpoints
+## 8. test sign-in
+if you haven't already, download the nginx, proxy, and portal folders and update the docker-compose.yml file.
+
+Next, open docker-compose.yml
+towards the bottom you will find:
+
+      - CLIENT_SECRET=PUT_CLIENT_SECRET_HERE
+      
+replace PUT_CLIENT_SECRET_HERE with the client secret found under api-testing (or create a new client)
+
+add http://localhost:8080/callback.html to the valid redirect URIs (you can delete the youtube link now)
+then add http://localhost:8080 to the Web origins (again, you can delete the youtube link now)
+
+next, navigate back to the terminal you are using for docker and run
+docker compose up -d --build
+docker compose ps
+
+ensure all containers are running
+
+finally navigate to http://localhost:8080 and attempt to log-in. upon success you should be directed to a page corresponding
+to one of the three roles (doctor, patient, receptionist) mentions so far.
+click logout
+
+# 9. Available API Endpoints
 
 Base URL:
 ```
