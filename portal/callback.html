@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Authenticating…</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0d1b2a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(42,181,173,0.2);
+      border-top-color: #2ab5ad;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status { font-size: 15px; color: #8a9bb0; font-weight: 300; }
+    .error-box {
+      background: rgba(220,50,50,0.1);
+      border: 1px solid rgba(220,50,50,0.3);
+      border-radius: 12px;
+      padding: 20px 28px;
+      max-width: 420px;
+      text-align: center;
+      display: none;
+    }
+    .error-box h2 { color: #ff6b6b; font-size: 17px; margin-bottom: 8px; }
+    .error-box p  { color: #8a9bb0; font-size: 13px; line-height: 1.6; }
+    .error-box a  { color: #2ab5ad; text-decoration: none; font-size: 13px; margin-top: 12px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="spinner" id="spinner"></div>
+  <p class="status" id="status">Verifying credentials…</p>
+  <div class="error-box" id="errorBox">
+    <h2>Authentication Failed</h2>
+    <p id="errorMsg">An unexpected error occurred.</p>
+    <a href="index.html">← Back to Login</a>
+  </div>
+
+  <script>
+    // ─── CONFIG ────────────────────────────────────────────────────────────────
+    const KEYCLOAK_BASE  = 'http://localhost:9090';
+    const REALM          = 'patient-portal';
+    const CLIENT_ID      = 'api-testing';
+    // ⚠️  Must match what's registered in Keycloak AND in your login URL
+    const REDIRECT_URI   = 'http://localhost:8080/callback.html';
+
+    const TOKEN_ENDPOINT = `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`;
+
+    const ROLE_ROUTES = {
+      ROLE_DOCTOR:       'doctor.html',
+      ROLE_PATIENT:      'patient.html',
+      ROLE_RECEPTIONIST: 'receptionist.html',
+    };
+    // ───────────────────────────────────────────────────────────────────────────
+
+    function showError(msg) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('status').style.display  = 'none';
+      const box = document.getElementById('errorBox');
+      document.getElementById('errorMsg').textContent = msg;
+      box.style.display = 'block';
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    // Decode a JWT payload (no signature verification — server must validate)
+    function decodeJwt(token) {
+      try {
+        const payload = token.split('.')[1];
+        const base64  = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const json    = decodeURIComponent(
+          atob(base64).split('').map(c =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+          ).join('')
+        );
+        return JSON.parse(json);
+      } catch {
+        return null;
+      }
+    }
+
+    async function handleCallback() {
+      const params = new URLSearchParams(window.location.search);
+
+      // Keycloak returned an error
+      if (params.has('error')) {
+        showError(`${params.get('error')}: ${params.get('error_description') || ''}`);
+        return;
+      }
+
+      const code = params.get('code');
+      if (!code) {
+        showError('No authorization code found in the URL.');
+        return;
+      }
+
+      // Exchange code for tokens
+      setStatus('Exchanging authorization code…');
+      let tokenData;
+      try {
+        const response = await fetch('http://localhost:3001/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          redirect_uri: REDIRECT_URI,
+        }),
+      });
+
+        tokenData = await response.json();
+        if (!response.ok) {
+          showError(tokenData.error_description || 'Token exchange failed.');
+          return;
+        }
+      } catch (err) {
+        showError('Could not reach Keycloak. Is it running on port 9090?');
+        return;
+      }
+
+      // Store tokens in sessionStorage (cleared when tab closes)
+      sessionStorage.setItem('access_token',  tokenData.access_token);
+      sessionStorage.setItem('refresh_token', tokenData.refresh_token || '');
+      sessionStorage.setItem('id_token',      tokenData.id_token      || '');
+
+      // Decode and inspect roles
+      setStatus('Checking role…');
+      const claims = decodeJwt(tokenData.access_token);
+      if (!claims) {
+        showError('Could not decode the access token.');
+        return;
+      }
+
+      const roles = claims?.realm_access?.roles ?? [];
+
+      // Find the first matching app role
+      const matchedRole = Object.keys(ROLE_ROUTES).find(r => roles.includes(r));
+
+      if (!matchedRole) {
+        showError(
+          `Your account has no recognised portal role.\n` +
+          `Assigned roles: ${roles.join(', ')}`
+        );
+        return;
+      }
+
+      setStatus(`Welcome, ${claims.given_name || claims.preferred_username}! Redirecting…`);
+      setTimeout(() => {
+        window.location.href = ROLE_ROUTES[matchedRole];
+      }, 600);
+    }
+
+    handleCallback();
+  </script>
+</body>
+</html>
