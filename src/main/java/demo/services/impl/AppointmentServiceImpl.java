@@ -26,6 +26,7 @@ import demo.exceptions.UserNotFoundException;
 import demo.exceptions.TimeNotInWorkingHourException;
 import demo.exceptions.AppointmentNotFoundException;
 import demo.exceptions.InvalidAppointmentStatusException;
+import demo.exceptions.InvalidConfirmationTimeWindowException;
 import demo.exceptions.MinimumBookingTimeException;
 import demo.exceptions.MismatchedParameterException;
 import demo.exceptions.OverlapAppointmentException;
@@ -44,11 +45,13 @@ public class AppointmentServiceImpl implements AppointmentService{
     private final LocalTime OPENING_TIME = LocalTime.of(8, 0);
     private final LocalTime CLOSING_TIME = LocalTime.of(18, 0);
     private final int MINIMUM_BOOKING_DAY = 3;
-    private final int QUICK_CHECK_DURATION_MINUTE = 15;
-    private final int MID_CHECK_DURATION_MINUTE = 30;
-    private final int LONG_CHECK_DURATION_MINUTE = 60;
+    private final int QUICK_CHECK_DURATION_MINUTE = 30;
+    private final int MID_CHECK_DURATION_MINUTE = 60;
+    private final int LONG_CHECK_DURATION_MINUTE = 90;
     private final Duration OVERLAP_BUFFER = Duration.ofMinutes(30);
     private final int LATE_TIME_SOFT_LIMIT_MINUTE = 5;
+    private static final int CONFIRMATION_EARLY_WINDOW_MINUTES = 5;
+    private static final int CONFIRMATION_LATE_WINDOW_MINUTES = 15;
 
     private final String DOCTOR_BUSY_CONSTRAINT_NAME = "no_doctor_overlap";
     private final String PATIENT_OVERLAP_APPOINTMENT_CONSTRAINT_NAME = "no_patient_overlap";
@@ -157,6 +160,8 @@ public class AppointmentServiceImpl implements AppointmentService{
         if (!confirmAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
             throw new InvalidAppointmentStatusException(String.format("Invalid status of appoiment with ID %s", appointmentId));
         }
+
+        checkWithinConfirmWindow(confirmAppointment.getStartTime(), confirmTime);
 
         confirmAppointment.setStatus(AppointmentStatusEnum.COMPLETED);
         confirmAppointment.setConfirmReceptionist(receptionist);
@@ -276,6 +281,14 @@ public class AppointmentServiceImpl implements AppointmentService{
         return appointmentRepository.save(cancelAppointment);
     }
 
+    private void checkWithinConfirmWindow(LocalDateTime startTime, LocalDateTime confirmTime){
+        LocalDateTime min = startTime.minusMinutes(CONFIRMATION_EARLY_WINDOW_MINUTES);
+        if (confirmTime.isBefore(min)) throw new InvalidConfirmationTimeWindowException();
+
+        LocalDateTime max = startTime.plusMinutes(CONFIRMATION_LATE_WINDOW_MINUTES);
+        if (confirmTime.isAfter(max)) throw new InvalidConfirmationTimeWindowException();
+    }
+    
     private boolean isLateForFreeCancel(LocalDateTime cancelTime, LocalDateTime startTime){
         return cancelTime.isAfter(startTime.minusDays(MINIMUM_BOOKING_DAY));
     }
