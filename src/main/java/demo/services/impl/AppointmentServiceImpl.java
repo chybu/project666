@@ -27,7 +27,7 @@ import demo.exceptions.TimeNotInWorkingHourException;
 import demo.exceptions.AppointmentNotFoundException;
 import demo.exceptions.InvalidAppointmentStatusException;
 import demo.exceptions.InvalidConfirmationTimeWindowException;
-import demo.exceptions.MinimumBookingTimeException;
+import demo.exceptions.InvalidCreateAppointmentTimeWindowException;
 import demo.exceptions.MismatchedParameterException;
 import demo.exceptions.OverlapAppointmentException;
 import demo.repositories.UserRepository;
@@ -45,6 +45,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     private final LocalTime OPENING_TIME = LocalTime.of(8, 0);
     private final LocalTime CLOSING_TIME = LocalTime.of(18, 0);
     private final int MINIMUM_BOOKING_DAY = 3;
+    private final int MAXIMUM_BOOKING_DAY = 31;
     private final int QUICK_CHECK_DURATION_MINUTE = 30;
     private final int MID_CHECK_DURATION_MINUTE = 60;
     private final int LONG_CHECK_DURATION_MINUTE = 90;
@@ -68,7 +69,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         AppointmentTypeEnum type = createAppointmentRequest.getType();
         LocalDateTime endTime = getEndTime(startTime, type);
 
-        checkMinimumBookingTime(startTime);
+        checkWithinCreateWindow(startTime);
 
         checkTimeInWorkingHour(startTime, endTime);
 
@@ -366,9 +367,14 @@ public class AppointmentServiceImpl implements AppointmentService{
     
     }
 
-    private void checkMinimumBookingTime(LocalDateTime startTime){
-        LocalDateTime minimum_time = LocalDateTime.now().plusDays(MINIMUM_BOOKING_DAY);
-        if (minimum_time.isAfter(startTime)) throw new MinimumBookingTimeException(String.format("Appointment can only be after %s", minimum_time));
+    private void checkWithinCreateWindow(LocalDateTime startTime){
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime minimum_time = now.plusDays(MINIMUM_BOOKING_DAY);
+        if (startTime.isBefore(minimum_time)) throw new InvalidCreateAppointmentTimeWindowException(String.format("Appointment can only be after %s", minimum_time));
+
+        LocalDateTime maximum_time = now.plusDays(MAXIMUM_BOOKING_DAY);
+        if (startTime.isAfter(maximum_time)) throw new InvalidCreateAppointmentTimeWindowException(String.format("Appointment can only be before %s", maximum_time));
+
     }
 
     private LocalDateTime getEndTime(LocalDateTime startTime, AppointmentTypeEnum type){

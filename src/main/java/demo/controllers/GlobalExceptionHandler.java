@@ -13,7 +13,7 @@ import demo.exceptions.AppointmentNotFoundException;
 import demo.exceptions.InvalidAppointmentStatusException;
 import demo.exceptions.InvalidAppointmentTypeException;
 import demo.exceptions.InvalidConfirmationTimeWindowException;
-import demo.exceptions.MinimumBookingTimeException;
+import demo.exceptions.InvalidCreateAppointmentTimeWindowException;
 import demo.exceptions.MismatchedParameterException;
 import demo.exceptions.OverlapAppointmentException;
 import demo.exceptions.RoleNotFoundException;
@@ -96,11 +96,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(MinimumBookingTimeException.class)
-    public ResponseEntity<ErrorDto> handleMinimumBookingTimeException(MinimumBookingTimeException ex){
+    @ExceptionHandler(InvalidCreateAppointmentTimeWindowException.class)
+    public ResponseEntity<ErrorDto> handleMinimumBookingTimeException(InvalidCreateAppointmentTimeWindowException ex){
         log.error("Caught MinimumBookingTimeException", ex);
         ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Appointment does not match minimum time");
+        errorDto.setErrorMessage("Appointment is not in booking window (3 days to 31 days ahead)");
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 
