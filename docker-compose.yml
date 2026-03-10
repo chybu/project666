@@ -33,7 +33,8 @@ services:
       KC_DB_PASSWORD: password
     depends_on:
       - db
+    volumes:
+      - ./providers:/opt/keycloak/providers
 
 volumes:
   postgres-data:
-
