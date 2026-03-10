@@ -1,0 +1,17 @@
+package demo.controller.client;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("/receptionist")
+public class ReceptionistController {
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('RECEPTIONIST')")
+    public String receptionistDashboard(){
+        return "receptionist";
+    }
+}

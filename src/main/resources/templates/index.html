@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Welcome</h1>
+        <p>Please log in to continue.</p>
+
+        <!-- Login button -->
+        <a th:href="@{/oauth2/authorization/keycloak}">
+            Sign in
+        </a>
+    </div>
+</body>
+</html>
