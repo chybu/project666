@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/doctor")
 public class DoctorController {
 
-    @GetMapping("/dashboard")
+    @GetMapping("/homepage")
     @PreAuthorize("hasRole('DOCTOR')")
     public String doctorDashboard(){
-        return "doctor";
+        return "doctor/homepage";
     }
 }

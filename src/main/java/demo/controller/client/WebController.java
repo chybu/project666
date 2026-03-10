@@ -22,13 +22,13 @@ public class WebController {
     ){
         RoleEnum role = getUserRole(authentication);
         if (RoleEnum.PATIENT.equals(role)){
-            return "redirect:/patient/dashboard";
+            return "redirect:/patient/homepage";
         }
         else if(RoleEnum.DOCTOR.equals(role)){
-            return "redirect:/doctor/dashboard";
+            return "redirect:/doctor/homepage";
         }
         else if(RoleEnum.RECEPTIONIST.equals(role)){
-            return "redirect:/receptionist/dashboard";
+            return "redirect:/receptionist/homepage";
         }
 
         return "redirect:/error";

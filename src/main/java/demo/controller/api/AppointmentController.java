@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,21 +43,6 @@ public class AppointmentController {
     private final AppointmentMapper appointmentMapper;
     private final AppointmentService appointmentService;
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST')")
-    public ResponseEntity<CreateAppointmentResponseDto> createAppointment(
-        @AuthenticationPrincipal Jwt jwt,
-        @RequestBody @Valid CreateAppointmentRequestDto requestDto
-    ){
-        CreateAppointmentRequest request = appointmentMapper.fromCreateAppointmentRequesDto(requestDto);
-        UUID creatorId = JwtUtil.getUserId(jwt);
-
-        Appointment createdAppointment = appointmentService.createAppointment(creatorId, request);
-        CreateAppointmentResponseDto responseDto = appointmentMapper.toCreateAppointmentResponseDto(createdAppointment);
-
-        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
-    }
-
     @PutMapping("/{appointmentId}/confirm")
     @PreAuthorize("hasRole('RECEPTIONIST')")
     public ResponseEntity<ConfirmAppointmentResponseDto> confirmAppointment(
@@ -89,7 +73,22 @@ public class AppointmentController {
         return ResponseEntity.ok(responseDto);
     }
 
-    @GetMapping("/search")
+    @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST')")
+    public ResponseEntity<CreateAppointmentResponseDto> createAppointment(
+        @AuthenticationPrincipal Jwt jwt,
+        @RequestBody @Valid CreateAppointmentRequestDto requestDto
+    ){
+        CreateAppointmentRequest request = appointmentMapper.fromCreateAppointmentRequesDto(requestDto);
+        UUID creatorId = JwtUtil.getUserId(jwt);
+
+        Appointment createdAppointment = appointmentService.createAppointment(creatorId, request);
+        CreateAppointmentResponseDto responseDto = appointmentMapper.toCreateAppointmentResponseDto(createdAppointment);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/search")
     @PreAuthorize("hasRole('RECEPTIONIST')")
     public ResponseEntity<Page<ListAppointmentResponseDto>> searchAppointments(
         @AuthenticationPrincipal Jwt jwt,
@@ -101,7 +100,7 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
     }
 
-    @GetMapping
+    @PostMapping("/list")
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST')")
     public ResponseEntity<Page<ListAppointmentResponseDto>> listAppointments(
         @AuthenticationPrincipal Jwt jwt,

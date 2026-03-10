@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Homepage</title>
+    <!-- CSS for Layout and Styling -->
+    <style>
+        body { margin:0; font-family:Arial, Helvetica, sans-serif; background:#e6e6e6; }
+        .container { display:flex; height:100vh; }
+        
+        /* LEFT SIDEBAR */
+        .left { width:220px; background:#dcdcdc; border-right:2px solid black; display:flex; flex-direction:column; align-items:center; }
+        .logo-container { margin-top: 20px; }
+        .logo-img { width:160px; height:auto; display:block; }
+        .menu { padding:20px; width: 100%; box-sizing: border-box; }
+        .menu a { display:block; margin:20px 0; text-decoration:none; color:black; font-size:18px; }
+        .menu a:hover { color: #3b5bff; }
+        .menu a.active { color:#3b5bff; font-weight:bold; }
+
+        /* CENTER AREA */
+        .center { flex:1; display:flex; flex-direction:column; }
+        .calendar-section { background:#7ec7be; height:300px; border-bottom:2px solid black; padding:20px; }
+        #calendar-placeholder { background:white; height:250px; display:flex; align-items:center; justify-content:center; border:1px solid #ccc; }
+
+        /* INFO SECTION */
+        .info { padding:30px; }
+        .info-box { background:#b3b3b3; padding:20px; border:1px solid #666; }
+        .info-title { text-align:center; font-size:30px; margin-bottom:20px; }
+        .alert { background:#cfcfd1; margin:20px 0; padding:20px; display:flex; align-items:center; }
+        .red-dot { width:25px; height:25px; background:red; border-radius:50%; margin-right:20px; }
+
+        /* RIGHT SIDEBAR */
+        .right { width:220px; background:#a9a9a9; border-left:2px solid black; padding:20px; overflow-y: auto; }
+        .upcoming { background:#d9d9a8; padding:15px; border-radius: 4px; min-height: 200px; }
+        .upcoming-title { display: block; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 5px; }
+        .appointment-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #bcbc8b; }
+        .appt-date { font-weight: bold; font-size: 14px; color: #333; }
+        .appt-type { font-size: 13px; color: #555; margin-top: 2px; }
+        .appt-doctor { font-size: 12px; color: #777; font-style: italic; }
+        .no-data { font-size: 13px; color: #666; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="left">
+        <div class="logo-container">
+            <!-- logo path relative to src/main/resources/static -->
+            <img th:src="@{/images/logo.png}" alt="Duplex Logo" class="logo-img">
+        </div>
+        <div class="menu">
+            <a th:href="@{/patient/home}" class="active">Home Page</a>
+            <a th:href="@{/patient/appointments}">Review Appointments</a>
+            <a th:href="@{/patient/finances}">Finances</a>
+            <a th:href="@{/patient/messages}">Messages</a>
+            <a th:href="@{/patient/notifications}">Notifications</a>
+            <a th:href="@{/patient/pharmacy}">Pharmacy</a>
+            <a th:href="@{/patient/profile}">Profile</a>
+            <a th:href="@{/patient/settings}">Settings</a>
+        </div>
+    </div>
+
+    <!-- CENTER CONTENT -->
+    <div class="center">
+        <div class="calendar-section">
+            <!-- Simplified Placeholder for the calendar area -->
+            <div id="calendar-placeholder">
+                <span>Calendar View</span>
+            </div>
+        </div>
+        
+        <div class="info">
+            <div class="info-box">
+                <div class="info-title">Important Information</div>
+                <div class="alert">
+                    <div class="red-dot"></div>
+                    <div>Upcoming Prescription Refills — Click To Enlarge</div>
+                </div>
+                <div class="alert">
+                    <div class="red-dot"></div>
+                    <div>Request Feedback — Click To Enlarge</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: Upcoming Important Dates -->
+    <div class="right">
+        <div class="upcoming">
+            <span class="upcoming-title">Upcoming Important Dates</span>
+
+            <!-- Case 1: No appointments found -->
+            <div th:if="${#lists.isEmpty(appointments)}" class="no-data">
+                No upcoming confirmed appointments.
+            </div>
+
+            <!-- Case 2: List appointments from the Model -->
+            <div th:each="appt : ${appointments}" class="appointment-item">
+                
+                <!-- 1. Format startTime (LocalDateTime) -->
+                <div class="appt-date" 
+                    th:text="${#temporals.format(appt.startTime, 'dd MMM yyyy HH:mm')}">
+                </div>
+
+                <!-- 2. Show Appointment Type (Enum) -->
+                <div class="appt-type" th:text="${appt.type}"></div>
+
+                <!-- 3. Show Doctor Name -->
+                <div class="appt-doctor" 
+                    th:text="'Dr. ' + ${appt.doctor.firstName}">
+                </div>
+            
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -67,7 +67,7 @@ public class SecurityConfig {
         http
         .securityMatcher("/**")
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/login").permitAll() // Home page
+            .requestMatchers("/", "/login", "/images/**", "/css/**").permitAll()
             .anyRequest().authenticated() // Internal Page
         )
         .oauth2Login(oauth2 -> oauth2
