@@ -1,0 +1,21 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: api-testing
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/login/oauth2/code/keycloak"
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:9090/realms/patient-portal/protocol/openid-connect/auth
+            token-uri: http://keycloak:8080/realms/patient-portal/protocol/openid-connect/token
+            jwk-set-uri: http://keycloak:8080/realms/patient-portal/protocol/openid-connect/certs
+            end-session-uri: http://localhost:9090/realms/patient-portal/protocol/openid-connect/logout
+            user-name-attribute: preferred_username
+
+server:
+  port: 8080

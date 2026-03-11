@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Patient Portal</title>
+</head>
+<body>
+  <h1>Patient Portal</h1>
+  <p th:if="${param.error}">You do not have an assigned role. Please contact your administrator.</p>
+  <a href="/oauth2/authorization/keycloak">Sign In</a>
+</body>
+</html>
