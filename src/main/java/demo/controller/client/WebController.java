@@ -2,14 +2,21 @@ package demo.controller.client;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import demo.domain.entities.RoleEnum;
+import demo.exception.RoleNotFoundException;
 import demo.exception.UnknowRoleException;
+import demo.service.UserService;
+import lombok.RequiredArgsConstructor;
 
 @Controller
+@RequiredArgsConstructor
 public class WebController {
+
+    private final UserService userService;
 
     @GetMapping("/")
     public String home(){
@@ -20,6 +27,11 @@ public class WebController {
     public String callback(
         Authentication authentication
     ){
+
+        if (authentication.getPrincipal() instanceof OidcUser oidcUser){
+            userService.provisionUser(oidcUser);
+        }
+
         RoleEnum role = getUserRole(authentication);
         if (RoleEnum.PATIENT.equals(role)){
             return "redirect:/patient/homepage";
@@ -49,8 +61,8 @@ public class WebController {
                 .startsWith("ROLE_")
             )
             .findFirst()
-            .orElse(null);
-        
+            .orElseThrow(RoleNotFoundException::new);
+                
         role = role.replace("ROLE_", "");
         try {
             return RoleEnum.valueOf(role);

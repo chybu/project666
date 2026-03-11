@@ -18,7 +18,6 @@ import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMap
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
@@ -36,8 +35,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiFilterChain(
         HttpSecurity http,
-        JwtAuthenticationConverter jwtAuthenticationConverter,
-        UserProvisioningFilter userProvisioningFilter
+        JwtAuthenticationConverter jwtAuthenticationConverter
     ){
 
         http
@@ -53,8 +51,8 @@ public class SecurityConfig {
             .jwt(jwt -> jwt
                 .jwtAuthenticationConverter(jwtAuthenticationConverter) // Map Keycloak realm roles to Spring Security roles
             )
-        )
-        .addFilterAfter(userProvisioningFilter, BearerTokenAuthenticationFilter.class); // Add keycloak users to user database
+        );
+        // .addFilterAfter(userProvisioningFilter, BearerTokenAuthenticationFilter.class); // Add keycloak users to user database
 
         return http.build();
     }

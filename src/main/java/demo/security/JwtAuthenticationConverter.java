@@ -13,11 +13,20 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import demo.service.UserService;
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationConverter implements Converter<Jwt, JwtAuthenticationToken>{
+
+    private final UserService userService;
 
     @Override
     public JwtAuthenticationToken convert(Jwt source) {
+
+        userService.provisionUser(source);
+
         Collection<GrantedAuthority> authorities = extractAuthorities(source);
         return new JwtAuthenticationToken(source, authorities);
     }
