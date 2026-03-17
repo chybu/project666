@@ -347,5 +347,8 @@ All endpoints support filtering using appointment parameters.
 
 Run:
 ```bash
-./mvnw clean spring-boot:run
+./mvnw clean install
+```
+```bash
+./mvnw -f frontend/pom.xml spring-boot:run
 ```
