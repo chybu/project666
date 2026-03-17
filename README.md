@@ -57,7 +57,7 @@ Keycloak handles authentication, authorization, roles, and token management.
 
 ---
 
-# 5. Keycloak Basics (Beginner Friendly)
+# 5. Keycloak Basics
 
 ### What is Keycloak?
 
@@ -129,29 +129,25 @@ To switch realms:
 
 ---
 
-## Step 2: Create a Client
+## Step 2: Config `patient-portal` realm
 
-1. Click **Clients** (left panel)
-2. Click **Create client**
-3. Set:
-
-```
-Client ID: api-testing
-Name: api-testing
-```
-
-⚠️ Must be exactly `api-testing`.
-
-Click **Next**
+1. Switch to `patient-portal` realm
+2. Click **Realm settings** (left panel)
+3. Click **Login** tab
+4. Enable `User registration`
+5. Click **Events** tab
+6. On the Event listeners, add `patient-role-listener`
+7. Click `Save`
 
 ---
 
-### Client Configuration
+## Step 3: Create API Testing Client
 
-- Enable: **Client authentication**
-- Enable: **Direct access grants**
+1. Click **Clients** (left panel)
+2. Click **Import client**
+3. Click `Browse` and Select the json file inside this repo:`keycloak_clients/api-testing.json`
 
-⚠️ Direct access grants is enabled ONLY for testing.
+⚠️ In `api-testing` client, `Direct access grants` is enabled ONLY for testing.
 
 ### Why not use this in production?
 
@@ -163,25 +159,16 @@ In production, use **Authorization Code Flow**:
 - JWT is never exposed in browser URL
 - Supports SSO and MFA properly
 
-Click **Next**
+---
+
+## Step 4: Create Frontend Client
+1. Click **Clients** (left panel)
+2. Click **Import client**
+3. Click `Browse` and Select the json file inside this repo: `keycloak_clients/frontend.json`
 
 ---
 
-## Step 3: Set Redirect URI
-
-In **Valid Redirect URIs**, enter:
-
-```
-https://youtu.be/dQw4w9WgXcQ
-```
-
-⚠️ It will not work if this is not set.
-
-Click **Save**
-
----
-
-## Step 4: Create Roles
+## Step 5: Create Roles
 
 Go to **Realm Roles** → **Create Role**
 
@@ -202,7 +189,7 @@ Spring Security maps these directly.
 
 ---
 
-## Step 5: Create Users
+## Step 6: Create Users
 
 Go to **Users** → **Add user**
 
@@ -239,27 +226,7 @@ Click **Create**
 
 ---
 
-## Step 6: Test Login via Browser
-
-Open:
-
-```
-http://localhost:9090/realms/patient-portal/protocol/openid-connect/auth?client_id=api-testing&response_type=code&scope=openid&redirect_uri=https://youtu.be/dQw4w9WgXcQ
-```
-
-Login with one of your created users.
-
----
-
-## Step 7: Logout URL
-
-```
-http://localhost:9090/realms/patient-portal/protocol/openid-connect/logout?redirect_uri=
-```
-
----
-
-## Step 8: Get Client Secret
+## Step 7: Get Client Secret
 
 1. Go to **Clients**
 2. Select `api-testing`
@@ -325,7 +292,7 @@ http://localhost:8080
 
 ### Create Appointment
 ```
-POST /api/v1/appointments
+POST /api/v1/appointments/create
 ```
 Accessible by:
 - ROLE_PATIENT
@@ -376,6 +343,12 @@ All endpoints support filtering using appointment parameters.
 
 ---
 
-⚠️ IMPORTANT:  
-The current configuration (Direct Access Grants enabled) is for development/testing only.  
-Do NOT use this configuration in production.
+# 9. Run The Website
+
+Run:
+```bash
+./mvnw clean install
+```
+```bash
+./mvnw -f frontend/pom.xml spring-boot:run
+```
