@@ -22,7 +22,7 @@ public class WebController {
 
     @GetMapping("/")
     public String home(){
-        return "index";
+        return "forward:/landingPage/index.html";
     }
 
     @GetMapping("/callback")
