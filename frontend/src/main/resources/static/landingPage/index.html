@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Duplex Patient Portal</title>
+
+    <link rel="icon" type="image/x-icon" href="/landingPage/assets/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Merriweather+Sans:400,700" rel="stylesheet" />
+    <link href="/landingPage/css/styles.css" rel="stylesheet" />
+</head>
+
+<body id="page-top">
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
+    <div class="container px-4 px-lg-5">
+        <a class="navbar-brand" href="#page-top">Duplex</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ms-auto my-2 my-lg-0">
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#services">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Support</a></li>
+                <li class="nav-item"><a class="nav-link" href="oauth2/authorization/keycloak">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="masthead">
+    <div class="container px-4 px-lg-5 h-100">
+        <div class="row h-100 align-items-center justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 class="text-white font-weight-bold">Your Health, Connected in One Place</h1>
+                <hr class="divider" />
+                <p class="text-white-75 mb-5">
+                    Manage appointments, prescriptions, messages, and health records securely through Duplex.
+                </p>
+                <a class="btn btn-primary btn-xl" href="oauth2/authorization/keycloak">Access Patient Portal</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- About -->
+<section class="page-section bg-primary" id="about">
+    <div class="container px-4 px-lg-5 text-center">
+        <h2 class="text-white mt-0">Built for Patients and Providers</h2>
+        <hr class="divider divider-light" />
+        <p class="text-white-75 mb-4">
+            Duplex provides secure healthcare communication, appointment tracking, pharmacy access, and personalized reminders.
+        </p>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="page-section" id="services">
+    <div class="container px-4 px-lg-5">
+        <h2 class="text-center mt-0">Portal Features</h2>
+        <hr class="divider" />
+
+        <div class="row gx-4 gx-lg-5">
+
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="mt-5">
+                    <i class="bi-calendar-check fs-1 text-primary"></i>
+                    <h3 class="h4 mb-2">Appointments</h3>
+                    <p class="text-muted">Schedule and review upcoming visits.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="mt-5">
+                    <i class="bi-prescription2 fs-1 text-primary"></i>
+                    <h3 class="h4 mb-2">Pharmacy</h3>
+                    <p class="text-muted">Manage prescription refills.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="mt-5">
+                    <i class="bi-chat-dots fs-1 text-primary"></i>
+                    <h3 class="h4 mb-2">Messages</h3>
+                    <p class="text-muted">Secure provider communication.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 text-center">
+                <div class="mt-5">
+                    <i class="bi-shield-check fs-1 text-primary"></i>
+                    <h3 class="h4 mb-2">Secure Records</h3>
+                    <p class="text-muted">Protected medical history access.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="page-section bg-dark text-white text-center">
+    <div class="container px-4 px-lg-5">
+        <h2 class="mb-4">Ready to Manage Your Care?</h2>
+        <a class="btn btn-light btn-xl" href="http://localhost:9090/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=http%3A%2F%2Flocalhost%3A9090%2Fadmin%2Fmaster%2Fconsole%2F%23%2Fpatient-portal%2Fusers%2F20368a3a-2424-4495-9850-9b8eaf0bdde5%2Frole-mapping&state=4dcee541-cb05-49c5-b4c9-209588d48e00&response_mode=query&response_type=code&scope=openid&nonce=efedddb4-17ad-4d66-b002-3f11b805821b&code_challenge=LOm8oiOD-mX-OGJqQwUs1-537ScjotY8w9UYvTI8wnk&code_challenge_method=S256">Login Now</a>
+    </div>
+</section>
+
+<!-- Contact -->
+<section class="page-section bg-primary" id="contact">
+    <div class="container px-4 px-lg-5 text-center">
+        <h2 class="mt-0">Need Assistance?</h2>
+        <hr class="divider" />
+        <p class="text-muted mb-5">
+            Contact our support team for account access or technical help.
+        </p>
+
+        <i class="bi-phone fs-2 mb-3 text-muted"></i>
+        <div>+1 (740)-442-0158</div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-light py-5">
+    <div class="container px-4 px-lg-5 text-center">
+        <div class="small text-muted">© 2026 Duplex Patient Portal</div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
