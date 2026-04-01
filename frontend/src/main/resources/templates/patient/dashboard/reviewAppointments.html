@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Review Appointments</title>
+
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="~{fragments/patientSidebar :: sidebar}"></div>
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Topbar -->
+            <div th:replace="~{fragments/patientTopbar :: topbar}"></div>
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <h1 class="h3 mb-4 text-gray-800">Review Appointments</h1>
+
+                <!-- Upcoming Appointments Card -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Upcoming Confirmed Appointments</h6>
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- No appointments -->
+                        <div th:if="${#lists.isEmpty(appointments)}" class="text-center text-gray-500">
+                            No upcoming confirmed appointments.
+                        </div>
+
+                        <!-- Appointment list -->
+                        <div th:each="appt : ${appointments}" class="card mb-3 border-left-primary shadow-sm">
+
+                            <div class="card-body">
+
+                                <div class="row align-items-center">
+
+                                    <div class="col-md-4">
+                                        <strong>Date:</strong><br>
+                                        <span th:text="${#temporals.format(appt.startTime, 'dd MMM yyyy HH:mm')}"></span>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <strong>Type:</strong><br>
+                                        <span th:text="${appt.type}"></span>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <strong>Doctor:</strong><br>
+                                        <span th:text="'Dr. ' + ${appt.doctor.firstName}"></span>
+                                    </div>
+
+                                    <div class="col-md-2 text-right">
+
+                                        <button class="btn btn-primary btn-sm mb-2">
+                                            Renew
+                                        </button>
+
+                                        <button class="btn btn-outline-secondary btn-sm">
+                                            Details
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+            <!-- /.container-fluid -->
+
+        </div>
+
+        <!-- Footer -->
+        <div th:replace="~{fragments/patientFooter :: footer}"></div>
+
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

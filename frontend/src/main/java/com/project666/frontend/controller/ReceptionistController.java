@@ -7,11 +7,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/receptionist")
+@PreAuthorize("hasRole('RECEPTIONIST')")
 public class ReceptionistController {
 
     @GetMapping("/homepage")
-    @PreAuthorize("hasRole('RECEPTIONIST')")
-    public String receptionistDashboard(){
-        return "receptionist/homepage";
+    public String redirectHomepage() {
+        return "redirect:/receptionist/dashboard/home";
+    }
+
+    @GetMapping("/dashboard/home")
+    public String home() {
+        return "receptionist/dashboard/home";
+    }
+
+    @GetMapping("/dashboard/appointments")
+    public String appointments() {
+        return "receptionist/dashboard/appointments";
+    }
+
+    @GetMapping("/dashboard/notifications")
+    public String notifications() {
+        return "receptionist/dashboard/notifications";
+    }
+
+    @GetMapping("/dashboard/profile")
+    public String profile() {
+        return "receptionist/dashboard/profile";
     }
 }
