@@ -87,7 +87,6 @@ public class FrontendSecurityConfig {
         };
     }
     
-    
     // Custom logout handler for OAuth2 logout with Keycloak
     private LogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler =
