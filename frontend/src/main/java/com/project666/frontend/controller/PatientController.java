@@ -27,12 +27,12 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/patient")
+@PreAuthorize("hasRole('PATIENT')")
 public class PatientController {
 
     private final AppointmentService appointmentService;
 
     @GetMapping("/dashboard/home")
-    @PreAuthorize("hasRole('PATIENT')")
     public String loadHomePage(
         @AuthenticationPrincipal OidcUser oidcUser,
         Model model
@@ -50,7 +50,6 @@ public class PatientController {
     }
 
     @GetMapping("/dashboard/reviewAppointments")
-    @PreAuthorize("hasRole('PATIENT')")
     public String reviewAppointments(
         @AuthenticationPrincipal OidcUser oidcUser,
         Model model
@@ -68,31 +67,26 @@ public class PatientController {
     }
 
     @GetMapping("/dashboard/finances")
-    @PreAuthorize("hasRole('PATIENT')")
     public String finances() {
         return "patient/dashboard/finances";
     }
 
     @GetMapping("/dashboard/notifications")
-    @PreAuthorize("hasRole('PATIENT')")
     public String notifications() {
         return "patient/dashboard/notifications";
     }
 
     @GetMapping("/dashboard/pharmacy")
-    @PreAuthorize("hasRole('PATIENT')")
     public String pharmacy() {
         return "patient/dashboard/pharmacy";
     }
 
     @GetMapping("/dashboard/profile")
-    @PreAuthorize("hasRole('PATIENT')")
     public String profile(){
         return "patient/dashboard/profile";
     }
 
     @GetMapping("/dashboard/security")
-    @PreAuthorize("hasRole('PATIENT')")
     public String security() {
         return "patient/dashboard/security";
     }
