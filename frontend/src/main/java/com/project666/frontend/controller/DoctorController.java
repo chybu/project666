@@ -10,11 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @PreAuthorize("hasRole('DOCTOR')")
 public class DoctorController {
 
-    @GetMapping("/homepage")
-    public String redirectHomepage() {
-        return "redirect:/doctor/dashboard/home";
-    }
-
     @GetMapping("/dashboard/home")
     public String home() {
         return "doctor/dashboard/home";

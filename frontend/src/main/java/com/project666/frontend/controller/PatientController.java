@@ -20,7 +20,6 @@ import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.service.AppointmentService;
 import com.project666.frontend.util.OidcUserUtil;
-import com.project666.backend.domain.entity.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,11 +30,6 @@ import lombok.RequiredArgsConstructor;
 public class PatientController {
 
     private final AppointmentService appointmentService;
-
-    @GetMapping("/homepage")
-    public String redirectOldHomepage() {
-        return "redirect:/patient/dashboard/home";
-    }
 
     @GetMapping("/dashboard/home")
     @PreAuthorize("hasRole('PATIENT')")
@@ -55,23 +49,23 @@ public class PatientController {
         return "patient/dashboard/home";
     }
 
-@GetMapping("/dashboard/reviewAppointments")
-@PreAuthorize("hasRole('PATIENT')")
-public String reviewAppointments(
-    @AuthenticationPrincipal OidcUser oidcUser,
-    Model model
-) {
-    ListAppointmentRequest request = new ListAppointmentRequest();
-    request.setStatus(AppointmentStatusEnum.CONFIRMED);
-    request.setFrom(LocalDate.now());
-    UUID patientId = OidcUserUtil.getUserId(oidcUser);
-    Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").ascending());
-    Page<Appointment> appointmentPage =
-        appointmentService.listDoctorAppointment(patientId, request, pageable);
+    @GetMapping("/dashboard/reviewAppointments")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String reviewAppointments(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+    ) {
+        ListAppointmentRequest request = new ListAppointmentRequest();
+        request.setStatus(AppointmentStatusEnum.CONFIRMED);
+        request.setFrom(LocalDate.now());
+        UUID patientId = OidcUserUtil.getUserId(oidcUser);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").ascending());
+        Page<Appointment> appointmentPage =
+            appointmentService.listDoctorAppointment(patientId, request, pageable);
 
-    model.addAttribute("appointments", appointmentPage.getContent());
-    return "patient/dashboard/reviewAppointments";
-}
+        model.addAttribute("appointments", appointmentPage.getContent());
+        return "patient/dashboard/reviewAppointments";
+    }
 
     @GetMapping("/dashboard/finances")
     @PreAuthorize("hasRole('PATIENT')")
@@ -91,11 +85,11 @@ public String reviewAppointments(
         return "patient/dashboard/pharmacy";
     }
 
-@GetMapping("/dashboard/profile")
-@PreAuthorize("hasRole('PATIENT')")
-public String profile(){
-    return "patient/dashboard/profile";
-}
+    @GetMapping("/dashboard/profile")
+    @PreAuthorize("hasRole('PATIENT')")
+    public String profile(){
+        return "patient/dashboard/profile";
+    }
 
     @GetMapping("/dashboard/security")
     @PreAuthorize("hasRole('PATIENT')")

@@ -39,8 +39,6 @@ public class FrontendSecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // Static assets (no authentication)
             .requestMatchers("/", "/login", "/landingPage/**", "/images/**", "/css/**").permitAll()
-            // dashboard pages (require authentication)
-            .requestMatchers("/dashboard/**", "/patient/**", "/receptionist/**", "/nurse/**", "/doctor/**").authenticated()
             .anyRequest().authenticated() // Internal Page
         )
         .oauth2Login(oauth2 -> oauth2

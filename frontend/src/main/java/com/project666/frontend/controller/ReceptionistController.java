@@ -10,11 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @PreAuthorize("hasRole('RECEPTIONIST')")
 public class ReceptionistController {
 
-    @GetMapping("/homepage")
-    public String redirectHomepage() {
-        return "redirect:/receptionist/dashboard/home";
-    }
-
     @GetMapping("/dashboard/home")
     public String home() {
         return "receptionist/dashboard/home";
