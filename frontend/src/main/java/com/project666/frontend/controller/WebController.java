@@ -1,14 +1,12 @@
 package com.project666.frontend.controller;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.project666.backend.domain.entity.RoleEnum;
-import com.project666.backend.exception.RoleNotFoundException;
-import com.project666.backend.exception.UnknowRoleException;
+import com.project666.frontend.security.SecurityUtil;
 
 import com.project666.frontend.service.FrontenndUserService;
 
@@ -34,7 +32,7 @@ public class WebController {
             userService.provisionUser(oidcUser);
         }
 
-        RoleEnum role = getUserRole(authentication);
+        RoleEnum role = SecurityUtil.getUserRole(authentication);
         if (RoleEnum.PATIENT.equals(role)){
             return "redirect:/patient/dashboard/home";
         }
@@ -50,29 +48,5 @@ public class WebController {
 
         return "redirect:/error";
         
-    }
-
-    @GetMapping("/error")
-    public String error(){
-        return "error";
-    }
-
-    private RoleEnum getUserRole(Authentication authentication){
-        String role = authentication
-            .getAuthorities()
-            .stream()
-            .map(GrantedAuthority::getAuthority)
-            .filter(auth -> auth
-                .startsWith("ROLE_")
-            )
-            .findFirst()
-            .orElseThrow(RoleNotFoundException::new);
-                
-        role = role.replace("ROLE_", "");
-        try {
-            return RoleEnum.valueOf(role);
-        } catch (IllegalArgumentException e) {
-            throw new UnknowRoleException();
-        }
     }
 }
