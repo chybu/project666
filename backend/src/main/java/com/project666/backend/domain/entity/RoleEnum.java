@@ -9,11 +9,14 @@ import com.project666.backend.exception.UnknowRoleException;
 public enum RoleEnum {
     PATIENT,
     RECEPTIONIST,
-    DOCTOR;
+    DOCTOR,
+    NURSE;
 
     private static final String KEYCLOAK_PATIENT_ROLE = "ROLE_PATIENT";
     private static final String KEYCLOAK_RECEPTIONIST_ROLE = "ROLE_RECEPTIONIST";
     private static final String KEYCLOAK_DOCTOR_ROLE = "ROLE_DOCTOR";
+    private static final String KEYCLOAK_NURSE_ROLE = "ROLE_NURSE";
+
 
     public static RoleEnum getUserRole(Map<String, Object> realmAccess){
 
@@ -32,6 +35,9 @@ public enum RoleEnum {
         }
         else if(roles.contains(KEYCLOAK_DOCTOR_ROLE)){
             return RoleEnum.DOCTOR;
+        }
+        else if(roles.contains(KEYCLOAK_NURSE_ROLE)){
+            return RoleEnum.NURSE;
         }
         else{
             throw new UnknowRoleException(roles.toString());

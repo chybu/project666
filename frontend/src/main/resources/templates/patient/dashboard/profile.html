@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Profile Settings</title>
+
+    <!-- SB-Admin & FontAwesome CSS -->
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+
+    <style>
+        .tab-content {
+            margin-top: 20px;
+        }
+        .profile-field {
+            margin-bottom: 15px;
+        }
+        .profile-label {
+            font-weight: 600;
+        }
+        .btn-edit {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="~{pageFragments/patientSidebar :: sidebar}"></div>
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Topbar -->
+            <div th:replace="~{pageFragments/patientTopbar :: topbar}"></div>
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <h1 class="h3 mb-4 text-gray-800">Profile Settings</h1>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="profile-tab" data-bs-toggle="tab" href="#profile" role="tab"
+                           aria-controls="profile" aria-selected="true">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security" role="tab"
+                           aria-controls="security" aria-selected="false">Security</a>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="profileTabsContent">
+
+                    <!-- Profile Tab -->
+                    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+
+                                <!-- Name -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Full Name:</div>
+                                    <div class="col-md-7" th:text="${user.fullName}">John Doe</div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-primary btn-edit">Edit</button>
+                                    </div>
+                                </div>
+
+                                <!-- Date of Birth (not editable) -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Date of Birth:</div>
+                                    <div class="col-md-9" th:text="${user.dateOfBirth}">01 Jan 1990</div>
+                                </div>
+
+                                <!-- Other info example -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Phone Number:</div>
+                                    <div class="col-md-7" th:text="${user.phoneNumber}">+1 555 555 5555</div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-primary btn-edit">Edit</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
+
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+
+                                <!-- Email -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Email:</div>
+                                    <div class="col-md-7" th:text="${user.email}">johndoe@example.com</div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-primary btn-edit">Change</button>
+                                    </div>
+                                </div>
+
+                                <!-- Password -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Password:</div>
+                                    <div class="col-md-7">********</div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-primary btn-edit">Change</button>
+                                    </div>
+                                </div>
+
+                                <!-- Delete Account -->
+                                <div class="profile-field row align-items-center">
+                                    <div class="col-md-3 profile-label">Delete Account:</div>
+                                    <div class="col-md-7 text-danger">This action is permanent</div>
+                                    <div class="col-md-2">
+                                        <button class="btn btn-sm btn-danger btn-edit">Delete</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+            <!-- /.container-fluid -->
+
+        </div>
+
+        <!-- Footer -->
+        <div th:replace="~{pageFragments/patientFooter :: footer}"></div>
+
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

@@ -37,6 +37,7 @@ public class FrontendSecurityConfig {
         http
         .securityMatcher("/**")
         .authorizeHttpRequests(auth -> auth
+            // Static assets (no authentication)
             .requestMatchers("/", "/login", "/landingPage/**", "/images/**", "/css/**").permitAll()
             .anyRequest().authenticated() // Internal Page
         )
