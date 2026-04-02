@@ -16,6 +16,15 @@ public class FrontEndErrorController implements ErrorController{
     @GetMapping("/error")
     public String handleError(HttpServletRequest request, Authentication authentication, org.springframework.ui.Model model) {
         Object statusAttr = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+
+        // User typed /error directly, not a real error dispatch
+        if (statusAttr == null) {
+            if (authentication != null && authentication.isAuthenticated()) {
+                return "redirect:" + SecurityUtil.getDashboardHomePath(authentication);
+            }
+            return "redirect:/";
+        }
+
         Object exceptionAttr = request.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
         Object messageAttr = request.getAttribute(RequestDispatcher.ERROR_MESSAGE);
 
