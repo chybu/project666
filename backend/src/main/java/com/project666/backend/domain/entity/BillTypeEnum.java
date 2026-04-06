@@ -12,5 +12,8 @@ public enum BillTypeEnum {
     LONG_CHECK_CANCELLATION_FEE,
 
     // late fee
-    LATE_FEE
+    LATE_FEE,
+
+    // lab test fee
+    LAB_TEST_FEE
 }

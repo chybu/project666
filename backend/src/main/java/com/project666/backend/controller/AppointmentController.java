@@ -28,7 +28,6 @@ import com.project666.backend.domain.dto.ListAppointmentRequestDto;
 import com.project666.backend.domain.dto.ListAppointmentResponseDto;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.RoleEnum;
-import com.project666.backend.exception.RoleNotFoundException;
 import com.project666.backend.mapper.AppointmentMapper;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.util.JwtUtil;
@@ -98,7 +97,7 @@ public class AppointmentController {
         @RequestBody @Valid ListAppointmentRequestDto requestDto
     ){
         ListAppointmentRequest request = appointmentMapper.fromListAppointmentRequestDto(requestDto);
-        Page<Appointment> appointments = appointmentService.listAppointment(request, pageable);
+        Page<Appointment> appointments = appointmentService.searchAnyAppointmentForReceptionist(JwtUtil.getUserId(jwt), request, pageable);
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
     }
 
@@ -115,10 +114,10 @@ public class AppointmentController {
         RoleEnum role = JwtUtil.getRole(jwt);
 
         switch (role){
-            case PATIENT -> appointments = appointmentService.listDoctorAppointment(requesterId, request, pageable);
-            case DOCTOR -> appointments = appointmentService.listPatientAppointment(requesterId, request, pageable);
-            case RECEPTIONIST -> appointments = appointmentService.listConfirmAppointment(requesterId, request, pageable);
-            default -> throw new RoleNotFoundException();
+            case PATIENT -> appointments = appointmentService.listAppointmentForPatient(requesterId, request, pageable);
+            case DOCTOR -> appointments = appointmentService.listAppointmentForDoctor(requesterId, request, pageable);
+            case RECEPTIONIST -> appointments = appointmentService.listAppointmentForReceptionist(requesterId, request, pageable);
+            default -> throw new IllegalArgumentException(String.format("%s role is not known", role.name()));
         }
          
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
@@ -128,10 +127,7 @@ public class AppointmentController {
     public ResponseEntity<CreateAppointmentResponseDto> test(
         @AuthenticationPrincipal Jwt jwt,
         @RequestBody @Valid CreateAppointmentRequestDto requestDto
-    ){
-
-        
+    ){  
         return ResponseEntity.ok().build();
-
     }
 }

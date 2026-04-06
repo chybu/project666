@@ -5,9 +5,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.project666.backend.domain.entity.AppointmentBill;
+import com.project666.backend.domain.entity.LabBill;
 
 @Repository
-public interface BillRepository extends JpaRepository<AppointmentBill, UUID>{
+public interface LabBillRepository extends JpaRepository<LabBill, UUID>{
 
 }

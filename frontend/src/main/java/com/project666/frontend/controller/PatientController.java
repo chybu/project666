@@ -43,7 +43,7 @@ public class PatientController {
         UUID patientId = OidcUserUtil.getUserId(oidcUser);
         Pageable pageable = PageRequest.of(0, 5, Sort.by("startTime").ascending());
         Page<Appointment> appointmentPage =
-            appointmentService.listDoctorAppointment(patientId, request, pageable);
+            appointmentService.listAppointmentForPatient(patientId, request, pageable);
 
         model.addAttribute("appointments", appointmentPage.getContent());
         return "patient/dashboard/home";
@@ -60,7 +60,7 @@ public class PatientController {
         UUID patientId = OidcUserUtil.getUserId(oidcUser);
         Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").ascending());
         Page<Appointment> appointmentPage =
-            appointmentService.listDoctorAppointment(patientId, request, pageable);
+            appointmentService.listAppointmentForPatient(patientId, request, pageable);
 
         model.addAttribute("appointments", appointmentPage.getContent());
         return "patient/dashboard/reviewAppointments";

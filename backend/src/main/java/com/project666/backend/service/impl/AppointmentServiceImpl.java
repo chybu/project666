@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,14 +23,11 @@ import com.project666.backend.domain.entity.AppointmentTypeEnum;
 import com.project666.backend.domain.entity.CancellationInitiatorEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.AppointmentNotFoundException;
-import com.project666.backend.exception.InvalidAppointmentStatusException;
 import com.project666.backend.exception.InvalidConfirmationTimeWindowException;
 import com.project666.backend.exception.InvalidCreateAppointmentTimeWindowException;
 import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.exception.OverlapAppointmentException;
 import com.project666.backend.exception.TimeNotInWorkingHourException;
-import com.project666.backend.exception.UserNotFoundException;
 import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.AppointmentService;
@@ -76,7 +74,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         User creator = userRepository
             .findById(creatorId)
             .orElseThrow(
-                () -> new UserNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("User with ID %s not found", creatorId)
                 )
             );
@@ -85,7 +83,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         User doctor = userRepository
             .findByIdAndRole(doctorId, RoleEnum.DOCTOR)
             .orElseThrow(
-                () -> new UserNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("Doctor with ID %s not found", doctorId)
                 )
             );
@@ -94,21 +92,10 @@ public class AppointmentServiceImpl implements AppointmentService{
         User patient = userRepository
             .findByIdAndRole(patientId, RoleEnum.PATIENT)
             .orElseThrow(
-                () -> new UserNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("Patient with ID %s not found", patientId)
                 )
             );
-
-        /**
-         * A race can happen when creating an appointment. Soft check with service logic and Hard check with db constraint
-         * 
-         * db constraint checks if the doctor is already scheduled with db constraint
-         * CREATE EXTENSION IF NOT EXISTS btree_gist;
-         * alter table appointments add constraint no_doctor_overlap exclude using gist (doctor_id with =, tsrange(start_time - interval '30 minutes', end_time + interval '30 minutes') with &&);
-         * 
-         * check if the patient already has appointment in that timeframe with db constraint
-         * alter table appointments add constraint no_patient_overlap exclude using gist (patient_id with =, tsrange(start_time - interval '30 minutes', end_time + interval '30 minutes') with &&);
-         */
 
         checkOverlapAppointment(startTime, endTime, doctorId, patientId);
 
@@ -145,7 +132,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         User receptionist = userRepository
             .findById(receptionistId)
             .orElseThrow(
-                () -> new UserNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("Receptionist with ID %s not found", receptionistId)
                 )
             );
@@ -153,13 +140,13 @@ public class AppointmentServiceImpl implements AppointmentService{
         Appointment confirmAppointment = appointmentRepository
             .findById(appointmentId)
             .orElseThrow(
-                () -> new AppointmentNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("Appointment with ID %s not found", appointmentId)
                 )
             );
 
         if (!confirmAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
-            throw new InvalidAppointmentStatusException(String.format("Invalid status of appoiment with ID %s", appointmentId));
+            throw new IllegalArgumentException(String.format("Invalid status of appoiment with ID %s", appointmentId));
         }
 
         checkWithinConfirmWindow(confirmAppointment.getStartTime(), confirmTime);
@@ -187,7 +174,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     }
 
     @Override
-    public Page<Appointment> listDoctorAppointment(UUID patientId, ListAppointmentRequest request, Pageable pageable) {
+    public Page<Appointment> listAppointmentForPatient(UUID patientId, ListAppointmentRequest request, Pageable pageable) {
         Map<RoleEnum, UUID> roleMap = new HashMap<>();
         roleMap.put(RoleEnum.PATIENT, patientId);
         roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
@@ -195,7 +182,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     }
 
     @Override
-    public Page<Appointment> listPatientAppointment(UUID doctorId, ListAppointmentRequest request, Pageable pageable) {
+    public Page<Appointment> listAppointmentForDoctor(UUID doctorId, ListAppointmentRequest request, Pageable pageable) {
         Map<RoleEnum, UUID> roleMap = new HashMap<>();
         roleMap.put(RoleEnum.PATIENT, request.getPatientId());
         roleMap.put(RoleEnum.DOCTOR, doctorId);
@@ -203,7 +190,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     }
 
     @Override
-    public Page<Appointment> listConfirmAppointment(UUID receptionistId, ListAppointmentRequest request,Pageable pageable) {
+    public Page<Appointment> listAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request,Pageable pageable) {
         Map<RoleEnum, UUID> roleMap = new HashMap<>();
         roleMap.put(RoleEnum.PATIENT, request.getPatientId());
         roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
@@ -212,7 +199,13 @@ public class AppointmentServiceImpl implements AppointmentService{
     }
 
     @Override
-    public Page<Appointment> listAppointment(ListAppointmentRequest request,Pageable pageable) {
+    public Page<Appointment> searchAnyAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable) {
+
+        // check if the current receptionist id using this method is valid
+        userRepository.findByIdAndRole(receptionistId, RoleEnum.RECEPTIONIST).orElseThrow(() -> new NoSuchElementException(
+            String.format("RECEPTIONIST with ID %s not found", receptionistId)
+        ));
+
         Map<RoleEnum, UUID> roleMap = new HashMap<>();
         roleMap.put(RoleEnum.PATIENT, request.getPatientId());
         roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
@@ -228,7 +221,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         User canceller = userRepository
             .findById(cancellerId)
             .orElseThrow(
-                () -> new UserNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("User with ID %s not found", cancellerId)
                 )
             );
@@ -236,13 +229,13 @@ public class AppointmentServiceImpl implements AppointmentService{
         Appointment cancelAppointment = appointmentRepository
             .findById(appointmentId)
             .orElseThrow(
-                () -> new AppointmentNotFoundException(
+                () -> new NoSuchElementException(
                     String.format("Appointment with ID %s not found", appointmentId)
                 )
             );
 
         if (!cancelAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
-            throw new InvalidAppointmentStatusException(String.format("Invalid status of appoiment with ID %s", appointmentId));
+            throw new IllegalArgumentException(String.format("Invalid status of appoiment with ID %s", appointmentId));
         }
 
         CancellationInitiatorEnum initiator = request.getCancellationInitiator();
@@ -307,28 +300,15 @@ public class AppointmentServiceImpl implements AppointmentService{
         // check for user existance
         roleMap.forEach((role, id) -> {
             if (id!=null){
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new UserNotFoundException(
+                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
                     String.format("%s with ID %s not found", role.name(), id)
                 ));
             }
         });
-
-        // parse request
-        AppointmentTypeEnum type = request.getType();
-        
-        AppointmentStatusEnum status = request.getStatus();
-
-        LocalDateTime from = request.getFrom() != null
-            ? request.getFrom().atStartOfDay()
-            : null;
-
-        LocalDateTime end = request.getEnd() != null
-            ? request.getEnd().atTime(LocalTime.MAX)
-            : null;
-
-        Specification<Appointment> spec = AppointmentSpecification.alwaysTrue();
         
         // build specification
+        Specification<Appointment> spec = AppointmentSpecification.alwaysTrue();
+
         UUID patientId = roleMap.get(RoleEnum.PATIENT);
         if (patientId!=null) spec = spec.and(AppointmentSpecification.byPatient(patientId));
 
@@ -338,10 +318,19 @@ public class AppointmentServiceImpl implements AppointmentService{
         UUID receptionistId = roleMap.get(RoleEnum.RECEPTIONIST);
         if (receptionistId!=null) spec = spec.and(AppointmentSpecification.byReceptionist(receptionistId));
 
+        AppointmentTypeEnum type = request.getType();
         if (type!=null) spec = spec.and(AppointmentSpecification.byType(type));
 
+        AppointmentStatusEnum status = request.getStatus();
         if (status != null) spec = spec.and(AppointmentSpecification.byStatus(status));
 
+        LocalDateTime from = request.getFrom() != null
+            ? request.getFrom().atStartOfDay()
+            : null;
+
+        LocalDateTime end = request.getEnd() != null
+            ? request.getEnd().atTime(LocalTime.MAX)
+            : null;
         if (from != null || end != null) spec = spec.and(AppointmentSpecification.byDateRange(from, end));
 
         return appointmentRepository.findAll(spec, pageable);

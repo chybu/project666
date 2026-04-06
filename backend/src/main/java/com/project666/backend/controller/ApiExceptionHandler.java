@@ -1,28 +1,55 @@
 package com.project666.backend.controller;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.persistence.OptimisticLockException;
 import com.project666.backend.domain.dto.ErrorDto;
-import com.project666.backend.exception.AppointmentNotFoundException;
-import com.project666.backend.exception.InvalidAppointmentStatusException;
-import com.project666.backend.exception.InvalidAppointmentTypeException;
 import com.project666.backend.exception.InvalidConfirmationTimeWindowException;
 import com.project666.backend.exception.InvalidCreateAppointmentTimeWindowException;
 import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.exception.OverlapAppointmentException;
-import com.project666.backend.exception.RoleNotFoundException;
 import com.project666.backend.exception.TimeNotInWorkingHourException;
-import com.project666.backend.exception.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice(basePackages = "com.project666.backend")
 @Slf4j
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ErrorDto> handleNoSuchElementException(NoSuchElementException ex){
+        log.error("Caught NoSuchElementException", ex);
+        ErrorDto errorDto = new ErrorDto();
+        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorDto> handleIllegalArgumentException(IllegalArgumentException ex){
+        log.error("Caught IllegalArgumentException", ex);
+        ErrorDto errorDto = new ErrorDto();
+        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorDto> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.error("Caught MethodArgumentNotValidException", ex);
+
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(err -> err.getField() + ": " + err.getDefaultMessage())
+            .reduce((a, b) -> a + "; " + b)
+            .orElse("Validation failed");
+
+        ErrorDto errorDto = new ErrorDto();
+        errorDto.setErrorMessage(message);
+
+        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(InvalidConfirmationTimeWindowException.class)
     public ResponseEntity<ErrorDto> handleOptimisticLockException(InvalidConfirmationTimeWindowException ex){
@@ -46,38 +73,6 @@ public class ApiExceptionHandler {
         ErrorDto errorDto = new ErrorDto();
         errorDto.setErrorMessage("The object is updated somewhere else");
         return new ResponseEntity<>(errorDto, HttpStatus.CONFLICT);
-    }
-
-    @ExceptionHandler(InvalidAppointmentTypeException.class)
-    public ResponseEntity<ErrorDto> handleInvalidAppointmentTypeException(InvalidAppointmentTypeException ex){
-        log.error("Caught InvalidAppointmentTypeException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Invalid appointment type");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleAppointmentNotFoundException(RoleNotFoundException ex){
-        log.error("Caught RoleNotFoundException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Role not found");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(InvalidAppointmentStatusException.class)
-    public ResponseEntity<ErrorDto> handleAppointmentNotFoundException(InvalidAppointmentStatusException ex){
-        log.error("Caught InvalidAppointmentStatusException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Invalid appointment status to be confirmed");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(AppointmentNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleAppointmentNotFoundException(AppointmentNotFoundException ex){
-        log.error("Caught AppointmentNotFoundException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Appointment not found");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
@@ -109,14 +104,6 @@ public class ApiExceptionHandler {
         log.error("Caught InvalidAppointmentTimeException", ex);
         ErrorDto errorDto = new ErrorDto();
         errorDto.setErrorMessage("Invalid appointment end and/or start time");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
-    }
-    
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleUserNotFoundException(UserNotFoundException ex){
-        log.error("Caught UserNotFoundException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("User not found");
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 

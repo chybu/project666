@@ -2,6 +2,8 @@ package com.project666.backend.service;
 
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentBill;
+import com.project666.backend.domain.entity.LabBill;
+import com.project666.backend.domain.entity.LabTest;
 
 public interface BillService {
     AppointmentBill generateBillForAppointment(Appointment appointment);
@@ -9,4 +11,6 @@ public interface BillService {
     AppointmentBill generateLateFeeBill(Appointment appointment);
 
     AppointmentBill generateCancellationFeeBill(Appointment appointment);
+
+    LabBill generateBillForLabTest(LabTest labTest);
 }

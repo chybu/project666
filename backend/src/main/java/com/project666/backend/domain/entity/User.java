@@ -71,13 +71,28 @@ public class User {
     // belong to doctor
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
     private List<Appointment> patientAppointments = new ArrayList<>();
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    private List<LabRequest> doctorLabRequests = new ArrayList<>();
+    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    private List<PatientRecordAccess> patientSharedRecordAccess = new ArrayList<>();
 
     // belong to patient
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<Appointment> doctorAppointments = new ArrayList<>();
-
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private List<LabRequest> patientLabRequests = new ArrayList<>();
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<AppointmentBill> appointmentBills = new ArrayList<>();
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private List<LabBill> labBills = new ArrayList<>();
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private List<PatientRecordAccess> patientRecordAccess = new ArrayList<>();
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private List<LabTest> patientLabTests = new ArrayList<>();
+
+    // belong to the lab technician
+    @OneToMany(mappedBy = "labTechnician", cascade = CascadeType.ALL)
+    private List<LabTest> labTechnicianLabTests = new ArrayList<>();    
 
     @Override
     public int hashCode() {

@@ -28,64 +28,29 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "appointments")
+@Table(name = "lab_requests")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Appointment {
+public class LabRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "start_time", updatable = false, nullable = false)
-    private LocalDateTime startTime;
-
-    @Column(name = "end_time", updatable = false, nullable = false)
-    private LocalDateTime endTime;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private AppointmentTypeEnum type;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private AppointmentStatusEnum status;
+    private LabRequestStatusEnum status;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id", updatable = false, nullable = false)
-    private User creator;
-
     @LastModifiedDate
     @Column(name = "last_updated", nullable = false)
     private LocalDateTime lastUpdated;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "canceller_id")
-    private User canceller;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "cancellation_initiator")
-    private CancellationInitiatorEnum cancellationInitiator;
-
-    @Column(name = "cancel_reason")
-    private String cancelReason;
-
-    @Column(name = "cancelled_at")
-    private LocalDateTime cancelledAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "confirm_receptionist_id")
-    private User confirmReceptionist;
-
-    @Column(name = "confirmed_at")
-    private LocalDateTime confirmedAt;
 
     /**
      * Version to deal with race in updating services like confirm, cancel, etc
@@ -94,18 +59,19 @@ public class Appointment {
     private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id", nullable = false)
+    @JoinColumn(name = "doctor_id", nullable = false, updatable = false)
     private User doctor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", nullable = false)
+    @JoinColumn(name = "patient_id", nullable = false, updatable = false)
     private User patient;
 
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
-    private List<AppointmentBill> appointmentBills = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "appointment_id", nullable = false, updatable = false)
+    private Appointment appointment;
 
-    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
-    private List<LabRequest> labRequests = new ArrayList<>();
+    @OneToMany(mappedBy = "labRequest", cascade = CascadeType.ALL)
+    private List<LabTest> labTests = new ArrayList<>();
 
     @Override
     public int hashCode() {
@@ -123,7 +89,7 @@ public class Appointment {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Appointment other = (Appointment) obj;
+        LabRequest other = (LabRequest) obj;
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -131,4 +97,10 @@ public class Appointment {
             return false;
         return true;
     }
+
+    public void addLabTest(LabTest labTest){
+        labTests.add(labTest);
+        labTest.setLabRequest(this);
+    }
+
 }

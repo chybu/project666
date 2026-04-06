@@ -1,11 +1,11 @@
 package com.project666.frontend.security;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
 import com.project666.backend.domain.entity.RoleEnum;
-import com.project666.backend.exception.RoleNotFoundException;
-import com.project666.backend.exception.UnknowRoleException;
 
 public final class SecurityUtil {
 
@@ -18,13 +18,13 @@ public final class SecurityUtil {
                 .startsWith("ROLE_")
             )
             .findFirst()
-            .orElseThrow(RoleNotFoundException::new);
+            .orElseThrow(NoSuchElementException::new);
                 
         role = role.replace("ROLE_", "");
         try {
             return RoleEnum.valueOf(role);
         } catch (IllegalArgumentException e) {
-            throw new UnknowRoleException();
+            throw new IllegalArgumentException(String.format("%s cannot be mapped to enum", role));
         }
     }
 
@@ -35,6 +35,7 @@ public final class SecurityUtil {
             case DOCTOR -> "/doctor/dashboard/home";
             case RECEPTIONIST -> "/receptionist/dashboard/home";
             case NURSE -> "/nurse/dashboard/home";
+            case LAB_TECHNICIAN -> "/labtechnician/dashboard/home";
         };
     }
 }
