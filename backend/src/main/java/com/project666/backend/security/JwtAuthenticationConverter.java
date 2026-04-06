@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
@@ -25,11 +27,20 @@ public class JwtAuthenticationConverter implements Converter<Jwt, JwtAuthenticat
 
     @Override
     public JwtAuthenticationToken convert(Jwt source) {
-
-        userService.provisionUser(source);
-
-        Collection<GrantedAuthority> authorities = extractAuthorities(source);
-        return new JwtAuthenticationToken(source, authorities);
+        try {
+            userService.provisionUser(source);
+            Collection<GrantedAuthority> authorities = extractAuthorities(source);
+            return new JwtAuthenticationToken(source, authorities);
+        } catch (OAuth2AuthenticationException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            OAuth2Error error = new OAuth2Error(
+                "invalid_token",
+                ex.getMessage(),
+                null
+            );
+            throw new OAuth2AuthenticationException(error, ex.getMessage(), ex);
+        }
     }
 
     private Collection<GrantedAuthority> extractAuthorities(Jwt source){

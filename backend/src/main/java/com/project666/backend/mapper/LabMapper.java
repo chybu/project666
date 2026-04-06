@@ -47,6 +47,8 @@ public interface LabMapper {
     @Mapping(target = "appointmentStartTime", source = "appointment.startTime")
     PatientLabRequestResponseDto toPatientLabRequestResponseDto(LabRequest labRequest);
 
+    @Mapping(target = "patientFullName", source = "labRequest.patient.fullName")
+    @Mapping(target = "doctorFullName", source = "labRequest.doctor.fullName")
     @Mapping(target = "labTechnicianFullName", source = "labTechnician.fullName")
     PatientLabRequestResponseDto.PatientLabTestResponseDto toPatientLabTestResponseDto(LabTest labTest);
 
@@ -56,6 +58,9 @@ public interface LabMapper {
         PatientLabRequestResponseDto.PatientLabTestResponseDto dto
     );
 
+    @Mapping(target = "patientFullName", source = "patient.fullName")
+    @Mapping(target = "doctorFullName", source = "doctor.fullName")
+    @Mapping(target = "appointmentStartTime", source = "appointment.startTime")
     ListLabRequestResponseDto toListLabRequestResponseDto(LabRequest request);
 
     UpdateLabTestRequest fromUpdateLabTestRequestDto(UpdateLabTestRequestDto dto);

@@ -14,18 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.ListPatientRecordAccessRequest;
 import com.project666.backend.domain.PatientRecordAccessRequest;
-import com.project666.backend.domain.entity.Appointment;
-import com.project666.backend.domain.entity.AppointmentStatusEnum;
-import com.project666.backend.domain.entity.AppointmentTypeEnum;
 import com.project666.backend.domain.entity.PatientRecordAccess;
 import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.DuplicateException;
 import com.project666.backend.repository.PatientRecordAccessRepository;
 import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.PatientRecordAccessService;
@@ -188,6 +183,6 @@ public class PatientRecordAccessServiceImpl implements PatientRecordAccessServic
                     PatientRecordAccessStatusEnum.APPROVED
                 )
             )
-        ) throw new DuplicateException("Duplicated Request");
+        ) throw new IllegalArgumentException("Duplicated Request");
     }
 }

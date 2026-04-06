@@ -28,7 +28,6 @@ import com.project666.backend.domain.entity.LabTest;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.DuplicateException;
 import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.mapper.LabMapper;
 import com.project666.backend.repository.AppointmentRepository;
@@ -375,7 +374,7 @@ public class LabServiceImpl implements LabService{
 
             // duplicate inside the same request
             if (!normalizedNames.add(normalized)) {
-                throw new DuplicateException("Duplicated lab test inside the same request: " + name);
+                throw new IllegalArgumentException("Duplicated lab test inside the same request: " + name);
             }
 
             // duplicate against active tests in DB
@@ -389,7 +388,7 @@ public class LabServiceImpl implements LabService{
             );
 
             if (exists) {
-                throw new DuplicateException("Duplicated active lab test: " + name);
+                throw new IllegalArgumentException("Duplicated active lab test: " + name);
             }
         }
     }

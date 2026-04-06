@@ -40,7 +40,7 @@ public class FrontendSecurityConfig {
         .securityMatcher("/**")
         .authorizeHttpRequests(auth -> auth
             // Static assets (no authentication)
-            .requestMatchers("/", "/login", "/landingPage/**", "/images/**", "/css/**").permitAll()
+            .requestMatchers("/", "/login", "/error", "/landingPage/**", "/images/**", "/css/**").permitAll()
             .anyRequest().authenticated() // Internal Page
         )
         .oauth2Login(oauth2 -> oauth2

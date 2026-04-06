@@ -26,6 +26,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorDto> handleNoSuchElementException(NoSuchElementException ex){
         log.error("Caught NoSuchElementException", ex);
         ErrorDto errorDto = new ErrorDto();
+        errorDto.setErrorMessage(ex.getMessage());
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 
@@ -33,6 +34,7 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorDto> handleIllegalArgumentException(IllegalArgumentException ex){
         log.error("Caught IllegalArgumentException", ex);
         ErrorDto errorDto = new ErrorDto();
+        errorDto.setErrorMessage(ex.getMessage());
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 

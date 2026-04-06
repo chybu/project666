@@ -29,6 +29,7 @@ public class PatientLabRequestResponseDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PatientLabTestResponseDto {
+        // dont have doctor and lab tech note
         private UUID id;
         private String code;
         private String name;
@@ -36,5 +37,8 @@ public class PatientLabRequestResponseDto {
         private LabTestStatusEnum status;
         private String result;
         private String labTechnicianFullName;
+        private String patientFullName;
+        private String doctorFullName;
+        private LocalDateTime createdAt;
     }
 }

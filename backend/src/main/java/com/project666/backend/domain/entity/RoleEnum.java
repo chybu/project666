@@ -15,7 +15,7 @@ public enum RoleEnum {
     private static final String KEYCLOAK_RECEPTIONIST_ROLE = "ROLE_RECEPTIONIST";
     private static final String KEYCLOAK_DOCTOR_ROLE = "ROLE_DOCTOR";
     private static final String KEYCLOAK_NURSE_ROLE = "ROLE_NURSE";
-    private static final String KEYCLOAK_LAB_TECHNICIAN_ROLE = "ROLE_LABTECHNICIAN";
+    private static final String KEYCLOAK_LAB_TECHNICIAN_ROLE = "ROLE_LAB_TECHNICIAN";
 
 
     public static RoleEnum getUserRole(Map<String, Object> realmAccess){

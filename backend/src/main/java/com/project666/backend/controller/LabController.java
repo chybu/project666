@@ -63,7 +63,7 @@ public class LabController {
     public ResponseEntity<Page<ListLabRequestResponseDto>> listLabRequests(
         @AuthenticationPrincipal Jwt jwt,
         Pageable pageable,
-        @RequestBody @Valid ListLabRequestRequestDto requestDto
+        @RequestBody ListLabRequestRequestDto requestDto
     ) {
         ListLabRequestRequest request = labMapper.fromListLabRequestRequestDto(requestDto);
         UUID requesterId = JwtUtil.getUserId(jwt);
