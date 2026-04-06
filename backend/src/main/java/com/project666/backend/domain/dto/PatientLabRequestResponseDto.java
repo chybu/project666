@@ -4,10 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
-import com.project666.backend.domain.entity.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
