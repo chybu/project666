@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.project666.backend.domain.ListLabRequestRequest;
 import com.project666.backend.domain.entity.LabRequest;
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 

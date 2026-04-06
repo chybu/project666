@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import com.project666.backend.domain.dto.ListPatientRecordAccessRequestDto;
 import com.project666.backend.domain.entity.PatientRecordAccess;
 import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
