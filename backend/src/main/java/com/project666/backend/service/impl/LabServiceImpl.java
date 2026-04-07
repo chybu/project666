@@ -26,6 +26,8 @@ import com.project666.backend.domain.entity.LabRequest;
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 import com.project666.backend.domain.entity.LabTest;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
+import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
+import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.exception.MismatchedParameterException;
@@ -33,6 +35,7 @@ import com.project666.backend.mapper.LabMapper;
 import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.LabRequestRepository;
 import com.project666.backend.repository.LabTestRepository;
+import com.project666.backend.repository.PatientRecordAccessRepository;
 import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.BillService;
 import com.project666.backend.service.LabService;
@@ -50,6 +53,7 @@ public class LabServiceImpl implements LabService{
     private final AppointmentRepository appointmentRepository;
     private final LabRequestRepository labRequestRepository;
     private final LabTestRepository labTestRepository;
+    private final PatientRecordAccessRepository patientRecordAccessRepository;
     private final LabMapper labMapper;
     private final BillService billService;
 
@@ -218,6 +222,63 @@ public class LabServiceImpl implements LabService{
 
         return labRequestRepository.findAll(spec, pageable);
     }
+
+    @Override
+    public Page<LabRequest> listLabRequestForNewDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable) {
+        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("DOCTOR with ID %s not found", doctorId)
+            ));
+
+        List<UUID> approvedPatientIds = patientRecordAccessRepository
+            .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+                doctorId,
+                PatientRecordTypeEnum.LAB_REQUEST,
+                PatientRecordAccessStatusEnum.APPROVED
+            );
+
+        if (approvedPatientIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
+
+        // only lab requests of patients who granted this doctor access
+        spec = spec.and((root, query, cb) ->
+            root.get("patient").get("id").in(approvedPatientIds)
+        );
+
+        // exclude lab requests created by this same doctor
+        spec = spec.and((root, query, cb) ->
+            cb.notEqual(root.get("doctor").get("id"), doctorId)
+        );
+
+        if (request.getStatus() != null) {
+            spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getCreatedAtDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
+        }
+
+        UUID patientId = request.getPatientId();
+        if (patientId != null) {
+            userRepository.findByIdAndRole(patientId, RoleEnum.PATIENT)
+                .orElseThrow(() -> new NoSuchElementException(
+                    String.format("PATIENT with ID %s not found", patientId)
+                ));
+
+            spec = spec.and(LabRequestSpecification.byPatient(patientId));
+        }
+
+        UUID appointmentId = request.getAppointmentId();
+        if (appointmentId != null) {
+            spec = spec.and(LabRequestSpecification.byAppointment(appointmentId));
+        }
+
+        return labRequestRepository.findAll(spec, pageable);
+    }
+
 
     @Override
     public Page<LabRequest> listLabRequestForLabTechnician(UUID labTechnicianId, ListLabRequestRequest request, Pageable pageable) {

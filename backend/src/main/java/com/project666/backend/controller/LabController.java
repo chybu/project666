@@ -90,6 +90,24 @@ public class LabController {
         return ResponseEntity.ok(labRequests);
     }
 
+    @PostMapping("/requests/shared/list")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<Page<ListLabRequestResponseDto>> listSharedLabRequestsForDoctor(
+        @AuthenticationPrincipal Jwt jwt,
+        Pageable pageable,
+        @RequestBody @Valid ListLabRequestRequestDto requestDto
+    ) {
+        ListLabRequestRequest request = labMapper.fromListLabRequestRequestDto(requestDto);
+        UUID doctorId = JwtUtil.getUserId(jwt);
+
+        Page<ListLabRequestResponseDto> labRequests = labService
+            .listLabRequestForNewDoctor(doctorId, request, pageable)
+            .map(labMapper::toListLabRequestResponseDto);
+
+        return ResponseEntity.ok(labRequests);
+    }
+
+
     @PostMapping("/tests/list")
     @PreAuthorize("hasRole('LAB_TECHNICIAN')")
     public ResponseEntity<Page<ListLabTestResponseDto>> listLabTestForStaff(

@@ -31,6 +31,9 @@ public interface LabService {
 
     Page<LabRequest> listLabRequestForDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable);
 
+    // for doctor who wants to view lab requests that he didn't create
+    Page<LabRequest> listLabRequestForNewDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable);
+
     Page<LabRequest> listLabRequestForLabTechnician(UUID labTechnicianId, ListLabRequestRequest request, Pageable pageable);
 
     LabTest claimLabTest(UUID labTechnicianId, UUID labTestId);

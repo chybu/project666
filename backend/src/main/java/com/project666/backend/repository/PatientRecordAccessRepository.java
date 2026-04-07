@@ -1,11 +1,14 @@
 package com.project666.backend.repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.project666.backend.domain.entity.PatientRecordAccess;
@@ -26,5 +29,18 @@ public interface PatientRecordAccessRepository extends
             UUID doctorId,
             UUID patientId,
             Collection<PatientRecordAccessStatusEnum> statuses
+        );
+
+        @Query("""
+            select pra.patient.id
+            from PatientRecordAccess pra
+            where pra.doctor.id = :doctorId
+            and pra.recordType = :recordType
+            and pra.status = :status
+        """)
+        List<UUID> findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+            @Param("doctorId") UUID doctorId,
+            @Param("recordType") PatientRecordTypeEnum recordType,
+            @Param("status") PatientRecordAccessStatusEnum status
         );
 }
