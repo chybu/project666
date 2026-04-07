@@ -1,6 +1,8 @@
 package com.project666.backend.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.UUID;
 
 import com.project666.backend.domain.entity.BillStatusEnum;
 import com.project666.backend.domain.entity.BillTypeEnum;
@@ -21,5 +23,7 @@ public class ListAppointmentBillRequest {
     private BigDecimal maxPatientPaymentAmount;
     private BillStatusEnum status;
     private BillTypeEnum type;
-    
+    private UUID appointmentId;
+    private LocalDate paidOnDate;
+    private LocalDate createdAtDate;    
 }
