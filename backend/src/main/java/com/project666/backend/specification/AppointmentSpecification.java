@@ -9,7 +9,10 @@ import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.domain.entity.AppointmentTypeEnum;
 
-public class AppointmentSpecification {
+public final class AppointmentSpecification {
+
+    private AppointmentSpecification(){
+    }
 
     // This is CriteriaBuilder
 

@@ -9,7 +9,10 @@ import org.springframework.data.jpa.domain.Specification;
 import com.project666.backend.domain.entity.LabTest;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
 
-public class LabTestSpecification {
+public final class LabTestSpecification {
+
+    private LabTestSpecification(){
+    }
 
     public static Specification<LabTest> alwaysTrue() {
         return (root, query, cb) -> cb.conjunction();

@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ListAppointmentBillRequest extends ListBillRequest{
-    private UUID appointmentId;
+public class ListLabBillRequest  extends ListBillRequest{
+    private UUID labTestId;
 }

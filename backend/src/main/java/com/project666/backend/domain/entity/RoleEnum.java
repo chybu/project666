@@ -9,14 +9,15 @@ public enum RoleEnum {
     RECEPTIONIST,
     DOCTOR,
     NURSE,
-    LAB_TECHNICIAN;
+    LAB_TECHNICIAN,
+    ACCOUNTANT;
 
     private static final String KEYCLOAK_PATIENT_ROLE = "ROLE_PATIENT";
     private static final String KEYCLOAK_RECEPTIONIST_ROLE = "ROLE_RECEPTIONIST";
     private static final String KEYCLOAK_DOCTOR_ROLE = "ROLE_DOCTOR";
     private static final String KEYCLOAK_NURSE_ROLE = "ROLE_NURSE";
     private static final String KEYCLOAK_LAB_TECHNICIAN_ROLE = "ROLE_LAB_TECHNICIAN";
-
+    private static final String KEYCLOAK_ACCOUNTANT_ROLE = "ROLE_ACCOUNTANT";
 
     public static RoleEnum getUserRole(Map<String, Object> realmAccess){
 
@@ -41,6 +42,9 @@ public enum RoleEnum {
         }
         else if(roles.contains(KEYCLOAK_LAB_TECHNICIAN_ROLE)){
             return RoleEnum.LAB_TECHNICIAN;
+        }
+        else if(roles.contains(KEYCLOAK_ACCOUNTANT_ROLE)){
+            return RoleEnum.ACCOUNTANT;
         }
         else{
             throw new IllegalArgumentException(String.format("%s role is not known", roles.toString()));

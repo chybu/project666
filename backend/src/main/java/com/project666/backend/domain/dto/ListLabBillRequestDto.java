@@ -1,4 +1,4 @@
-package com.project666.backend.domain;
+package com.project666.backend.domain.dto;
 
 import java.util.UUID;
 
@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ListAppointmentBillRequest extends ListBillRequest{
-    private UUID appointmentId;
+public class ListLabBillRequestDto extends ListBillRequestDto{
+    private UUID labTestId;
 }

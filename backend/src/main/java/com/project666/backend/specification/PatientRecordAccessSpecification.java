@@ -10,7 +10,10 @@ import com.project666.backend.domain.entity.PatientRecordAccess;
 import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 
-public class PatientRecordAccessSpecification {
+public final class PatientRecordAccessSpecification {
+
+    private PatientRecordAccessSpecification(){
+    }
 
     public static Specification<PatientRecordAccess> alwaysTrue() {
         return (root, query, cb) -> cb.conjunction();
