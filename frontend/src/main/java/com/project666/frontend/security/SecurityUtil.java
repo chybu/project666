@@ -36,6 +36,7 @@ public final class SecurityUtil {
             case RECEPTIONIST -> "/receptionist/dashboard/home";
             case NURSE -> "/nurse/dashboard/home";
             case LAB_TECHNICIAN -> "/labtechnician/dashboard/home";
+            case ACCOUNTANT -> "/accountant/dashboard/home";
         };
     }
 }
