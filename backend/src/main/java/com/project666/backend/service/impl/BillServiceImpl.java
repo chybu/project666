@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,6 +28,7 @@ import com.project666.backend.domain.entity.LabTest;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
+import com.project666.backend.domain.message.BillReadyForInsuranceEvent;
 import com.project666.backend.repository.AppointmentBillRepository;
 import com.project666.backend.repository.LabBillRepository;
 import com.project666.backend.repository.UserRepository;
@@ -43,6 +45,7 @@ import lombok.RequiredArgsConstructor;
 public class BillServiceImpl implements BillService{
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     private final BigDecimal CANCELLATION_FEE_PERCENTAGE = new BigDecimal("0.05");
     private final BigDecimal LATE_FEE_AMOUNT = new BigDecimal("10.00");
@@ -76,17 +79,26 @@ public class BillServiceImpl implements BillService{
         if (billType == null) throw new IllegalArgumentException();
         BigDecimal amount = baseFeeMap.get(billType);
 
-        return appointmentBillRepository.save(
+        AppointmentBill saved = appointmentBillRepository.save(
             createAppointmentBill(appointment, billType, amount)
         );
+        applicationEventPublisher.publishEvent(
+            new BillReadyForInsuranceEvent(saved.getId())
+        );
+        return saved;
     }
 
     @Override
     @Transactional
     public AppointmentBill generateLateFeeBill(Appointment appointment) {
-        return appointmentBillRepository.save(
+        
+        AppointmentBill saved = appointmentBillRepository.save(
             createAppointmentBill(appointment, BillTypeEnum.LATE_FEE, LATE_FEE_AMOUNT)
         );
+        applicationEventPublisher.publishEvent(
+            new BillReadyForInsuranceEvent(saved.getId())
+        );
+        return saved;
     }
 
     @Override
@@ -102,10 +114,13 @@ public class BillServiceImpl implements BillService{
         BillTypeEnum cancelBillType = appointmentCancelBillMap.get(appointmentType);
         if (cancelBillType==null) throw new IllegalArgumentException();
 
-
-        return appointmentBillRepository.save(
+        AppointmentBill saved = appointmentBillRepository.save(
             createAppointmentBill(appointment, cancelBillType, amount)
         );
+        applicationEventPublisher.publishEvent(
+            new BillReadyForInsuranceEvent(saved.getId())
+        );
+        return saved;
     }
 
     @Override
@@ -117,11 +132,17 @@ public class BillServiceImpl implements BillService{
         LabBill bill = new LabBill();
         bill.setAmount(LAB_TEST_FEE);
         bill.setPatientPaymentAmount(LAB_TEST_FEE);
+        bill.setInsuranceCoverAmount(BigDecimal.ZERO);
         bill.setStatus(BillStatusEnum.VIEWING);
         bill.setType(BillTypeEnum.LAB_TEST_FEE);
         bill.setPatient(labTest.getPatient());
         bill.setLabTest(labTest);
-        return labBillRepository.save(bill);
+
+        LabBill saved = labBillRepository.save(bill);
+        applicationEventPublisher.publishEvent(
+            new BillReadyForInsuranceEvent(saved.getId())
+        );
+        return saved;
     }
 
     @Override
@@ -218,11 +239,19 @@ public class BillServiceImpl implements BillService{
                 String.format("ACCOUNTANT with ID %s not found", accountantId)
             ));
 
+        BillStatusEnum currentBillStatus;
+
         AppointmentBill appointmentBill = appointmentBillRepository.findById(billId).orElse(null);
         if (appointmentBill != null) {
-            if (BillStatusEnum.PAID.equals(appointmentBill.getStatus())) {
+            currentBillStatus = appointmentBill.getStatus();
+            if (BillStatusEnum.PAID.equals(currentBillStatus)) {
                 throw new IllegalArgumentException(
                     String.format("Bill with ID %s is already paid", billId)
+                );
+            }
+            if (BillStatusEnum.VIEWING.equals(currentBillStatus)) {
+                throw new IllegalArgumentException(
+                    String.format("Bill with ID %s is being viewed by Insurance Service", billId)
                 );
             }
 
@@ -238,10 +267,17 @@ public class BillServiceImpl implements BillService{
             )
         );
 
-        if (BillStatusEnum.PAID.equals(labBill.getStatus())) {
+        currentBillStatus = labBill.getStatus();
+        if (BillStatusEnum.PAID.equals(currentBillStatus)) {
             throw new IllegalArgumentException(
                 String.format("Bill with ID %s is already paid", billId)
             );
+        }
+
+        if (BillStatusEnum.VIEWING.equals(currentBillStatus)) {
+                throw new IllegalArgumentException(
+                    String.format("Bill with ID %s is being viewed by Insurance Service", billId)
+                );
         }
 
         labBill.setStatus(BillStatusEnum.PAID);
@@ -383,6 +419,7 @@ public class BillServiceImpl implements BillService{
         AppointmentBill bill = new AppointmentBill();
         bill.setAmount(amount);
         bill.setPatientPaymentAmount(amount);
+        bill.setInsuranceCoverAmount(BigDecimal.ZERO);
         bill.setStatus(BillStatusEnum.VIEWING);
         bill.setType(billType);
         bill.setPatient(appointment.getPatient());
