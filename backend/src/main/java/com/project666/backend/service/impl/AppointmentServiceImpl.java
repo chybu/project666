@@ -35,7 +35,7 @@ import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.BillService;
 import com.project666.backend.specification.AppointmentSpecification;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service

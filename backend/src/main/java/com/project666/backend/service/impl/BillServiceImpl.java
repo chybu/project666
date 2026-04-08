@@ -14,7 +14,7 @@ import com.project666.backend.domain.entity.BillTypeEnum;
 import com.project666.backend.exception.InvalidAppointmentTypeException;
 import com.project666.backend.repository.BillRepository;
 import com.project666.backend.service.BillService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service

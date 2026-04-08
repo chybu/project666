@@ -91,7 +91,8 @@ public class Appointment {
      * Version to deal with race in updating services like confirm, cancel, etc
      */
     @Version
-    private Long version;
+    @Column(nullable = false)
+    private long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", nullable = false)
