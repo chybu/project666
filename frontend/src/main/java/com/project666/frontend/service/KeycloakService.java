@@ -3,12 +3,15 @@ package com.project666.frontend.service;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.project666.backend.domain.entity.User;
@@ -16,8 +19,23 @@ import com.project666.backend.domain.entity.User;
 @Service
 public class KeycloakService {
 
-    private final String KEYCLOAK_BASE = "http://localhost:9090";
-    private final String REALM = "patient-portal";
+    @Value("${keycloak.base-url}")
+    private String KEYCLOAK_BASE;
+
+    @Value("${keycloak.realm}")
+    private String REALM;
+
+    @Value("${keycloak.client-id}")
+    private String clientId;
+
+    @Value("${keycloak.client-secret}")
+    private String clientSecret;
+
+    @Value("${keycloak.account-url}")
+    private String accountUrl;
+
+    @Value("${keycloak.password-url}")
+    private String passwordUrl;
 
     public void syncUser(OAuth2AuthorizedClient authorizedClient, User user) {
 
@@ -48,27 +66,28 @@ public class KeycloakService {
 
     public boolean verifyPassword(String username, String password) {
 
-        String url = KEYCLOAK_BASE + "/realms/" + REALM + "/protocol/openid-connect/token";
+    String url = KEYCLOAK_BASE + "/realms/" + REALM + "/protocol/openid-connect/token";
 
-        RestTemplate restTemplate = new RestTemplate();
+    RestTemplate restTemplate = new RestTemplate();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
-        // TODO: use an url enconding function
-        String body = "client_id=frontend-client"
-            + "&grant_type=password"
-            + "&username=" + username
-            + "&password=" + password;
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
+    MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+    body.add("client_id", "frontend-client");
+    body.add("grant_type", "password");
+    body.add("username", username);
+    body.add("password", password);
 
-        try {
-            restTemplate.postForEntity(url, request, Map.class);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
+    try {
+        restTemplate.postForEntity(url, request, Map.class);
+        return true;
+    } catch (Exception e) {
+        return false;
     }
+}
 
     public void deleteUser(UUID userId) {
 
@@ -87,24 +106,31 @@ public class KeycloakService {
     }
 
     private String getAdminToken() {
-        // TODO: In production, don't use admin credential to create admin token. Instead, create an admin service client.
 
-        String url = KEYCLOAK_BASE + "/realms/master/protocol/openid-connect/token";
+        String url = KEYCLOAK_BASE + "/realms/" + REALM + "/protocol/openid-connect/token";
 
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
 
-        String body = "client_id=admin-cli"
-            + "&grant_type=password"
-            + "&username=admin"
-            + "&password=password";
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "client_credentials");
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
 
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
         return (String) response.getBody().get("access_token");
     }
+
+    public String getAccountRedirect() {
+        return "redirect:" + accountUrl;
+}
+
+    public String getPasswordRedirect() {
+        return "redirect:" + passwordUrl;
+}
 }
