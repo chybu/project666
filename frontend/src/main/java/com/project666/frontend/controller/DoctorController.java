@@ -13,7 +13,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
@@ -31,11 +30,6 @@ public class DoctorController {
 
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
-
-    @GetMapping("/homepage")
-    public String redirectHomepage() {
-        return "redirect:/doctor/dashboard/home";
-    }
 
     @GetMapping("/dashboard/home")
     public String home(

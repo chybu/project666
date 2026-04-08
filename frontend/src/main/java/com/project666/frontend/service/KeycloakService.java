@@ -54,7 +54,7 @@ public class KeycloakService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
-
+        // TODO: use an url enconding function
         String body = "client_id=frontend-client"
             + "&grant_type=password"
             + "&username=" + username
@@ -87,6 +87,7 @@ public class KeycloakService {
     }
 
     private String getAdminToken() {
+        // TODO: In production, don't use admin credential to create admin token. Instead, create an admin service client.
 
         String url = KEYCLOAK_BASE + "/realms/master/protocol/openid-connect/token";
 

@@ -19,6 +19,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 public class FrontendSecurityConfig {
 
     private final ClientRegistrationRepository clientRegistrationRepository;
+    @Value("${app.base-url}")
+    private final String appBaseUrl;
 
     @Bean
     public SecurityFilterChain frontendFilterChain(
@@ -91,7 +94,7 @@ public class FrontendSecurityConfig {
     private LogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler =
             new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        logoutSuccessHandler.setPostLogoutRedirectUri("http://localhost:8080"); // Redirect after logout
+        logoutSuccessHandler.setPostLogoutRedirectUri(appBaseUrl); // Redirect after logout
         return logoutSuccessHandler;
     }
 }

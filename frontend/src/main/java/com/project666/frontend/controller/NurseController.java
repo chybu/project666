@@ -31,11 +31,6 @@ public class NurseController {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
 
-    @GetMapping("/homepage")
-    public String redirectHomepage() {
-        return "redirect:/nurse/dashboard/home";
-    }
-
     @GetMapping("/dashboard/home")
     public String home(
         @AuthenticationPrincipal OidcUser oidcUser,

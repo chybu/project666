@@ -31,11 +31,6 @@ public class ReceptionistController {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
 
-    @GetMapping("/homepage")
-    public String redirectHomepage() {
-        return "redirect:/receptionist/dashboard/home";
-    }
-
     @GetMapping("/dashboard/home")
     public String home(
         @AuthenticationPrincipal OidcUser oidcUser,

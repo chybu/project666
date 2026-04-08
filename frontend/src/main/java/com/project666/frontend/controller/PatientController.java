@@ -42,7 +42,6 @@ public class PatientController {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
 
-
     @GetMapping("/dashboard/home")
     public String loadHomePage(
         @AuthenticationPrincipal OidcUser oidcUser,
