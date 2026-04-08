@@ -27,17 +27,17 @@ public enum RoleEnum {
         @SuppressWarnings("unchecked")
         List<String> roles = (List<String>) realmAccess.get("roles");
 
-        if (roles.contains(KEYCLOAK_PATIENT_ROLE)){
-            return RoleEnum.PATIENT;
+        if (roles.contains(KEYCLOAK_DOCTOR_ROLE)){
+            return RoleEnum.DOCTOR;
         }
         else if(roles.contains(KEYCLOAK_RECEPTIONIST_ROLE)){
             return RoleEnum.RECEPTIONIST;
         }
-        else if(roles.contains(KEYCLOAK_DOCTOR_ROLE)){
-            return RoleEnum.DOCTOR;
-        }
         else if(roles.contains(KEYCLOAK_NURSE_ROLE)){
             return RoleEnum.NURSE;
+        }
+        else if(roles.contains(KEYCLOAK_PATIENT_ROLE)){
+            return RoleEnum.PATIENT;
         }
         else{
             throw new UnknowRoleException(roles.toString());
