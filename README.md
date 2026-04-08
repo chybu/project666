@@ -177,6 +177,7 @@ Create the following roles exactly:
 ```
 ROLE_PATIENT
 ROLE_DOCTOR
+ROLE_NURSE
 ROLE_RECEPTIONIST
 ```
 
@@ -193,9 +194,10 @@ Spring Security maps these directly.
 
 Go to **Users** → **Add user**
 
-Create three users:
+Create four users (Test User Information Provided Below "Set Password" Section):
 - Patient
 - Doctor
+- Nurse
 - Receptionist
 
 Fill:
@@ -215,6 +217,44 @@ Click **Create**
 3. Enter password
 4. Turn OFF "Temporary"
 5. Save
+
+---
+
+### Test User Information
+Users:
+
+* Patients
+
+Username - testPatient
+Email - testPatient501@gmail.com
+First Name - Ryan
+Last Name - Brewster
+password - 123TestPatient!
+
+
+* Doctors
+
+Username - testDoctor
+Email - TestDoctor502@gmail.com
+First Name - Greggory
+Last Name - House
+password - 123TestDoctor!
+
+* Nurses
+
+Username - testNurse
+Email - TestNurse501@gmail.com
+First Name - Carmen
+Last Name - idk
+password - 123TestNurse!
+
+* Receptionists
+
+Username - testRecep
+Email - testRecep501@gmail.com
+First Name - Sam
+Last Name - Something
+password - 123TestRecep!
 
 ---
 
