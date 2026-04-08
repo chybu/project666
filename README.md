@@ -397,5 +397,8 @@ Open another terminal. Run the insurance app:
 
 Open another terminal. Run the portal:
 ```bash
-./mvnw -f frontend/pom.xml clean install spring-boot:run
+./mvnw clean install
+```
+```bash
+./mvnw -f frontend/pom.xml spring-boot:run
 ```

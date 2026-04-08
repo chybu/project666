@@ -32,7 +32,7 @@ public class FrontendSecurityConfig {
 
     private final ClientRegistrationRepository clientRegistrationRepository;
     @Value("${app.base-url}")
-    private final String appBaseUrl;
+    private String appBaseUrl;
 
     @Bean
     @Order(2)
