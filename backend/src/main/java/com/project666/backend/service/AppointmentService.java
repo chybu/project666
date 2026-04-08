@@ -11,28 +11,42 @@ import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.RoleEnum;
 
+/**
+ * Handles appointment booking, confirmation, search, and cancellation flows.
+ */
 public interface AppointmentService {
-    Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
     /**
-     * A race can happen when creating an appointment. Soft check with service logic and Hard check with db constraint
-     * 
-     * db constraint checks if the doctor is already scheduled with db constraint
-     * CREATE EXTENSION IF NOT EXISTS btree_gist;
-     * alter table appointments add constraint no_doctor_overlap exclude using gist (doctor_id with =, tsrange(start_time - interval '30 minutes', end_time + interval '30 minutes') with &&);
-     * 
-     * check if the patient already has appointment in that timeframe with db constraint
-     * alter table appointments add constraint no_patient_overlap exclude using gist (patient_id with =, tsrange(start_time - interval '30 minutes', end_time + interval '30 minutes') with &&);
+     * Creates a confirmed appointment for the given doctor, patient, and time slot.
      */
+    Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
 
+    /**
+     * Marks a scheduled appointment as completed when the patient checks in within the allowed time window.
+     */
     Appointment confirmAppointment(UUID receptionistId, UUID appointmentId);
 
+    /**
+     * Lists appointments visible to a patient, with optional filtering.
+     */
     Page<Appointment> listAppointmentForPatient(UUID patientId, ListAppointmentRequest request, Pageable pageable);
 
+    /**
+     * Lists appointments assigned to a doctor, with optional filtering.
+     */
     Page<Appointment> listAppointmentForDoctor(UUID doctorId, ListAppointmentRequest request, Pageable pageable);
 
+    /**
+     * Lists appointments tied to a receptionist's work, with optional filtering.
+     */
     Page<Appointment> listAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable);
 
+    /**
+     * Lets a receptionist search appointments across the system, including ones not created or confirmed by them.
+     */
     Page<Appointment> searchAnyAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable);
 
+    /**
+     * Cancels a confirmed appointment and applies any required cancellation fee rules.
+     */
     Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
 }
