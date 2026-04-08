@@ -343,12 +343,18 @@ All endpoints support filtering using appointment parameters.
 
 ---
 
-# 9. Run The Website
-
+# 9. Run The Application
 Run:
 ```bash
-./mvnw clean install
+docker compose up -d
 ```
+
+Open another terminal. Run the insurance app:
 ```bash
-./mvnw -f frontend/pom.xml spring-boot:run
+./mvnw -f insurance/pom.xml clean spring-boot:run
+```
+
+Open another terminal. Run the portal:
+```bash
+./mvnw -f frontend/pom.xml clean install spring-boot:run
 ```
