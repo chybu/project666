@@ -168,7 +168,7 @@ In production, use **Authorization Code Flow**:
 
 ---
 
-## Step 5: Create Roles
+## Step 5.1: Create Roles
 
 Go to **Realm Roles** → **Create Role**
 
@@ -189,6 +189,7 @@ ROLE_RECEPTIONIST
 Spring Security maps these directly.
 
 ---
+
 
 ## Step 6: Create Users
 
@@ -383,9 +384,18 @@ All endpoints support filtering using appointment parameters.
 
 ---
 
-# 9. Run The Website
-
+# 9. Run The Application
 Run:
+```bash
+docker compose up -d
+```
+
+Open another terminal. Run the insurance app:
+```bash
+./mvnw -f insurance/pom.xml clean spring-boot:run
+```
+
+Open another terminal. Run the portal:
 ```bash
 ./mvnw clean install
 ```

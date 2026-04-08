@@ -2,45 +2,52 @@ package com.project666.backend.domain.entity;
 
 import java.util.List;
 import java.util.Map;
-
-import com.project666.backend.exception.RoleNotFoundException;
-import com.project666.backend.exception.UnknowRoleException;
+import java.util.NoSuchElementException;
 
 public enum RoleEnum {
     PATIENT,
     RECEPTIONIST,
     DOCTOR,
-    NURSE;
+    NURSE,
+    LAB_TECHNICIAN,
+    ACCOUNTANT;
 
     private static final String KEYCLOAK_PATIENT_ROLE = "ROLE_PATIENT";
     private static final String KEYCLOAK_RECEPTIONIST_ROLE = "ROLE_RECEPTIONIST";
     private static final String KEYCLOAK_DOCTOR_ROLE = "ROLE_DOCTOR";
     private static final String KEYCLOAK_NURSE_ROLE = "ROLE_NURSE";
-
+    private static final String KEYCLOAK_LAB_TECHNICIAN_ROLE = "ROLE_LAB_TECHNICIAN";
+    private static final String KEYCLOAK_ACCOUNTANT_ROLE = "ROLE_ACCOUNTANT";
 
     public static RoleEnum getUserRole(Map<String, Object> realmAccess){
 
         if(realmAccess==null || !realmAccess.containsKey("roles")){
-            throw new RoleNotFoundException();
+            throw new NoSuchElementException();
         }
 
         @SuppressWarnings("unchecked")
         List<String> roles = (List<String>) realmAccess.get("roles");
 
-        if (roles.contains(KEYCLOAK_PATIENT_ROLE)){
+        if (roles.contains(KEYCLOAK_DOCTOR_ROLE)){
+            return RoleEnum.DOCTOR;
+        }
+        else if(roles.contains(KEYCLOAK_PATIENT_ROLE)){
             return RoleEnum.PATIENT;
         }
         else if(roles.contains(KEYCLOAK_RECEPTIONIST_ROLE)){
             return RoleEnum.RECEPTIONIST;
         }
-        else if(roles.contains(KEYCLOAK_DOCTOR_ROLE)){
-            return RoleEnum.DOCTOR;
-        }
         else if(roles.contains(KEYCLOAK_NURSE_ROLE)){
             return RoleEnum.NURSE;
         }
+        else if(roles.contains(KEYCLOAK_LAB_TECHNICIAN_ROLE)){
+            return RoleEnum.LAB_TECHNICIAN;
+        }
+        else if(roles.contains(KEYCLOAK_ACCOUNTANT_ROLE)){
+            return RoleEnum.ACCOUNTANT;
+        }
         else{
-            throw new UnknowRoleException(roles.toString());
+            throw new IllegalArgumentException(String.format("%s role is not known", roles.toString()));
         }
     }
 }

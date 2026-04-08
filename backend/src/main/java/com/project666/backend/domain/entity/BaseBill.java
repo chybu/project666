@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,8 +33,6 @@ public abstract class BaseBill {
     /**
      * TODO:
      * 1. two kind of bill: appointmentBill and labBill
-     * 2. add bill to confirm (service bill and late bill)
-     * 3. add bill to cancel
      */
 
     @Id
@@ -76,5 +75,8 @@ public abstract class BaseBill {
     @LastModifiedDate
     @Column(name = "last_updated", nullable = false)
     private LocalDateTime lastUpdated;
+
+    @Version
+    private Long version;
 }
 

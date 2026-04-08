@@ -2,12 +2,12 @@ package com.project666.backend.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import com.project666.backend.domain.entity.RoleEnum;
-import com.project666.backend.exception.UnknowRoleException;
 
 public final class JwtUtil {
     public static UUID getUserId(Jwt jwt){
@@ -34,7 +34,7 @@ public final class JwtUtil {
         try {
             return RoleEnum.valueOf(role);
         } catch (IllegalArgumentException e) {
-            throw new UnknowRoleException();
+            throw new NoSuchElementException(String.format("Cannot map %s to enum", role));
         }
     }
 }
