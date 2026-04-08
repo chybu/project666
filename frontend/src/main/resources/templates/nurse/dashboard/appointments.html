@@ -44,15 +44,25 @@
 
                                 <tbody>
                                     <tr th:each="appointment : ${appointments}">
-                                        <td th:text="${appointment.patientName}">John Doe</td>
-                                        <td th:text="${appointment.startTime}">Date</td>
-                                        <td th:text="${appointment.doctorName}">Dr</td>
+                                        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}">John Doe</td>
+                                        <td th:text="${#temporals.format(appointment.startTime, 'dd MMM yyyy HH:mm')}">Date</td>
+                                        <td th:text="${'Dr. ' + appointment.doctor.firstName + ' ' + appointment.doctor.lastName}">Dr</td>
                                         <td>
                                             <button class="btn btn-primary btn-sm"
                                                     data-toggle="modal"
                                                     data-target="#intakeModal">
                                                 Enter Information
                                             </button>
+
+                                            <form th:action="@{/nurse/dashboard/appointments/{id}/no-show(id=${appointment.id})}"
+                                            method="post"
+                                            style="display:inline;">
+                                                <button type="submit"
+                                                        class="btn btn-warning btn-sm"
+                                                        onclick="return confirm('Mark this appointment as No Show?')">
+                                                    No Show
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </tbody>

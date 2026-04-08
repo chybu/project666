@@ -15,6 +15,10 @@ public interface AppointmentService {
     Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
 
     Appointment confirmAppointment(UUID receptionistId, UUID appointmentId);
+    
+    Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
+
+    Appointment noShowAppointment(UUID staffId, UUID appointmentId);
 
     Page<Appointment> listDoctorAppointment(UUID patientId, ListAppointmentRequest request, Pageable pageable);
 
@@ -23,6 +27,4 @@ public interface AppointmentService {
     Page<Appointment> listConfirmAppointment(UUID receptionistId, ListAppointmentRequest request, Pageable pageable);
 
     Page<Appointment> listAppointment(ListAppointmentRequest request, Pageable pageable);
-
-    Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
 }

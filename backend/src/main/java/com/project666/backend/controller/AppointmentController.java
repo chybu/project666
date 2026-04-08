@@ -58,6 +58,17 @@ public class AppointmentController {
 
         return ResponseEntity.ok(responseDto);
     }
+    @PutMapping("/{appointmentId}/no-show")
+    @PreAuthorize("hasAnyRole('NURSE', 'RECEPTIONIST')")
+    public ResponseEntity<ConfirmAppointmentResponseDto> noShowAppointment(
+        @AuthenticationPrincipal Jwt jwt,
+        @PathVariable UUID appointmentId
+    ) {
+        UUID staffId = JwtUtil.getUserId(jwt);
+        Appointment appointment = appointmentService.noShowAppointment(staffId, appointmentId);
+        ConfirmAppointmentResponseDto responseDto = appointmentMapper.toConfirmAppointmentResponseDto(appointment);
+        return ResponseEntity.ok(responseDto);
+    }
 
     @PutMapping("/cancel")
     @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST')")

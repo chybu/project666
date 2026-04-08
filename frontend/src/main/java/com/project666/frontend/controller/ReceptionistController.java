@@ -1,14 +1,34 @@
 package com.project666.frontend.controller;
 
+import java.time.LocalDate;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import com.project666.backend.domain.ListAppointmentRequest;
+import com.project666.backend.domain.entity.Appointment;
+import com.project666.backend.domain.entity.AppointmentStatusEnum;
+import com.project666.backend.service.AppointmentService;
+import com.project666.frontend.util.OidcUserUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/receptionist")
 @PreAuthorize("hasRole('RECEPTIONIST')")
+@RequiredArgsConstructor
 public class ReceptionistController {
+
+    private final AppointmentService appointmentService;
 
     @GetMapping("/dashboard/home")
     public String home() {
@@ -16,8 +36,33 @@ public class ReceptionistController {
     }
 
     @GetMapping("/dashboard/appointments")
-    public String appointments() {
+    public String appointments(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+    ) {
+        UUID receptionistId = OidcUserUtil.getUserId(oidcUser);
+
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("startTime").ascending());
+
+        ListAppointmentRequest request = new ListAppointmentRequest();
+        request.setStatus(AppointmentStatusEnum.CONFIRMED);
+        request.setFrom(LocalDate.now());
+
+        Page<Appointment> appointmentPage =
+            appointmentService.listAppointment(request, pageable);
+
+        model.addAttribute("appointments", appointmentPage.getContent());
         return "receptionist/dashboard/appointments";
+    }
+
+    @PostMapping("/dashboard/appointments/{appointmentId}/no-show")
+    public String markNoShow(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @PathVariable UUID appointmentId
+    ) {
+        UUID receptionistId = OidcUserUtil.getUserId(oidcUser);
+        appointmentService.noShowAppointment(receptionistId, appointmentId);
+        return "redirect:/receptionist/dashboard/appointments";
     }
 
     @GetMapping("/dashboard/notifications")

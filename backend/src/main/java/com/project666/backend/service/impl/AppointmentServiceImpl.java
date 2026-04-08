@@ -185,6 +185,27 @@ public class AppointmentServiceImpl implements AppointmentService{
         return confirmAppointment;
 
     }
+    
+    @Override
+    @Transactional
+    public Appointment noShowAppointment(UUID staffId, UUID appointmentId) {
+        Appointment appointment = appointmentRepository
+            .findById(appointmentId)
+            .orElseThrow(
+                () -> new AppointmentNotFoundException(
+                    String.format("Appointment with ID %s not found", appointmentId)
+                )
+            );
+
+        if (!AppointmentStatusEnum.CONFIRMED.equals(appointment.getStatus())) {
+            throw new InvalidAppointmentStatusException(
+                "Only CONFIRMED appointments can be marked as no-show"
+            );
+        }
+
+        appointment.setStatus(AppointmentStatusEnum.NO_SHOW);
+        return appointmentRepository.save(appointment);
+    }
 
     @Override
     public Page<Appointment> listDoctorAppointment(UUID patientId, ListAppointmentRequest request, Pageable pageable) {
