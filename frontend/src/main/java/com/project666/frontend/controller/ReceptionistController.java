@@ -21,6 +21,9 @@ import com.project666.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
+
+
 
 @Controller
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class ReceptionistController {
 
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
+
 
     @GetMapping("/dashboard/home")
     public String home(
@@ -90,11 +94,11 @@ public class ReceptionistController {
 
     @GetMapping("/profile/keycloak")
     public String redirectToKeycloakAccount() {
-        return "redirect:http://localhost:9090/realms/patient-portal/account";
+        return keycloakService.getAccountRedirect();
     }
 
     @GetMapping("/profile/keycloak-password")
     public String redirectToKeycloakPassword() {
-        return "redirect:http://localhost:9090/realms/patient-portal/account/account-security/signing-in";
+        return keycloakService.getPasswordRedirect();
     }
 }

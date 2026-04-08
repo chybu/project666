@@ -31,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 
+import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 @RequiredArgsConstructor
@@ -41,6 +42,7 @@ public class PatientController {
     private final AppointmentService appointmentService;
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
+
 
     @GetMapping("/dashboard/home")
     public String loadHomePage(
@@ -155,13 +157,13 @@ public String deleteAccount(
 @GetMapping("/profile/keycloak")
 @PreAuthorize("hasRole('PATIENT')")
 public String redirectToKeycloakAccount() {
-    return "redirect:http://localhost:9090/realms/patient-portal/account";
+    return keycloakService.getAccountRedirect();
 }
 
 @GetMapping("/profile/keycloak-password")
 @PreAuthorize("hasRole('PATIENT')")
 public String redirectToKeycloakPassword() {
-    return "redirect:http://localhost:9090/realms/patient-portal/account/account-security/signing-in";
+    return keycloakService.getPasswordRedirect();
 }
 
     @GetMapping("/dashboard/security")
