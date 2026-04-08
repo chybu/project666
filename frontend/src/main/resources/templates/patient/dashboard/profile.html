@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
     <title>Profile Settings</title>
-
-    <!-- SB-Admin & FontAwesome CSS -->
-    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
-    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
 
     <style>
-        .tab-content {
-            margin-top: 20px;
+        .outer-box {
+            background-color: #224abe;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
         }
-        .profile-field {
-            margin-bottom: 15px;
+
+        .inner-box {
+            background-color: #4e73df;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
         }
-        .profile-label {
-            font-weight: 600;
+
+        .field-label {
+            font-weight: bold;
         }
-        .btn-edit {
-            margin-left: 10px;
+
+        .change-btn {
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -28,130 +32,143 @@
 <body id="page-top">
 <div id="wrapper">
 
+<<<<<<< HEAD
     <!-- Sidebar -->
     <div th:replace="~{pageFragments/patientSidebar :: sidebar}"></div>
+=======
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
+>>>>>>> main
 
-    <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
-
-        <!-- Main Content -->
         <div id="content">
 
+<<<<<<< HEAD
             <!-- Topbar -->
             <div th:replace="~{pageFragments/patientTopbar :: topbar}"></div>
+=======
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
+>>>>>>> main
 
-            <!-- Begin Page Content -->
             <div class="container-fluid">
 
-                <!-- Page Heading -->
                 <h1 class="h3 mb-4 text-gray-800">Profile Settings</h1>
 
-                <!-- Tabs -->
-                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="profile-tab" data-bs-toggle="tab" href="#profile" role="tab"
-                           aria-controls="profile" aria-selected="true">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security" role="tab"
-                           aria-controls="security" aria-selected="false">Security</a>
-                    </li>
-                </ul>
+                <div class="outer-box">
+                    <div class="inner-box">
 
-                <!-- Tab Content -->
-                <div class="tab-content" id="profileTabsContent">
+                        <h4>Profile</h4>
 
-                    <!-- Profile Tab -->
-                    <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                        <div class="mb-3">
+                            <div class="field-label">First Name</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.firstName}" disabled>
 
-                        <div class="card shadow mb-4">
-                            <div class="card-body">
+                            <a th:href="@{/patient/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change First Name
+                            </a>
+                        </div>
 
-                                <!-- Name -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Full Name:</div>
-                                    <div class="col-md-7" th:text="${user.fullName}">John Doe</div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-primary btn-edit">Edit</button>
-                                    </div>
-                                </div>
+                        <div class="mb-3">
+                            <div class="field-label">Last Name</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.lastName}" disabled>
 
-                                <!-- Date of Birth (not editable) -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Date of Birth:</div>
-                                    <div class="col-md-9" th:text="${user.dateOfBirth}">01 Jan 1990</div>
-                                </div>
-
-                                <!-- Other info example -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Phone Number:</div>
-                                    <div class="col-md-7" th:text="${user.phoneNumber}">+1 555 555 5555</div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-primary btn-edit">Edit</button>
-                                    </div>
-                                </div>
-
-                            </div>
+                            <a th:href="@{/patient/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Last Name
+                            </a>
                         </div>
 
                     </div>
+                </div>
 
-                    <!-- Security Tab -->
-                    <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
+                <div class="outer-box">
+                    <div class="inner-box">
 
-                        <div class="card shadow mb-4">
-                            <div class="card-body">
+                        <h4>Security</h4>
 
-                                <!-- Email -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Email:</div>
-                                    <div class="col-md-7" th:text="${user.email}">johndoe@example.com</div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-primary btn-edit">Change</button>
-                                    </div>
-                                </div>
+                        <div class="mb-3">
+                            <div class="field-label">Email</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.email}" disabled>
 
-                                <!-- Password -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Password:</div>
-                                    <div class="col-md-7">********</div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-primary btn-edit">Change</button>
-                                    </div>
-                                </div>
+                            <a th:href="@{/patient/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Email
+                            </a>
+                        </div>
 
-                                <!-- Delete Account -->
-                                <div class="profile-field row align-items-center">
-                                    <div class="col-md-3 profile-label">Delete Account:</div>
-                                    <div class="col-md-7 text-danger">This action is permanent</div>
-                                    <div class="col-md-2">
-                                        <button class="btn btn-sm btn-danger btn-edit">Delete</button>
-                                    </div>
-                                </div>
+                        <div class="mb-3">
+                            <div class="field-label">Password</div>
 
+                            <input type="password" class="form-control"
+                                   value="********" disabled>
+
+                            <a th:href="@{/patient/profile/keycloak-password}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Password
+                            </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="field-label text-danger">
+                                Delete Account
                             </div>
+                            <button class="btn btn-danger"
+                                    data-toggle="modal"
+                                    data-target="#deleteModal">
+                                Delete Account
+                            </button>
                         </div>
 
                     </div>
-
                 </div>
 
             </div>
-            <!-- /.container-fluid -->
-
         </div>
 
+<<<<<<< HEAD
         <!-- Footer -->
         <div th:replace="~{pageFragments/patientFooter :: footer}"></div>
 
+=======
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
+>>>>>>> main
     </div>
-
 </div>
 
-<!-- Scripts -->
-<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
-<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/js/sb-admin-2.min.js}"></script>
+<form th:action="@{/patient/delete-account}" method="post">
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5>Confirm Deletion</h5>
+                </div>
+
+                <div class="modal-body">
+                    This action is permanent.<br>
+                    Are you sure you want to delete your account?
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
 
 </body>
 </html>

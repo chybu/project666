@@ -3,7 +3,6 @@ package com.project666.frontend.service.impl;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,11 +28,9 @@ public class FrontendUserServiceImpl implements FrontenndUserService{
     public void provisionUser(OidcUser oidcUser) {
         UUID keycloakId = OidcUserUtil.getUserId(oidcUser);
 
-        if (userRepository.existsById(keycloakId)) {
-            return;
-        }
+        User user = userRepository.findById(keycloakId)
+            .orElse(new User());
 
-        User user = new User();
         user.setId(keycloakId);
         user.setEmail(oidcUser.getClaimAsString("email"));
         user.setName(oidcUser.getClaimAsString("preferred_username"));
@@ -44,10 +41,6 @@ public class FrontendUserServiceImpl implements FrontenndUserService{
         RoleEnum role = RoleEnum.getUserRole(realmAccess);
         user.setRole(role);
 
-        try {
-            userRepository.saveAndFlush(user);
-        } catch (DataIntegrityViolationException e) {
-            // User already exists
-        }
+        userRepository.saveAndFlush(user);
     }
 }
