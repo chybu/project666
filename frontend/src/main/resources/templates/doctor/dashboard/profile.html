@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Doctor Profile Settings</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+
+    <style>
+        .outer-box {
+            background-color: #224abe;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .inner-box {
+            background-color: #4e73df;
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .field-label {
+            font-weight: bold;
+        }
+
+        .change-btn {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Doctor Profile Settings</h1>
+
+                <div class="outer-box">
+                    <div class="inner-box">
+
+                        <h4>Profile</h4>
+
+                        <div class="mb-3">
+                            <div class="field-label">First Name</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.firstName}" disabled>
+
+                            <a th:href="@{/doctor/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change First Name
+                            </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="field-label">Last Name</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.lastName}" disabled>
+
+                            <a th:href="@{/doctor/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Last Name
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="outer-box">
+                    <div class="inner-box">
+
+                        <h4>Security</h4>
+
+                        <div class="mb-3">
+                            <div class="field-label">Email</div>
+                            <input type="text" class="form-control"
+                                   th:value="${user.email}" disabled>
+
+                            <a th:href="@{/doctor/profile/keycloak}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Email
+                            </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="field-label">Password</div>
+
+                            <input type="password" class="form-control"
+                                   value="********" disabled>
+
+                            <a th:href="@{/doctor/profile/keycloak-password}"
+                               target="_blank"
+                               class="btn btn-light btn-sm change-btn">
+                                Change Password
+                            </a>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="field-label text-danger">
+                                Delete Account
+                            </div>
+                            <button class="btn btn-danger"
+                                    data-toggle="modal"
+                                    data-target="#deleteModal">
+                                Delete Account
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+    </div>
+</div>
+
+<form th:action="@{/doctor/delete-account}" method="post">
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5>Confirm Deletion</h5>
+                </div>
+
+                <div class="modal-body">
+                    This action is permanent.<br>
+                    Are you sure you want to delete your account?
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

@@ -168,7 +168,7 @@ In production, use **Authorization Code Flow**:
 
 ---
 
-## Step 5: Create Roles
+## Step 5.1: Create Roles
 
 Go to **Realm Roles** → **Create Role**
 
@@ -189,6 +189,7 @@ ROLE_RECEPTIONIST
 Spring Security maps these directly.
 
 ---
+
 
 ## Step 6: Create Users
 
