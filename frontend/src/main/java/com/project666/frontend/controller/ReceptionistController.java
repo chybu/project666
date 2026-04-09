@@ -18,6 +18,9 @@ import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.repository.UserRepository;
+import com.project666.backend.domain.NoShowAppointmentRequest;
+import com.project666.backend.service.AppointmentService;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +33,7 @@ public class ReceptionistController {
 
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
+    private final AppointmentService appointmentService;
 
     @GetMapping("/dashboard/home")
     public String home(
@@ -86,6 +90,16 @@ public class ReceptionistController {
         userRepository.deleteById(userId);
 
         return "redirect:/logout";
+    }
+    @PostMapping("/appointments/no-show")
+    public String noShowAppointment(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID appointmentId
+    ) {
+        UUID receptionistId = OidcUserUtil.getUserId(oidcUser);
+        NoShowAppointmentRequest request = new NoShowAppointmentRequest(appointmentId);
+        appointmentService.noShowAppointment(receptionistId, request);
+        return "redirect:/receptionist/dashboard/appointments";
     }
 
     @GetMapping("/profile/keycloak")

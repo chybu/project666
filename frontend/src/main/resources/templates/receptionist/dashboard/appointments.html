@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Receptionist Appointments</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/receptionistSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/receptionistTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Upcoming Appointments
+                        </h6>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Date</th>
+                                        <th>Doctor</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr th:each="appointment : ${appointments}">
+                                        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}">John Doe</td>
+                                        <td th:text="${#temporals.format(appointment.startTime, 'dd MMM yyyy HH:mm')}">Date</td>
+                                        <td th:text="${'Dr. ' + appointment.doctor.firstName + ' ' + appointment.doctor.lastName}">Dr</td>
+                                        <td>
+                                            <form th:action="@{/receptionist/dashboard/appointments/{id}/no-show(id=${appointment.id})}"
+                                                  method="post"
+                                                  style="display:inline;">
+                                                <button type="submit"
+                                                        class="btn btn-warning btn-sm"
+                                                        onclick="return confirm('Mark this appointment as No Show?')">
+                                                    No Show
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/receptionistFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

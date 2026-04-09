@@ -31,6 +31,9 @@ import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.mapper.AppointmentMapper;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.util.JwtUtil;
+import com.project666.backend.domain.NoShowAppointmentRequest;
+import com.project666.backend.domain.dto.NoShowAppointmentRequestDto;
+import com.project666.backend.domain.dto.NoShowAppointmentResponseDto;
 
 import jakarta.validation.Valid;
 
@@ -71,6 +74,18 @@ public class AppointmentController {
 
         CancelAppointmentResponseDto responseDto = appointmentMapper.toCancelAppointmentResponseDto(appointment);
         
+        return ResponseEntity.ok(responseDto);
+    }
+    @PutMapping("/no-show")
+    @PreAuthorize("hasRole('RECEPTIONIST')")
+    public ResponseEntity<NoShowAppointmentResponseDto> noShowAppointment(
+        @AuthenticationPrincipal Jwt jwt,
+        @RequestBody @Valid NoShowAppointmentRequestDto requestDto
+    ) {
+        NoShowAppointmentRequest request = appointmentMapper.fromNoShowAppointmentRequestDto(requestDto);
+        UUID receptionistId = JwtUtil.getUserId(jwt);
+        Appointment appointment = appointmentService.noShowAppointment(receptionistId, request);
+        NoShowAppointmentResponseDto responseDto = appointmentMapper.toNoShowAppointmentResponseDto(appointment);
         return ResponseEntity.ok(responseDto);
     }
 

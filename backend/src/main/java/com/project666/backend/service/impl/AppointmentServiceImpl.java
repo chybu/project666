@@ -33,6 +33,7 @@ import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.BillService;
 import com.project666.backend.specification.AppointmentSpecification;
+import com.project666.backend.domain.NoShowAppointmentRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -273,6 +274,37 @@ public class AppointmentServiceImpl implements AppointmentService{
         }
         
         return appointmentRepository.save(cancelAppointment);
+    }
+    @Override
+    @Transactional
+    public Appointment noShowAppointment(UUID receptionistId, NoShowAppointmentRequest request) {
+
+        LocalDateTime noShowAt = LocalDateTime.now();
+
+        User receptionist = userRepository
+            .findByIdAndRole(receptionistId, RoleEnum.RECEPTIONIST)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Receptionist with ID %s not found", receptionistId)
+            ));
+
+        UUID appointmentId = request.getAppointmentId();
+        Appointment appointment = appointmentRepository
+            .findById(appointmentId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Appointment with ID %s not found", appointmentId)
+            ));
+
+        if (!appointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)) {
+            throw new IllegalArgumentException(
+                String.format("Invalid status of appointment with ID %s", appointmentId)
+            );
+        }
+
+        appointment.setStatus(AppointmentStatusEnum.NO_SHOW);
+        appointment.setNoShowReceptionist(receptionist);
+        appointment.setNoShowAt(noShowAt);
+
+        return appointmentRepository.save(appointment);
     }
 
     private void checkWithinConfirmWindow(LocalDateTime startTime, LocalDateTime confirmTime){

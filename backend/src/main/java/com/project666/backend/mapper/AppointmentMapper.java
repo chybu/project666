@@ -15,6 +15,9 @@ import com.project666.backend.domain.dto.CreateAppointmentResponseDto;
 import com.project666.backend.domain.dto.ListAppointmentRequestDto;
 import com.project666.backend.domain.dto.ListAppointmentResponseDto;
 import com.project666.backend.domain.entity.Appointment;
+import com.project666.backend.domain.NoShowAppointmentRequest;
+import com.project666.backend.domain.dto.NoShowAppointmentRequestDto;
+import com.project666.backend.domain.dto.NoShowAppointmentResponseDto;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AppointmentMapper {
@@ -42,4 +45,10 @@ public interface AppointmentMapper {
     @Mapping(target = "cancellerFullName", source = "appointment.canceller.fullName")
     CancelAppointmentResponseDto toCancelAppointmentResponseDto(Appointment appointment);
     
+    NoShowAppointmentRequest fromNoShowAppointmentRequestDto(NoShowAppointmentRequestDto dto);
+
+    @Mapping(target = "patientFullName", source = "appointment.patient.fullName")
+    @Mapping(target = "doctorFullName", source = "appointment.doctor.fullName")
+    @Mapping(target = "noShowReceptionistFullName", source = "appointment.noShowReceptionist.fullName")
+    NoShowAppointmentResponseDto toNoShowAppointmentResponseDto(Appointment appointment);
 }

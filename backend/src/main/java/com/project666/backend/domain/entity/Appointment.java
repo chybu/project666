@@ -81,6 +81,13 @@ public class Appointment {
     private LocalDateTime cancelledAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "no_show_receptionist_id")
+    private User noShowReceptionist;
+
+    @Column(name = "no_show_at")
+    private LocalDateTime noShowAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "confirm_receptionist_id")
     private User confirmReceptionist;
 

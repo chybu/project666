@@ -10,6 +10,7 @@ import com.project666.backend.domain.CreateAppointmentRequest;
 import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.RoleEnum;
+import com.project666.backend.domain.NoShowAppointmentRequest;
 
 public interface AppointmentService {
     Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
@@ -35,4 +36,6 @@ public interface AppointmentService {
     Page<Appointment> searchAnyAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable);
 
     Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
+    
+    Appointment noShowAppointment(UUID receptionistId, NoShowAppointmentRequest request);
 }
