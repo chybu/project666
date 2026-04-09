@@ -102,7 +102,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/list")
-    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<Page<ListAppointmentResponseDto>> listAppointments(
         @AuthenticationPrincipal Jwt jwt,
         Pageable pageable,
@@ -117,6 +117,7 @@ public class AppointmentController {
             case PATIENT -> appointments = appointmentService.listAppointmentForPatient(requesterId, request, pageable);
             case DOCTOR -> appointments = appointmentService.listAppointmentForDoctor(requesterId, request, pageable);
             case RECEPTIONIST -> appointments = appointmentService.listAppointmentForReceptionist(requesterId, request, pageable);
+            case NURSE -> appointments = appointmentService.listAppointmentForNurse(requesterId, request, pageable);
             default -> throw new IllegalArgumentException(String.format("%s role is not known", role.name()));
         }
          

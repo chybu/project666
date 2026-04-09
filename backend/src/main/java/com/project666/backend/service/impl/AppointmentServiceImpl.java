@@ -46,6 +46,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     private final int QUICK_CHECK_DURATION_MINUTE = 30;
     private final int MID_CHECK_DURATION_MINUTE = 60;
     private final int LONG_CHECK_DURATION_MINUTE = 90;
+    private final int PRECHECK_DURATION_MINUTE = 15;
     private final Duration OVERLAP_BUFFER = Duration.ofMinutes(30);
     private final int LATE_TIME_SOFT_LIMIT_MINUTE = 5;
     private static final int CONFIRMATION_EARLY_WINDOW_MINUTES = 5;
@@ -196,6 +197,58 @@ public class AppointmentServiceImpl implements AppointmentService{
         roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
         roleMap.put(RoleEnum.RECEPTIONIST, receptionistId);
         return listAppointmentHelper(request, roleMap, pageable);
+    }
+
+    @Override
+    public Page<Appointment> listAppointmentForNurse(UUID nurseId, ListAppointmentRequest request, Pageable pageable) {
+        userRepository.findByIdAndRole(nurseId, RoleEnum.NURSE).orElseThrow(() -> new NoSuchElementException(
+            String.format("NURSE with ID %s not found", nurseId)
+        ));
+
+        Map<RoleEnum, UUID> roleMap = new HashMap<>();
+        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
+        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
+        roleMap.forEach((role, id) -> {
+            if (id != null) {
+                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
+                    String.format("%s with ID %s not found", role.name(), id)
+                ));
+            }
+        });
+
+        Specification<Appointment> spec = AppointmentSpecification.alwaysTrue();
+
+        if (request.getPatientId() != null) {
+            spec = spec.and(AppointmentSpecification.byPatient(request.getPatientId()));
+        }
+
+        if (request.getDoctorId() != null) {
+            spec = spec.and(AppointmentSpecification.byDoctor(request.getDoctorId()));
+        }
+
+        if (request.getType() != null) {
+            spec = spec.and(AppointmentSpecification.byType(request.getType()));
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        spec = spec.and(AppointmentSpecification.byStatus(AppointmentStatusEnum.COMPLETED));
+        spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("endTime"), now));
+
+        LocalDateTime from = request.getFrom() != null
+            ? request.getFrom().atStartOfDay()
+            : null;
+        LocalDateTime end = request.getEnd() != null
+            ? request.getEnd().atTime(LocalTime.MAX)
+            : null;
+
+        if (from != null || end != null) {
+            if (end != null && from != null && end.isBefore(from)) {
+                return Page.empty(pageable);
+            }
+            spec = spec.and(AppointmentSpecification.byDateRange(from, end));
+        }
+
+        return appointmentRepository.findAll(spec, pageable);
     }
 
     @Override
@@ -392,6 +445,7 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     private LocalDateTime getEndTime(LocalDateTime startTime, AppointmentTypeEnum type){
         Duration duration;
+        Duration precheck_duration = Duration.ofMinutes(PRECHECK_DURATION_MINUTE);
         switch (type) {
             case QUICK_CHECK:
                 duration = Duration.ofMinutes(QUICK_CHECK_DURATION_MINUTE);
@@ -403,6 +457,6 @@ public class AppointmentServiceImpl implements AppointmentService{
                 duration = Duration.ofMinutes(LONG_CHECK_DURATION_MINUTE);
                 break;
         }
-        return startTime.plus(duration);
+        return startTime.plus(duration).plus(precheck_duration);
     }
 }
