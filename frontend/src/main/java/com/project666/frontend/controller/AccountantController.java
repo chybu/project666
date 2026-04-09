@@ -24,16 +24,16 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/labtechnician")
-@PreAuthorize("hasRole('LAB_TECHNICIAN')")
-public class LabTechnicianController {
+@RequestMapping("/accountant")
+@PreAuthorize("hasRole('ACCOUNTANT')")
+public class AccountantController {
 
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
 
     @GetMapping("/homepage")
     public String redirectHomepage() {
-        return "redirect:/labtechnician/dashboard/home";
+        return "redirect:/accountant/dashboard/home";
     }
 
     @GetMapping("/dashboard/home")
@@ -49,22 +49,17 @@ public class LabTechnicianController {
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
 
-        return "labtechnician/dashboard/home";
+        return "accountant/dashboard/home";
     }
 
-    @GetMapping("/dashboard/lab-requests")
-    public String labRequests() {
-        return "labtechnician/dashboard/lab-requests";
-    }
-
-    @GetMapping("/dashboard/lab-tests")
-    public String labTests() {
-        return "labtechnician/dashboard/lab-tests";
+    @GetMapping("/dashboard/finances")
+    public String finances() {
+        return "accountant/dashboard/finances";
     }
 
     @GetMapping("/dashboard/notifications")
     public String notifications() {
-        return "labtechnician/dashboard/notifications";
+        return "accountant/dashboard/notifications";
     }
 
     @GetMapping("/dashboard/profile")
@@ -83,7 +78,7 @@ public class LabTechnicianController {
 
         model.addAttribute("user", user);
 
-        return "labtechnician/dashboard/profile";
+        return "accountant/dashboard/profile";
     }
 
     @PostMapping("/delete-account")
