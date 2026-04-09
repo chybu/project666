@@ -37,6 +37,8 @@ public class PatientRecordAccessServiceImpl implements PatientRecordAccessServic
     @Override
     @Transactional
     public PatientRecordAccess requestPatientRecordAccess(UUID doctorId, PatientRecordAccessRequest request) {
+        validatePatientRecordAccessRequest(request);
+
         User doctor = userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
             .orElseThrow(() -> new NoSuchElementException(String.format("Doctor with ID %s not found", doctorId)));
 
@@ -182,5 +184,19 @@ public class PatientRecordAccessServiceImpl implements PatientRecordAccessServic
                 )
             )
         ) throw new IllegalArgumentException("Duplicated Request");
+    }
+
+    private void validatePatientRecordAccessRequest(PatientRecordAccessRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Patient record access request is required");
+        }
+
+        if (request.getPatientId() == null) {
+            throw new IllegalArgumentException("Patient record access patientId is required");
+        }
+
+        if (request.getType() == null) {
+            throw new IllegalArgumentException("Patient record access type is required");
+        }
     }
 }

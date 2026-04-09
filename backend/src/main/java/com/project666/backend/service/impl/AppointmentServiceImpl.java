@@ -62,6 +62,7 @@ public class AppointmentServiceImpl implements AppointmentService{
     @Override
     @Transactional
     public Appointment createAppointment(UUID creatorId, CreateAppointmentRequest createAppointmentRequest) {
+        validateCreateAppointmentRequest(createAppointmentRequest);
         
         LocalDateTime startTime = createAppointmentRequest.getStartTime();
         AppointmentTypeEnum type = createAppointmentRequest.getType();
@@ -130,7 +131,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         LocalDateTime confirmTime = LocalDateTime.now();
 
         User receptionist = userRepository
-            .findById(receptionistId)
+            .findByIdAndRole(receptionistId, RoleEnum.RECEPTIONIST)
             .orElseThrow(
                 () -> new NoSuchElementException(
                     String.format("Receptionist with ID %s not found", receptionistId)
@@ -219,10 +220,10 @@ public class AppointmentServiceImpl implements AppointmentService{
         LocalDateTime cancelAt = LocalDateTime.now();
         
         User canceller = userRepository
-            .findById(cancellerId)
+            .findByIdAndRole(cancellerId, cancellerRole)
             .orElseThrow(
                 () -> new NoSuchElementException(
-                    String.format("User with ID %s not found", cancellerId)
+                    String.format("%s with ID %s not found", cancellerRole.name(), cancellerId)
                 )
             );
         UUID appointmentId = request.getAppointmentId();
@@ -364,6 +365,28 @@ public class AppointmentServiceImpl implements AppointmentService{
         LocalDateTime maximum_time = now.plusDays(MAXIMUM_BOOKING_DAY);
         if (startTime.isAfter(maximum_time)) throw new InvalidCreateAppointmentTimeWindowException(String.format("Appointment can only be before %s", maximum_time));
 
+    }
+
+    private void validateCreateAppointmentRequest(CreateAppointmentRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Create appointment request is required");
+        }
+
+        if (request.getStartTime() == null) {
+            throw new IllegalArgumentException("Appointment start time is required");
+        }
+
+        if (request.getType() == null) {
+            throw new IllegalArgumentException("Appointment type is required");
+        }
+
+        if (request.getDoctorId() == null) {
+            throw new IllegalArgumentException("Appointment doctorId is required");
+        }
+
+        if (request.getPatientId() == null) {
+            throw new IllegalArgumentException("Appointment patientId is required");
+        }
     }
 
     private LocalDateTime getEndTime(LocalDateTime startTime, AppointmentTypeEnum type){

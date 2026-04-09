@@ -1,6 +1,7 @@
 package com.project666.backend.repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -42,4 +43,6 @@ public interface AppointmentRepository extends
         @Param("startTime") LocalDateTime startTime,
         @Param("endTime") LocalDateTime endTime
     );
+
+    Optional<Appointment> findByIdAndDoctorId(UUID id, UUID doctorId);
 }

@@ -30,7 +30,6 @@ import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.mapper.LabMapper;
 import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.LabRequestRepository;
@@ -60,22 +59,19 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabRequest createLabRequest(UUID doctorId, CreateLabRequestRequest request) {
+        validateCreateLabRequest(request);
+
         User doctor = userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("DOCTOR with ID %s not found", doctorId)
             )
         );
 
-        Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
+        Appointment appointment = appointmentRepository.findByIdAndDoctorId(request.getAppointmentId(), doctorId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Appointment with ID %s not found", request.getAppointmentId())
             )
         );
-
-        // make sure only the doctor in the appointment can make lab request for it
-        if (!appointment.getDoctor().getId().equals(doctorId)){
-            throw new MismatchedParameterException(String.format("Doctor with ID %s cannot make lab request for appointment %s", doctorId, appointment.getId()));
-        }
 
         // only when the receptionist confirms the patient going to the appointment then the doctor can make the lab request for that appointment
         if (!appointment.getStatus().equals(AppointmentStatusEnum.COMPLETED)){
@@ -450,6 +446,26 @@ public class LabServiceImpl implements LabService{
 
             if (exists) {
                 throw new IllegalArgumentException("Duplicated active lab test: " + name);
+            }
+        }
+    }
+
+    private void validateCreateLabRequest(CreateLabRequestRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Create lab request is required");
+        }
+
+        if (request.getAppointmentId() == null) {
+            throw new IllegalArgumentException("Lab request appointmentId is required");
+        }
+
+        if (request.getLabTests() == null || request.getLabTests().isEmpty()) {
+            throw new IllegalArgumentException("Lab request must contain at least one lab test");
+        }
+
+        for (CreateLabRequestRequest.LabTestRequest labTestRequest : request.getLabTests()) {
+            if (labTestRequest == null || labTestRequest.getName() == null || labTestRequest.getName().isBlank()) {
+                throw new IllegalArgumentException("Lab test name is required");
             }
         }
     }
