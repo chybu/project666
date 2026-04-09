@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lab Technician Dashboard</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="pageFragments/labtechnicianSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <div id="content">
+
+            <!-- Topbar -->
+            <div th:replace="pageFragments/labtechnicianTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Lab Technician Dashboard</h1>
+
+                <!-- Calendar -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Calendar</h6>
+                    </div>
+                    <div class="card-body">
+                        Calendar goes here
+                    </div>
+                </div>
+
+                <!-- Staff / Clinical Notes -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Clinical Overview
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li>Review patient charts before appointments</li>
+                            <li>Follow up on pending lab results</li>
+                            <li>Check nurse intake notes</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div th:replace="pageFragments/labtechnicianFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

@@ -45,6 +45,9 @@ public class WebController {
         else if(RoleEnum.NURSE.equals(role)){
             return "redirect:/nurse/dashboard/home";
         }
+        else if(RoleEnum.ACCOUNTANT.equals(role)){
+            return "redirect:/accountant/dashboard/home";
+        }
 
         return "redirect:/error";
         
