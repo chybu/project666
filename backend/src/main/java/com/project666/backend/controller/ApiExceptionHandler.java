@@ -13,7 +13,6 @@ import jakarta.persistence.OptimisticLockException;
 import com.project666.backend.domain.dto.ErrorDto;
 import com.project666.backend.exception.InvalidConfirmationTimeWindowException;
 import com.project666.backend.exception.InvalidCreateAppointmentTimeWindowException;
-import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.exception.OverlapAppointmentException;
 import com.project666.backend.exception.TimeNotInWorkingHourException;
 import lombok.extern.slf4j.Slf4j;
@@ -58,14 +57,6 @@ public class ApiExceptionHandler {
         log.error("Caught InvalidConfirmationTimeWindowException", ex);
         ErrorDto errorDto = new ErrorDto();
         errorDto.setErrorMessage("Invalid time to confirm an appointment");
-        return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(MismatchedParameterException.class)
-    public ResponseEntity<ErrorDto> handleOptimisticLockException(MismatchedParameterException ex){
-        log.error("Caught MismatchedParameterException", ex);
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setErrorMessage("Mismatched parameters");
         return new ResponseEntity<>(errorDto, HttpStatus.BAD_REQUEST);
     }
 

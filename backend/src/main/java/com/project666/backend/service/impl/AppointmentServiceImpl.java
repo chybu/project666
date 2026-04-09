@@ -25,7 +25,6 @@ import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.exception.InvalidConfirmationTimeWindowException;
 import com.project666.backend.exception.InvalidCreateAppointmentTimeWindowException;
-import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.exception.OverlapAppointmentException;
 import com.project666.backend.exception.TimeNotInWorkingHourException;
 import com.project666.backend.repository.AppointmentRepository;
@@ -251,7 +250,9 @@ public class AppointmentServiceImpl implements AppointmentService{
                 && !cancellerRole.equals(RoleEnum.RECEPTIONIST)
             )
         ){
-            throw new MismatchedParameterException();
+            throw new IllegalArgumentException(
+                String.format("%s cannot cancel an appointment", initiator.name())
+            );
         }
 
         cancelAppointment.setCancelledAt(cancelAt);

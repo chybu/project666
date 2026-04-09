@@ -24,7 +24,6 @@ import com.project666.backend.domain.entity.PrescriptionMedicine;
 import com.project666.backend.domain.entity.PrescriptionStatusEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.PatientRecordAccessRepository;
 import com.project666.backend.repository.PrescriptionRepository;
