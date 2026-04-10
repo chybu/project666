@@ -30,6 +30,9 @@ import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.repository.UserRepository;
+import com.project666.backend.domain.CancelAppointmentRequest;
+import com.project666.backend.domain.entity.CancellationInitiatorEnum;
+import com.project666.backend.domain.entity.RoleEnum;
 
 import lombok.RequiredArgsConstructor;
 
@@ -186,7 +189,26 @@ public String profile(
 
     return "patient/dashboard/profile";
 }
+@PostMapping("/dashboard/cancel-appointment")
+public String cancelAppointment(
+        @RequestParam UUID appointmentId,
+        @AuthenticationPrincipal OidcUser oidcUser
+) {
+    UUID userId = OidcUserUtil.getUserId(oidcUser);
 
+    CancelAppointmentRequest request = new CancelAppointmentRequest();
+    request.setAppointmentId(appointmentId);
+    request.setCancelReason("Cancelled by patient from dashboard");
+    request.setCancellationInitiator(CancellationInitiatorEnum.PATIENT);
+
+    appointmentService.cancelAppointment(
+            userId,
+            RoleEnum.PATIENT,
+            request
+    );
+
+    return "redirect:/patient/dashboard/home";
+}
 @PostMapping("/profile/update-name")
 @PreAuthorize("hasRole('PATIENT')")
 public String updateName(

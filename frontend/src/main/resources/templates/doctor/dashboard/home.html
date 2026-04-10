@@ -177,6 +177,7 @@
                                             <th>Patient</th>
                                             <th>Type</th>
                                             <th>Status</th>
+                                            <th>Action</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -186,6 +187,13 @@
                                             <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
                                             <td th:text="${appointment.type}"></td>
                                             <td th:text="${appointment.status}"></td>
+
+                                            <td>
+                                                <form th:action="@{/doctor/dashboard/cancel-appointment}" method="post">
+                                                    <input type="hidden" name="appointmentId" th:value="${appointment.id}" />
+                                                    <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                                </form>
+                                            </td>
                                         </tr>
                                         </tbody>
                                     </table>

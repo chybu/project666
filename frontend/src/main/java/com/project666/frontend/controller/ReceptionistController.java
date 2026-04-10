@@ -18,6 +18,7 @@ import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.service.AppointmentService;
+import com.project666.backend.domain.entity.CancellationInitiatorEnum;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,6 +36,8 @@ import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.repository.UserRepository;
+import com.project666.backend.domain.CancelAppointmentRequest;
+import com.project666.backend.domain.entity.RoleEnum;
 
 import lombok.RequiredArgsConstructor;
 
@@ -79,12 +82,12 @@ public class ReceptionistController {
         LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
 
         ListAppointmentRequest request = new ListAppointmentRequest();
-        //request.setStatus(AppointmentStatusEnum.CONFIRMED);
+        request.setStatus(AppointmentStatusEnum.CONFIRMED);
         request.setFrom(firstDayOfMonth);
 
         Pageable pageable = PageRequest.of(0, 200, Sort.by("startTime").ascending());
         Page<Appointment> appointmentPage =
-                appointmentService.listAppointmentForReceptionist(userId, request, pageable);
+                appointmentService.searchAnyAppointmentForReceptionist(userId, request, pageable);
 
         List<Appointment> monthAppointments = appointmentPage.getContent().stream()
                 .filter(a -> !a.getStartTime().toLocalDate().isAfter(lastDayOfMonth))
@@ -166,6 +169,28 @@ public class ReceptionistController {
         model.addAttribute("user", user);
 
         return "receptionist/dashboard/profile";
+    }
+
+    @PostMapping("/dashboard/cancel-appointment")
+    public String cancelAppointment(
+            @RequestParam UUID appointmentId,
+            @AuthenticationPrincipal OidcUser oidcUser
+    ) {
+        UUID userId = OidcUserUtil.getUserId(oidcUser);
+
+
+        CancelAppointmentRequest request = new CancelAppointmentRequest();
+        request.setAppointmentId(appointmentId);
+        request.setCancelReason("Cancelled by receptionist from dashboard");
+        request.setCancellationInitiator(CancellationInitiatorEnum.RECEPTIONIST);
+
+        appointmentService.cancelAppointment(
+                userId,
+                RoleEnum.RECEPTIONIST,
+                request
+        );
+
+        return "redirect:/receptionist/dashboard/home";
     }
 
     @PostMapping("/delete-account")

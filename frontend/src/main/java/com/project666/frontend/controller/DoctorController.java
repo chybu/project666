@@ -18,6 +18,11 @@ import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.repository.UserRepository;
+import com.project666.backend.domain.CancelAppointmentRequest;
+import com.project666.backend.domain.entity.CancellationInitiatorEnum;
+import com.project666.backend.domain.entity.RoleEnum;
+import com.project666.backend.domain.entity.AppointmentStatusEnum;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -78,6 +83,7 @@ public class DoctorController {
         LocalDate lastDayOfMonth = yearMonth.atEndOfMonth();
 
         ListAppointmentRequest request = new ListAppointmentRequest();
+        request.setStatus(AppointmentStatusEnum.CONFIRMED);
         request.setFrom(firstDayOfMonth);
 
         Pageable pageable = PageRequest.of(0, 100, Sort.by("startTime").ascending());
@@ -184,6 +190,26 @@ public class DoctorController {
         model.addAttribute("user", user);
 
         return "doctor/dashboard/profile";
+    }
+    @PostMapping("/dashboard/cancel-appointment")
+    public String cancelAppointment(
+            @RequestParam UUID appointmentId,
+            @AuthenticationPrincipal OidcUser oidcUser
+    ) {
+        UUID userId = OidcUserUtil.getUserId(oidcUser);
+
+        CancelAppointmentRequest request = new CancelAppointmentRequest();
+        request.setAppointmentId(appointmentId);
+        request.setCancelReason("Cancelled by doctor from dashboard");
+        request.setCancellationInitiator(CancellationInitiatorEnum.RECEPTIONIST);
+
+        appointmentService.cancelAppointment(
+                userId,
+                RoleEnum.RECEPTIONIST,
+                request
+        );
+
+        return "redirect:/doctor/dashboard/home";
     }
 
 @PostMapping("/delete-account")
