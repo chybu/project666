@@ -40,10 +40,7 @@ public class LabTechnicianController {
         @AuthenticationPrincipal OidcUser oidcUser,
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient
     ) {
-        UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-        User user = userRepository.findById(userId)
-            .orElseThrow();
+        User user = requireActiveUser(oidcUser);
 
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
@@ -72,10 +69,7 @@ public class LabTechnicianController {
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
         Model model
     ){
-        UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-        User user = userRepository.findById(userId)
-            .orElseThrow();
+        User user = requireActiveUser(oidcUser);
 
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
@@ -89,10 +83,11 @@ public class LabTechnicianController {
     public String deleteAccount(
         @AuthenticationPrincipal OidcUser oidcUser
     ){
-        UUID userId = OidcUserUtil.getUserId(oidcUser);
+        User user = requireActiveUser(oidcUser);
 
-        keycloakService.deleteUser(userId);
-        userRepository.deleteById(userId);
+        keycloakService.deleteUser(user.getId());
+        user.setDeleted(true);
+        userRepository.save(user);
 
         return "redirect:/logout";
     }
@@ -105,5 +100,11 @@ public class LabTechnicianController {
     @GetMapping("/profile/keycloak-password")
     public String redirectToKeycloakPassword() {
         return keycloakService.getPasswordRedirect();
+    }
+
+    private User requireActiveUser(OidcUser oidcUser) {
+        UUID userId = OidcUserUtil.getUserId(oidcUser);
+        return userRepository.findByIdAndDeletedFalse(userId)
+            .orElseThrow();
     }
 }

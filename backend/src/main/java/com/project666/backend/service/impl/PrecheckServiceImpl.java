@@ -44,10 +44,7 @@ public class PrecheckServiceImpl implements PrecheckService {
     @Override
     @Transactional
     public Precheck createPrecheck(UUID nurseId, CreatePrecheckRequest request) {
-        User nurse = userRepository.findByIdAndRole(nurseId, RoleEnum.NURSE)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("NURSE with ID %s not found", nurseId)
-            ));
+        User nurse = requireActiveUserByRole(nurseId, RoleEnum.NURSE);
 
         validateCreateRequest(request);
 
@@ -55,6 +52,9 @@ public class PrecheckServiceImpl implements PrecheckService {
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Appointment with ID %s not found", request.getAppointmentId())
             ));
+
+        requireActiveUserByRole(appointment.getPatient().getId(), RoleEnum.PATIENT);
+        requireActiveUserByRole(appointment.getDoctor().getId(), RoleEnum.DOCTOR);
 
         if (!AppointmentStatusEnum.COMPLETED.equals(appointment.getStatus())) {
             throw new IllegalArgumentException("Cannot create precheck for unattended appointment");
@@ -91,15 +91,15 @@ public class PrecheckServiceImpl implements PrecheckService {
     @Override
     @Transactional
     public Precheck cancelPrecheck(UUID nurseId, UUID precheckId) {
-        userRepository.findByIdAndRole(nurseId, RoleEnum.NURSE)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("NURSE with ID %s not found", nurseId)
-            ));
+        requireActiveUserByRole(nurseId, RoleEnum.NURSE);
 
         Precheck precheck = precheckRepository.findByIdAndNurseId(precheckId, nurseId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Precheck with ID %s not found", precheckId)
             ));
+
+        requireActiveUserByRole(precheck.getPatient().getId(), RoleEnum.PATIENT);
+        requireActiveUserByRole(precheck.getDoctor().getId(), RoleEnum.DOCTOR);
 
         if (!PrecheckStatusEnum.VALID.equals(precheck.getStatus())) {
             throw new IllegalArgumentException("Only valid precheck can be cancelled");
@@ -116,37 +116,38 @@ public class PrecheckServiceImpl implements PrecheckService {
 
     @Override
     public Page<Precheck> listPrecheckForPatient(UUID patientId, ListPrecheckRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        roleMap.put(RoleEnum.NURSE, request.getNurseId());
-        return listPrecheckHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        userLookupMap.put(RoleEnum.NURSE, new UserLookup(request.getNurseId(), RoleEnum.NURSE, true));
+        return listPrecheckHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Precheck> listPrecheckForDoctor(UUID doctorId, ListPrecheckRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.DOCTOR, doctorId);
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.NURSE, request.getNurseId());
-        return listPrecheckHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.NURSE, new UserLookup(request.getNurseId(), RoleEnum.NURSE, true));
+        return listPrecheckHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Precheck> listPrecheckForNurse(UUID nurseId, ListPrecheckRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.NURSE, nurseId);
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        return listPrecheckHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        userLookupMap.put(RoleEnum.NURSE, new UserLookup(nurseId, RoleEnum.NURSE, false));
+        return listPrecheckHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Precheck> listSharedPrecheckForDoctor(UUID doctorId, ListPrecheckRequest request, Pageable pageable) {
-        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            ));
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.NURSE, new UserLookup(request.getNurseId(), RoleEnum.NURSE, true));
+        validateUserLookups(userLookupMap.values());
 
         List<UUID> approvedPatientIds = patientRecordAccessRepository
             .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
@@ -157,20 +158,6 @@ public class PrecheckServiceImpl implements PrecheckService {
 
         if (approvedPatientIds.isEmpty()) {
             return Page.empty(pageable);
-        }
-
-        if (request.getPatientId() != null) {
-            userRepository.findByIdAndRole(request.getPatientId(), RoleEnum.PATIENT)
-                .orElseThrow(() -> new NoSuchElementException(
-                    String.format("PATIENT with ID %s not found", request.getPatientId())
-                ));
-        }
-
-        if (request.getNurseId() != null) {
-            userRepository.findByIdAndRole(request.getNurseId(), RoleEnum.NURSE)
-                .orElseThrow(() -> new NoSuchElementException(
-                    String.format("NURSE with ID %s not found", request.getNurseId())
-                ));
         }
 
         Specification<Precheck> spec = baseSpecification(request);
@@ -190,30 +177,24 @@ public class PrecheckServiceImpl implements PrecheckService {
 
     private Page<Precheck> listPrecheckHelper(
         ListPrecheckRequest request,
-        Map<RoleEnum, UUID> roleMap,
+        Map<RoleEnum, UserLookup> userLookupMap,
         Pageable pageable
     ) {
-        roleMap.forEach((role, id) -> {
-            if (id != null) {
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", role.name(), id)
-                ));
-            }
-        });
+        validateUserLookups(userLookupMap.values());
 
         Specification<Precheck> spec = baseSpecification(request);
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId != null) {
             spec = spec.and(PrecheckSpecification.byPatient(patientId));
         }
 
-        UUID doctorId = roleMap.get(RoleEnum.DOCTOR);
+        UUID doctorId = getLookupId(userLookupMap, RoleEnum.DOCTOR);
         if (doctorId != null) {
             spec = spec.and(PrecheckSpecification.byDoctor(doctorId));
         }
 
-        UUID nurseId = roleMap.get(RoleEnum.NURSE);
+        UUID nurseId = getLookupId(userLookupMap, RoleEnum.NURSE);
         if (nurseId != null) {
             spec = spec.and(PrecheckSpecification.byNurse(nurseId));
         }
@@ -283,5 +264,38 @@ public class PrecheckServiceImpl implements PrecheckService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private User requireActiveUserByRole(UUID userId, RoleEnum role) {
+        return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("%s with ID %s not found", role.name(), userId)
+            ));
+    }
+
+    private void validateUserLookups(Iterable<UserLookup> userLookups) {
+        for (UserLookup userLookup : userLookups) {
+            if (userLookup == null || userLookup.id() == null) {
+                continue;
+            }
+
+            boolean exists = userLookup.filter()
+                ? userRepository.findByIdAndRole(userLookup.id(), userLookup.role()).isPresent()
+                : userRepository.findByIdAndRoleAndDeletedFalse(userLookup.id(), userLookup.role()).isPresent();
+
+            if (!exists) {
+                throw new NoSuchElementException(
+                    String.format("%s with ID %s not found", userLookup.role().name(), userLookup.id())
+                );
+            }
+        }
+    }
+
+    private UUID getLookupId(Map<RoleEnum, UserLookup> userLookupMap, RoleEnum role) {
+        UserLookup lookup = userLookupMap.get(role);
+        return lookup != null ? lookup.id() : null;
+    }
+
+    private record UserLookup(UUID id, RoleEnum role, boolean filter) {
     }
 }

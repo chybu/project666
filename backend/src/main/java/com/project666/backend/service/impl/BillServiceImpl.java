@@ -151,10 +151,10 @@ public class BillServiceImpl implements BillService{
         ListAppointmentBillRequest request,
         Pageable pageable
     ) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.ACCOUNTANT, request.getConfirmAccountantId());
-        return listAppointmentBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(request.getConfirmAccountantId(), RoleEnum.ACCOUNTANT, true));
+        return listAppointmentBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -163,10 +163,10 @@ public class BillServiceImpl implements BillService{
         ListAppointmentBillRequest request,
         Pageable pageable
     ) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.ACCOUNTANT, accountantId);
-        return listAppointmentBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(accountantId, RoleEnum.ACCOUNTANT, false));
+        return listAppointmentBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -175,16 +175,12 @@ public class BillServiceImpl implements BillService{
         ListAppointmentBillRequest request,
         Pageable pageable
     ) {
-        userRepository.findByIdAndRole(accountantId, RoleEnum.ACCOUNTANT)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("ACCOUNTANT with ID %s not found", accountantId)
-            )
-        );
+        requireActiveUserByRole(accountantId, RoleEnum.ACCOUNTANT);
 
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.ACCOUNTANT, request.getConfirmAccountantId());
-        return listAppointmentBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(request.getConfirmAccountantId(), RoleEnum.ACCOUNTANT, true));
+        return listAppointmentBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -193,10 +189,10 @@ public class BillServiceImpl implements BillService{
         ListLabBillRequest request,
         Pageable pageable
     ) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.ACCOUNTANT, request.getConfirmAccountantId());
-        return listLabBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(request.getConfirmAccountantId(), RoleEnum.ACCOUNTANT, true));
+        return listLabBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -205,10 +201,10 @@ public class BillServiceImpl implements BillService{
         ListLabBillRequest request,
         Pageable pageable
     ) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.ACCOUNTANT, accountantId);
-        return listLabBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(accountantId, RoleEnum.ACCOUNTANT, false));
+        return listLabBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -217,16 +213,12 @@ public class BillServiceImpl implements BillService{
         ListLabBillRequest request,
         Pageable pageable
     ) {
-        userRepository.findByIdAndRole(accountantId, RoleEnum.ACCOUNTANT)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("ACCOUNTANT with ID %s not found", accountantId)
-            )
-        );
+        requireActiveUserByRole(accountantId, RoleEnum.ACCOUNTANT);
 
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.ACCOUNTANT, request.getConfirmAccountantId());
-        return listLabBillHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.ACCOUNTANT, new UserLookup(request.getConfirmAccountantId(), RoleEnum.ACCOUNTANT, true));
+        return listLabBillHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -234,10 +226,7 @@ public class BillServiceImpl implements BillService{
     public BaseBill confirmBillPayment(UUID accountantId, UUID billId) {
         LocalDateTime paidTime = LocalDateTime.now();
 
-        User accountant = userRepository.findByIdAndRole(accountantId, RoleEnum.ACCOUNTANT)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("ACCOUNTANT with ID %s not found", accountantId)
-            ));
+        User accountant = requireActiveUserByRole(accountantId, RoleEnum.ACCOUNTANT);
 
         BillStatusEnum currentBillStatus;
 
@@ -288,28 +277,20 @@ public class BillServiceImpl implements BillService{
 
     private <T extends BaseBill> Specification<T> buildBaseBillSpecification(
         ListBillRequest request,
-        Map<RoleEnum, UUID> roleMap
+        Map<RoleEnum, UserLookup> userLookupMap
     ) {
-        roleMap.forEach((role, id) -> {
-            if (id != null) {
-                userRepository.findByIdAndRole(id, role).orElseThrow(() ->
-                    new NoSuchElementException(
-                        String.format("%s with ID %s not found", role.name(), id)
-                    )
-                );
-            }
-        });
+        validateUserLookups(userLookupMap.values());
 
         validateBillRange(request);
 
         Specification<T> spec = BaseBillSpecification.<T>alwaysTrue();
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId != null) {
             spec = spec.and(BaseBillSpecification.byPatient(patientId));
         }
 
-        UUID accountantId = roleMap.get(RoleEnum.ACCOUNTANT);
+        UUID accountantId = getLookupId(userLookupMap, RoleEnum.ACCOUNTANT);
         if (accountantId != null) {
             spec = spec.and(BaseBillSpecification.byConfirmAccountant(accountantId));
         }
@@ -368,11 +349,11 @@ public class BillServiceImpl implements BillService{
 
     private Page<AppointmentBill> listAppointmentBillHelper(
         ListAppointmentBillRequest request,
-        Map<RoleEnum, UUID> roleMap,
+        Map<RoleEnum, UserLookup> userLookupMap,
         Pageable pageable
     ) {
         Specification<AppointmentBill> spec =
-            buildBaseBillSpecification(request, roleMap);
+            buildBaseBillSpecification(request, userLookupMap);
 
         UUID appointmentId = request.getAppointmentId();
         if (appointmentId != null) {
@@ -384,11 +365,11 @@ public class BillServiceImpl implements BillService{
 
     private Page<LabBill> listLabBillHelper(
         ListLabBillRequest request,
-        Map<RoleEnum, UUID> roleMap,
+        Map<RoleEnum, UserLookup> userLookupMap,
         Pageable pageable
     ) {
         Specification<LabBill> spec =
-            buildBaseBillSpecification(request, roleMap);
+            buildBaseBillSpecification(request, userLookupMap);
 
         UUID labTestId = request.getLabTestId();
         if (labTestId != null) {
@@ -426,5 +407,38 @@ public class BillServiceImpl implements BillService{
         bill.setAppointment(appointment);
 
         return bill;
+    }
+
+    private User requireActiveUserByRole(UUID userId, RoleEnum role) {
+        return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("%s with ID %s not found", role.name(), userId)
+            ));
+    }
+
+    private void validateUserLookups(Iterable<UserLookup> userLookups) {
+        for (UserLookup userLookup : userLookups) {
+            if (userLookup == null || userLookup.id() == null) {
+                continue;
+            }
+
+            boolean exists = userLookup.filter()
+                ? userRepository.findByIdAndRole(userLookup.id(), userLookup.role()).isPresent()
+                : userRepository.findByIdAndRoleAndDeletedFalse(userLookup.id(), userLookup.role()).isPresent();
+
+            if (!exists) {
+                throw new NoSuchElementException(
+                    String.format("%s with ID %s not found", userLookup.role().name(), userLookup.id())
+                );
+            }
+        }
+    }
+
+    private UUID getLookupId(Map<RoleEnum, UserLookup> userLookupMap, RoleEnum role) {
+        UserLookup lookup = userLookupMap.get(role);
+        return lookup != null ? lookup.id() : null;
+    }
+
+    private record UserLookup(UUID id, RoleEnum role, boolean filter) {
     }
 }

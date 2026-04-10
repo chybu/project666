@@ -29,7 +29,11 @@ public class WebController {
     ){
 
         if (authentication.getPrincipal() instanceof OidcUser oidcUser){
-            userService.provisionUser(oidcUser);
+            try {
+                userService.provisionUser(oidcUser);
+            } catch (IllegalStateException ex) {
+                return "redirect:/logout";
+            }
         }
 
         RoleEnum role = SecurityUtil.getUserRole(authentication);

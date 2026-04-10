@@ -46,16 +46,14 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     @Transactional
     public Prescription createPrescription(UUID doctorId, CreatePrescriptionRequest request) {
-        User doctor = userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            ));
+        User doctor = requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
 
         Appointment appointment = appointmentRepository.findByIdAndDoctorId(request.getAppointmentId(), doctorId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Appointment with ID %s not found", request.getAppointmentId())
             ));
 
+        requireActiveUserByRole(appointment.getPatient().getId(), RoleEnum.PATIENT);
 
         if (!AppointmentStatusEnum.COMPLETED.equals(appointment.getStatus())) {
             throw new IllegalArgumentException("Cannot create prescription for incomplete appointment");
@@ -93,15 +91,14 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     @Transactional
     public Prescription cancelPrescription(UUID doctorId, UUID prescriptionId) {
-        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            ));
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
 
         Prescription prescription = prescriptionRepository.findByIdAndDoctorId(prescriptionId, doctorId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Prescription with ID %s not found", prescriptionId)
             ));
+
+        requireActiveUserByRole(prescription.getPatient().getId(), RoleEnum.PATIENT);
 
         if (PrescriptionStatusEnum.CANCELLED.equals(prescription.getStatus())) {
             throw new IllegalArgumentException("Prescription is already cancelled");
@@ -118,10 +115,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     @Override
     @Transactional
     public Prescription consumeRefill(UUID patientId, UUID prescriptionId) {
-        userRepository.findByIdAndRole(patientId, RoleEnum.PATIENT)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("PATIENT with ID %s not found", patientId)
-            ));
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
 
         Prescription prescription = prescriptionRepository.findByIdAndPatientId(prescriptionId, patientId)
             .orElseThrow(() -> new NoSuchElementException(
@@ -165,25 +159,29 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.DOCTOR, doctorId);
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        validateUserLookups(userLookupMap.values());
 
         Specification<Prescription> spec = baseSpecification(request);
         spec = spec.and(PrescriptionSpecification.byDoctor(doctorId));
+        UUID patientId = request.getPatientId();
+        if (patientId!=null) spec = spec.and(PrescriptionSpecification.byPatient(patientId));
 
         return prescriptionRepository.findAll(spec, pageable);
     }
 
     @Override
     public Page<Prescription> listPrescriptionForPatient(UUID patientId, ListPrescriptionRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        validateUserLookups(userLookupMap.values());
 
         Specification<Prescription> spec = baseSpecification(request);
+        UUID doctorId = request.getDoctorId();
+        if (doctorId!=null) spec = spec.and(PrescriptionSpecification.byDoctor(doctorId));
         spec = spec.and(PrescriptionSpecification.byPatient(patientId));
 
         return prescriptionRepository.findAll(spec, pageable);
@@ -191,10 +189,10 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
     @Override
     public Page<Prescription> listPrescriptionForNewDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable) {
-        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            ));
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        validateUserLookups(userLookupMap.values());
 
         List<UUID> approvedPatientIds = patientRecordAccessRepository
             .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
@@ -211,12 +209,8 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         spec = spec.and((root, query, cb) -> root.get("patient").get("id").in(approvedPatientIds));
         spec = spec.and((root, query, cb) -> cb.notEqual(root.get("doctor").get("id"), doctorId));
 
-        UUID patientId = request.getPatientId();
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId != null) {
-            userRepository.findByIdAndRole(patientId, RoleEnum.PATIENT)
-                .orElseThrow(() -> new NoSuchElementException(
-                    String.format("PATIENT with ID %s not found", patientId)
-                ));
             spec = spec.and(PrescriptionSpecification.byPatient(patientId));
         }
 
@@ -240,10 +234,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             // (doctorId/patientId/approved shared-patient set), so a foreign appointmentId
             // cannot expand visibility beyond records the caller is already allowed to see.
             spec = spec.and(PrescriptionSpecification.byAppointment(request.getAppointmentId()));
-        }
-
-        if (request.getDoctorId() != null) {
-            spec = spec.and(PrescriptionSpecification.byDoctor(request.getDoctorId()));
         }
 
         if (request.getMedicineName() != null && !request.getMedicineName().isBlank()) {
@@ -281,16 +271,6 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         }
     }
 
-    private void checkForRoleExistance(Map<RoleEnum, UUID> roleMap) {
-        roleMap.forEach((role, id) -> {
-            if (id != null) {
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", role.name(), id)
-                ));
-            }
-        });
-    }
-
     private String trimToNull(String value) {
         if (value == null) {
             return null;
@@ -298,5 +278,38 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private User requireActiveUserByRole(UUID userId, RoleEnum role) {
+        return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("%s with ID %s not found", role.name(), userId)
+            ));
+    }
+
+    private void validateUserLookups(Iterable<UserLookup> userLookups) {
+        for (UserLookup userLookup : userLookups) {
+            if (userLookup == null || userLookup.id() == null) {
+                continue;
+            }
+
+            boolean exists = userLookup.filter()
+                ? userRepository.findByIdAndRole(userLookup.id(), userLookup.role()).isPresent()
+                : userRepository.findByIdAndRoleAndDeletedFalse(userLookup.id(), userLookup.role()).isPresent();
+
+            if (!exists) {
+                throw new NoSuchElementException(
+                    String.format("%s with ID %s not found", userLookup.role().name(), userLookup.id())
+                );
+            }
+        }
+    }
+
+    private UUID getLookupId(Map<RoleEnum, UserLookup> userLookupMap, RoleEnum role) {
+        UserLookup lookup = userLookupMap.get(role);
+        return lookup != null ? lookup.id() : null;
+    }
+
+    private record UserLookup(UUID id, RoleEnum role, boolean filter) {
     }
 }

@@ -48,6 +48,9 @@ public class User {
     @Column(name = "role", nullable = false, updatable = false)
     private RoleEnum role;
 
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -57,53 +60,53 @@ public class User {
     private LocalDateTime lastUpdated;
 
     // belongs to receptionist or patient
-    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "creator", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Appointment> createdAppointments = new ArrayList<>();
 
     // belongs to receptionist or patient
-    @OneToMany(mappedBy = "canceller", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "canceller", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Appointment> cancelledAppointments = new ArrayList<>();
 
     // belongs to receptionist
-    @OneToMany(mappedBy = "confirmReceptionist", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "confirmReceptionist", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Appointment> confirmedAppointments = new ArrayList<>();
 
     // belong to doctor
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Appointment> patientAppointments = new ArrayList<>();
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<LabRequest> doctorLabRequests = new ArrayList<>();
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Prescription> doctorPrescriptions = new ArrayList<>();
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Precheck> doctorPrechecks = new ArrayList<>();
-    @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<PatientRecordAccess> patientSharedRecordAccess = new ArrayList<>();
 
     // belong to patient
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Appointment> doctorAppointments = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<LabRequest> patientLabRequests = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Prescription> patientPrescriptions = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Precheck> patientPrechecks = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<AppointmentBill> appointmentBills = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<LabBill> labBills = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<PatientRecordAccess> patientRecordAccess = new ArrayList<>();
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<LabTest> patientLabTests = new ArrayList<>();
 
     // belong to the lab technician
-    @OneToMany(mappedBy = "labTechnician", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "labTechnician", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<LabTest> labTechnicianLabTests = new ArrayList<>();    
 
     // belong to nurse
-    @OneToMany(mappedBy = "nurse", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "nurse", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Precheck> nursePrechecks = new ArrayList<>();
 
     @Override

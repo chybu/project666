@@ -72,31 +72,13 @@ public class AppointmentServiceImpl implements AppointmentService{
 
         checkTimeInWorkingHour(startTime, endTime);
 
-        User creator = userRepository
-            .findById(creatorId)
-            .orElseThrow(
-                () -> new NoSuchElementException(
-                    String.format("User with ID %s not found", creatorId)
-                )
-            );
+        User creator = requireActiveUser(creatorId);
 
         UUID doctorId = createAppointmentRequest.getDoctorId();
-        User doctor = userRepository
-            .findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(
-                () -> new NoSuchElementException(
-                    String.format("Doctor with ID %s not found", doctorId)
-                )
-            );
+        User doctor = requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
         
         UUID patientId = createAppointmentRequest.getPatientId();
-        User patient = userRepository
-            .findByIdAndRole(patientId, RoleEnum.PATIENT)
-            .orElseThrow(
-                () -> new NoSuchElementException(
-                    String.format("Patient with ID %s not found", patientId)
-                )
-            );
+        User patient = requireActiveUserByRole(patientId, RoleEnum.PATIENT);
 
         checkOverlapAppointment(startTime, endTime, doctorId, patientId);
 
@@ -130,13 +112,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         
         LocalDateTime confirmTime = LocalDateTime.now();
 
-        User receptionist = userRepository
-            .findByIdAndRole(receptionistId, RoleEnum.RECEPTIONIST)
-            .orElseThrow(
-                () -> new NoSuchElementException(
-                    String.format("Receptionist with ID %s not found", receptionistId)
-                )
-            );
+        User receptionist = requireActiveUserByRole(receptionistId, RoleEnum.RECEPTIONIST);
         
         Appointment confirmAppointment = appointmentRepository
             .findById(appointmentId)
@@ -145,6 +121,9 @@ public class AppointmentServiceImpl implements AppointmentService{
                     String.format("Appointment with ID %s not found", appointmentId)
                 )
             );
+
+        requireActiveUserByRole(confirmAppointment.getDoctor().getId(), RoleEnum.DOCTOR);
+        requireActiveUserByRole(confirmAppointment.getPatient().getId(), RoleEnum.PATIENT);
 
         if (!confirmAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
             throw new IllegalArgumentException(String.format("Invalid status of appoiment with ID %s", appointmentId));
@@ -159,15 +138,9 @@ public class AppointmentServiceImpl implements AppointmentService{
         appointmentRepository.save(confirmAppointment);
 
         billService.generateBillForAppointment(confirmAppointment);
-        
-        // TODO: add sending appointment bill to insurance
-
 
         if (isLate(confirmTime, confirmAppointment.getStartTime())){
             billService.generateLateFeeBill(confirmAppointment);
-                    
-            // TODO: add sending appointment bill to insurance
-
         }
 
         return confirmAppointment;
@@ -176,54 +149,47 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     @Override
     public Page<Appointment> listAppointmentForPatient(UUID patientId, ListAppointmentRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        return listAppointmentHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        return listAppointmentHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Appointment> listAppointmentForDoctor(UUID doctorId, ListAppointmentRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, doctorId);
-        return listAppointmentHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        return listAppointmentHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Appointment> listAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request,Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        roleMap.put(RoleEnum.RECEPTIONIST, receptionistId);
-        return listAppointmentHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        userLookupMap.put(RoleEnum.RECEPTIONIST, new UserLookup(receptionistId, RoleEnum.RECEPTIONIST, false));
+        return listAppointmentHelper(request, userLookupMap, pageable);
     }
 
     @Override
     public Page<Appointment> listAppointmentForNurse(UUID nurseId, ListAppointmentRequest request, Pageable pageable) {
-        userRepository.findByIdAndRole(nurseId, RoleEnum.NURSE).orElseThrow(() -> new NoSuchElementException(
-            String.format("NURSE with ID %s not found", nurseId)
-        ));
-
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        roleMap.forEach((role, id) -> {
-            if (id != null) {
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", role.name(), id)
-                ));
-            }
-        });
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        userLookupMap.put(RoleEnum.NURSE, new UserLookup(nurseId, RoleEnum.NURSE, false));
+        validateUserLookups(userLookupMap.values());
 
         Specification<Appointment> spec = AppointmentSpecification.alwaysTrue();
 
-        if (request.getPatientId() != null) {
-            spec = spec.and(AppointmentSpecification.byPatient(request.getPatientId()));
+        UUID patientId = userLookupMap.get(RoleEnum.PATIENT).id();
+        if (patientId != null) {
+            spec = spec.and(AppointmentSpecification.byPatient(patientId));
         }
 
-        if (request.getDoctorId() != null) {
-            spec = spec.and(AppointmentSpecification.byDoctor(request.getDoctorId()));
+        UUID doctorId = userLookupMap.get(RoleEnum.DOCTOR).id();
+        if (doctorId != null) {
+            spec = spec.and(AppointmentSpecification.byDoctor(doctorId));
         }
 
         if (request.getType() != null) {
@@ -255,14 +221,12 @@ public class AppointmentServiceImpl implements AppointmentService{
     public Page<Appointment> searchAnyAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable) {
 
         // check if the current receptionist id using this method is valid
-        userRepository.findByIdAndRole(receptionistId, RoleEnum.RECEPTIONIST).orElseThrow(() -> new NoSuchElementException(
-            String.format("RECEPTIONIST with ID %s not found", receptionistId)
-        ));
+        requireActiveUserByRole(receptionistId, RoleEnum.RECEPTIONIST);
 
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        return listAppointmentHelper(request, roleMap, pageable);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        return listAppointmentHelper(request, userLookupMap, pageable);
     }
 
     @Override
@@ -271,13 +235,7 @@ public class AppointmentServiceImpl implements AppointmentService{
         
         LocalDateTime cancelAt = LocalDateTime.now();
         
-        User canceller = userRepository
-            .findByIdAndRole(cancellerId, cancellerRole)
-            .orElseThrow(
-                () -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", cancellerRole.name(), cancellerId)
-                )
-            );
+        User canceller = requireActiveUserByRole(cancellerId, cancellerRole);
         UUID appointmentId = request.getAppointmentId();
         Appointment cancelAppointment = appointmentRepository
             .findById(appointmentId)
@@ -286,6 +244,9 @@ public class AppointmentServiceImpl implements AppointmentService{
                     String.format("Appointment with ID %s not found", appointmentId)
                 )
             );
+
+        requireActiveUserByRole(cancelAppointment.getDoctor().getId(), RoleEnum.DOCTOR);
+        requireActiveUserByRole(cancelAppointment.getPatient().getId(), RoleEnum.PATIENT);
 
         if (!cancelAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
             throw new IllegalArgumentException(String.format("Invalid status of appoiment with ID %s", appointmentId));
@@ -348,29 +309,21 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     private Page<Appointment> listAppointmentHelper(
         ListAppointmentRequest request,
-        Map<RoleEnum, UUID> roleMap,
+        Map<RoleEnum, UserLookup> userLookupMap,
         Pageable pageable
     ){
-
-        // check for user existance
-        roleMap.forEach((role, id) -> {
-            if (id!=null){
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", role.name(), id)
-                ));
-            }
-        });
+        validateUserLookups(userLookupMap.values());
         
         // build specification
         Specification<Appointment> spec = AppointmentSpecification.alwaysTrue();
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId!=null) spec = spec.and(AppointmentSpecification.byPatient(patientId));
 
-        UUID doctorId = roleMap.get(RoleEnum.DOCTOR);
+        UUID doctorId = getLookupId(userLookupMap, RoleEnum.DOCTOR);
         if (doctorId!=null) spec = spec.and(AppointmentSpecification.byDoctor(doctorId));
 
-        UUID receptionistId = roleMap.get(RoleEnum.RECEPTIONIST);
+        UUID receptionistId = getLookupId(userLookupMap, RoleEnum.RECEPTIONIST);
         if (receptionistId!=null) spec = spec.and(AppointmentSpecification.byReceptionist(receptionistId));
 
         AppointmentTypeEnum type = request.getType();
@@ -458,5 +411,45 @@ public class AppointmentServiceImpl implements AppointmentService{
                 break;
         }
         return startTime.plus(duration).plus(precheck_duration);
+    }
+
+    private User requireActiveUser(UUID userId) {
+        return userRepository.findByIdAndDeletedFalse(userId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("User with ID %s not found", userId)
+            ));
+    }
+
+    private User requireActiveUserByRole(UUID userId, RoleEnum role) {
+        return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("%s with ID %s not found", role.name(), userId)
+            ));
+    }
+
+    private void validateUserLookups(Iterable<UserLookup> userLookups) {
+        for (UserLookup userLookup : userLookups) {
+            if (userLookup == null || userLookup.id() == null) {
+                continue;
+            }
+
+            boolean exists = userLookup.filter()
+                ? userRepository.findByIdAndRole(userLookup.id(), userLookup.role()).isPresent()
+                : userRepository.findByIdAndRoleAndDeletedFalse(userLookup.id(), userLookup.role()).isPresent();
+
+            if (!exists) {
+                throw new NoSuchElementException(
+                    String.format("%s with ID %s not found", userLookup.role().name(), userLookup.id())
+                );
+            }
+        }
+    }
+
+    private UUID getLookupId(Map<RoleEnum, UserLookup> userLookupMap, RoleEnum role) {
+        UserLookup lookup = userLookupMap.get(role);
+        return lookup != null ? lookup.id() : null;
+    }
+
+    private record UserLookup(UUID id, RoleEnum role, boolean filter) {
     }
 }

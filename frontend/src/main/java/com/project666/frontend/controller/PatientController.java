@@ -48,10 +48,8 @@ public class PatientController {
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
         Model model
     ) {
-        UUID patientId = OidcUserUtil.getUserId(oidcUser);
-
-        User user = userRepository.findById(patientId)
-            .orElseThrow();
+        User user = requireActiveUser(oidcUser);
+        UUID patientId = user.getId();
 
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
@@ -72,10 +70,11 @@ public class PatientController {
         @AuthenticationPrincipal OidcUser oidcUser,
         Model model
     ) {
+        User user = requireActiveUser(oidcUser);
         ListAppointmentRequest request = new ListAppointmentRequest();
         request.setStatus(AppointmentStatusEnum.CONFIRMED);
         request.setFrom(LocalDate.now());
-        UUID patientId = OidcUserUtil.getUserId(oidcUser);
+        UUID patientId = user.getId();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").ascending());
         Page<Appointment> appointmentPage =
             appointmentService.listAppointmentForPatient(patientId, request, pageable);
@@ -106,10 +105,7 @@ public String profile(
     @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
     Model model
 ){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-    User user = userRepository.findById(userId)
-        .orElseThrow();
+    User user = requireActiveUser(oidcUser);
 
     keycloakService.syncUser(authorizedClient, user);
     userRepository.save(user);
@@ -124,10 +120,11 @@ public String profile(
 public String deleteAccount(
     @AuthenticationPrincipal OidcUser oidcUser
 ){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
+    User user = requireActiveUser(oidcUser);
 
-    keycloakService.deleteUser(userId);
-    userRepository.deleteById(userId);
+    keycloakService.deleteUser(user.getId());
+    user.setDeleted(true);
+    userRepository.save(user);
 
     return "redirect:/logout";
 }
@@ -147,6 +144,12 @@ public String redirectToKeycloakPassword() {
     @GetMapping("/dashboard/security")
     public String security() {
         return "patient/dashboard/security";
+    }
+
+    private User requireActiveUser(OidcUser oidcUser) {
+        UUID userId = OidcUserUtil.getUserId(oidcUser);
+        return userRepository.findByIdAndDeletedFalse(userId)
+            .orElseThrow();
     }
 
 }
