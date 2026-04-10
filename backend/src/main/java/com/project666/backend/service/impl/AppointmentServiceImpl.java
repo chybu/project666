@@ -392,10 +392,6 @@ public class AppointmentServiceImpl implements AppointmentService{
         if (request.getDoctorId() == null) {
             throw new IllegalArgumentException("Appointment doctorId is required");
         }
-
-        if (request.getPatientId() == null) {
-            throw new IllegalArgumentException("Appointment patientId is required");
-        }
     }
 
     private LocalDateTime getEndTime(LocalDateTime startTime, AppointmentTypeEnum type){

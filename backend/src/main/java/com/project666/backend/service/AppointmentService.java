@@ -43,7 +43,7 @@ public interface AppointmentService {
     Page<Appointment> listAppointmentForReceptionist(UUID receptionistId, ListAppointmentRequest request, Pageable pageable);
 
     /**
-     * Lists upcoming confirmed appointments for nurses.
+     * Lists upcoming completed appointments for nurses.
      */
     Page<Appointment> listAppointmentForNurse(UUID nurseId, ListAppointmentRequest request, Pageable pageable);
 

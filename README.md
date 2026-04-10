@@ -19,20 +19,22 @@ The repository is split into three Maven modules:
 
 ## Current Features
 
-- Appointment management
-  Create, list, search, confirm, and cancel appointments.
-- Lab workflows
-  Doctors can create lab requests, lab technicians can list/claim/update/submit tests, patients can view their own lab requests, and doctors can list shared lab requests after patient approval.
-- Billing workflows
-  Appointment bills and lab bills can be listed or searched, and accountants can confirm payment.
-- Patient record access
-  Doctors can request access to patient-owned record types. Patients can approve, deny, or revoke requests, and doctors can cancel their own requests.
-- Role-based web dashboards
-  Patient, doctor, nurse, and receptionist dashboard pages are available in the frontend.
-- Keycloak integration
-  The project supports browser login through OAuth2/OIDC and API testing through Bearer JWTs.
-- Insurance integration
-  Bills are published to RabbitMQ and processed asynchronously by the insurance service.
+- Appointment workflow
+  Patients and receptionists can create appointments, role-scoped appointment lists are available for patients, doctors, receptionists, and nurses, receptionists can search globally, confirm check-in, cancel appointments, and mark no-shows. Booking windows, working hours, overlap protection, and late/cancellation fee rules are enforced in the service layer.
+- Precheck workflow
+  Nurses can create and cancel prechecks for attended appointments, and patients, doctors, and nurses can list relevant prechecks. Doctors can also view shared prechecks after patient approval.
+- Prescription workflow
+  Doctors can create and cancel prescriptions, patients can list their own prescriptions and consume eligible refills, and doctors can view shared prescriptions after patient approval.
+- Lab workflow
+  Doctors can create and cancel lab requests, lab technicians can list request queues and assigned tests, claim tests, update results, and submit completed tests. Patients can view their own lab requests, and doctors can view shared lab requests after patient approval.
+- Billing and insurance workflow
+  Appointment bills and lab bills are generated automatically from appointment/lab events, patients and accountants can list bills, accountants can search and confirm payments, and the insurance worker processes bill events asynchronously through RabbitMQ.
+- Patient record access workflow
+  Doctors can request access to patient-owned `PRECHECK`, `LAB_REQUEST`, and `PRESCRIPTION` records. Patients can approve, deny, or revoke requests, and doctors can cancel their own pending requests.
+- Role-based server-rendered frontend
+  The frontend includes dashboard routes and profile/account pages for patient, doctor, nurse, receptionist, lab technician, and accountant roles. Patient appointment pages are already wired to the backend service layer, and a detailed SSR integration design is documented in `frontend.md`.
+- Security and identity integration
+  The project supports browser login through OAuth2/OIDC with Keycloak, role-based routing in the web app, and Bearer JWT authentication for the REST API.
 
 ## Roles
 
@@ -90,8 +92,8 @@ Default local credentials from the repo:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/chybu/project666
-cd project666
+git clone https://github.com/chybu/Duplex-Patient-Portal
+cd Duplex-Patient-Portal
 ```
 
 ### 2. Start infrastructure
@@ -108,6 +110,8 @@ Create the `patient-portal` realm and import these clients:
 
 - `keycloak_clients/api-testing.json`
 - `keycloak_clients/frontend.json`
+- `keycloak_clients/backend-service.json`
+- Go to backend-service clients, `Service account roles` tab, click `Assign role`, click `Client roles`, add `manage-users` and `view-users`
 
 The project also includes a custom Keycloak provider in `providers/`, so keep that folder mounted when running Keycloak through Docker.
 
@@ -153,13 +157,13 @@ Assign each user the matching realm role.
 Windows:
 
 ```powershell
-.\mvnw.cmd -f insurance\pom.xml spring-boot:run
+.\mvnw.cmd -f insurance\pom.xml clean spring-boot:run
 ```
 
 macOS/Linux:
 
 ```bash
-./mvnw -f insurance/pom.xml spring-boot:run
+./mvnw -f insurance/pom.xml clean spring-boot:run
 ```
 
 ### 7. Run the main application
@@ -167,13 +171,17 @@ macOS/Linux:
 The `frontend` module is the main runnable app and loads the backend package through dependency wiring and component scanning.
 
 Windows:
-
+```powershell
+.\mvnw.cmd -f backend\pom.xml clean install
+```
 ```powershell
 .\mvnw.cmd -f frontend\pom.xml spring-boot:run
 ```
 
 macOS/Linux:
-
+```bash
+./mvnw -f backend/pom.xml clean install
+```
 ```bash
 ./mvnw -f frontend/pom.xml spring-boot:run
 ```
@@ -185,158 +193,3 @@ macOS/Linux:
 - Keycloak: `http://localhost:9090`
 - Adminer: `http://localhost:8888`
 - RabbitMQ management: `http://localhost:15672`
-
-## Authentication Model
-
-There are two security flows in this project.
-
-### Frontend web app
-
-The frontend uses OAuth2 login with Keycloak and stores a browser session after login. This is used for routes such as:
-
-- `/patient/**`
-- `/doctor/**`
-- `/nurse/**`
-- `/receptionist/**`
-
-### Backend API
-
-The backend API uses Bearer JWT authentication for:
-
-```text
-/api/**
-```
-
-That means:
-
-- browser pages should be tested through the login flow
-- API endpoints should be tested with `Authorization: Bearer <token>`
-
-## Getting a JWT for API Testing
-
-Import the `api-testing` client into Keycloak, copy its client secret, then request a token:
-
-```bash
-curl --location "http://localhost:9090/realms/patient-portal/protocol/openid-connect/token" \
-  --header "Content-Type: application/x-www-form-urlencoded" \
-  --data-urlencode "grant_type=password" \
-  --data-urlencode "client_id=api-testing" \
-  --data-urlencode "client_secret=YOUR_CLIENT_SECRET" \
-  --data-urlencode "username=YOUR_USERNAME" \
-  --data-urlencode "password=YOUR_PASSWORD"
-```
-
-Use the returned `access_token` like this:
-
-```bash
-curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" ...
-```
-
-## API Surface
-
-The main backend controller groups currently are:
-
-- `/api/v1/appointments`
-  Create, list, search, confirm, and cancel appointments.
-- `/api/v1/labs`
-  Create/list/cancel lab requests, list shared lab requests, and list/claim/update/submit lab tests.
-- `/api/v1/bills`
-  List/search appointment bills, list/search lab bills, and confirm payment.
-- `/api/v1/patient-record-access`
-  Create/list/cancel/approve/deny/revoke patient record access requests.
-
-For exact request and response shapes, check the DTO classes under `backend/src/main/java/com/project666/backend/domain/dto`.
-
-## Useful Example Requests
-
-### Get a receptionist token
-
-```bash
-curl --location "http://localhost:9090/realms/patient-portal/protocol/openid-connect/token" \
-  --header "Content-Type: application/x-www-form-urlencoded" \
-  --data-urlencode "grant_type=password" \
-  --data-urlencode "client_id=api-testing" \
-  --data-urlencode "client_secret=YOUR_CLIENT_SECRET" \
-  --data-urlencode "username=testRecep" \
-  --data-urlencode "password=123TestRecep!"
-```
-
-### Confirm an appointment
-
-```bash
-curl -X PUT "http://localhost:8080/api/v1/appointments/REPLACE_APPOINTMENT_ID/confirm" \
-  -H "Authorization: Bearer REPLACE_ACCESS_TOKEN"
-```
-
-Notes:
-
-- the caller must have role `ROLE_RECEPTIONIST`
-- the appointment must satisfy the confirmation rules enforced in the service layer
-
-## Frontend Pages
-
-The web app currently includes dashboard routes for:
-
-- Patient
-  Home, review appointments, finances, notifications, pharmacy, profile, security
-- Doctor
-  Home, appointments, notifications, profile
-- Nurse
-  Home, appointments, notifications, profile
-- Receptionist
-  Home, appointments, notifications, profile
-
-There is also a secured `labtechnician` controller, but it does not currently expose dashboard pages.
-
-## Development Notes
-
-- `backend` is a library module and does not have its own Spring Boot runner.
-- The main runnable app is `frontend`.
-- The main app connects to PostgreSQL at `jdbc:postgresql://localhost:5432/postgres`.
-- The main app connects to Keycloak at `http://localhost:9090/realms/patient-portal`.
-- The main app also uses RabbitMQ from local Docker services.
-- `spring.jpa.hibernate.ddl-auto=update` is enabled in the frontend application properties.
-- Pagination defaults are configured globally:
-  - default page size: `5`
-  - max page size: `20`
-
-## Common Pitfalls
-
-- A valid Bearer token will not work against the frontend login pages. Bearer JWTs are for `/api/**`.
-- If you get `403 Forbidden` on an API request, confirm:
-  - you are calling a backend API route
-  - the token includes the expected `ROLE_*`
-  - the endpoint role matches the caller role
-- If you get business errors on appointment confirmation or cancellation, check the appointment status and time-window rules in the service layer.
-- Some older notes in the repo may not match the latest controller names. Prefer the current controller and service code when in doubt.
-
-## Testing
-
-Run all tests with Maven.
-
-Windows:
-
-```powershell
-.\mvnw.cmd test
-```
-
-macOS/Linux:
-
-```bash
-./mvnw test
-```
-
-You can also run tests per module:
-
-```bash
-./mvnw -f backend/pom.xml test
-./mvnw -f frontend/pom.xml test
-./mvnw -f insurance/pom.xml test
-```
-
-## Related Notes in the Repo
-
-- `frontend_backend.md`
-- `workflow.md`
-
-These files contain additional project notes alongside the main README.
