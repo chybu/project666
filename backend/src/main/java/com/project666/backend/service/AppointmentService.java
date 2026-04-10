@@ -56,4 +56,9 @@ public interface AppointmentService {
      * Cancels a confirmed appointment.
      */
     Appointment cancelAppointment(UUID cancellerId, RoleEnum cancellerRole, CancelAppointmentRequest request);
+
+    /**
+     * Mark an appointment as no show. Can only mark no show after the appointment end time
+     */
+    Appointment noShowAppointment(UUID receptionistId, UUID appointmentId);
 }

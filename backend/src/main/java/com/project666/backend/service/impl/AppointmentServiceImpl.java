@@ -250,14 +250,49 @@ public class AppointmentServiceImpl implements AppointmentService{
             && isLateForFreeCancel(cancelAt, cancelAppointment.getStartTime())
         ){
            billService.generateCancellationFeeBill(cancelAppointment);
-                   
-            // TODO: add sending appointment bill to insurance
-
         }
         
         return appointmentRepository.save(cancelAppointment);
     }
 
+    @Override
+    @Transactional
+    public Appointment noShowAppointment(UUID receptionistId, UUID appointmentId){
+        
+        LocalDateTime noShowAt = LocalDateTime.now();
+        
+        User receptionist = requireActiveUserByRole(receptionistId, RoleEnum.RECEPTIONIST);
+        Appointment noShowAppointment = appointmentRepository
+            .findById(appointmentId)
+            .orElseThrow(
+                () -> new NoSuchElementException(
+                    String.format("Appointment with ID %s not found", appointmentId)
+                )
+            );
+        
+        if (noShowAt.isBefore(noShowAppointment.getEndTime())) throw new IllegalArgumentException(
+            String.format("Appointment ID %s can only marked as no show after %s", noShowAppointment.getId(), noShowAppointment.getEndTime())
+        );
+
+        requireActiveUserByRole(noShowAppointment.getDoctor().getId(), RoleEnum.DOCTOR);
+        requireActiveUserByRole(noShowAppointment.getPatient().getId(), RoleEnum.PATIENT);
+
+        if (!noShowAppointment.getStatus().equals(AppointmentStatusEnum.CONFIRMED)){
+            throw new IllegalArgumentException(String.format("Invalid status of appoiment with ID %s", appointmentId));
+        }
+
+        noShowAppointment.setCancelledAt(noShowAt);
+        noShowAppointment.setCanceller(receptionist);
+        noShowAppointment.setCancelReason("Patient didn't show up");
+        noShowAppointment.setStatus(AppointmentStatusEnum.NO_SHOW);
+        
+        noShowAppointment.setCancellationInitiator(CancellationInitiatorEnum.RECEPTIONIST);
+
+        Appointment saved = appointmentRepository.save(noShowAppointment);
+        billService.generateCancellationFeeBill(saved);
+        return saved;
+    }
+    
     private void checkWithinConfirmWindow(LocalDateTime startTime, LocalDateTime confirmTime){
         LocalDateTime min = startTime.minusMinutes(CONFIRMATION_EARLY_WINDOW_MINUTES);
         if (confirmTime.isBefore(min)) throw new InvalidConfirmationTimeWindowException();

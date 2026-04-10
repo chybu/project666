@@ -133,11 +133,15 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
     }
 
-    @PostMapping(path = "/test")
-    public ResponseEntity<CreateAppointmentResponseDto> test(
+    @PutMapping("/{appointmentId}/no-show")
+    @PreAuthorize("hasRole('RECEPTIONIST')")
+    public ResponseEntity<CancelAppointmentResponseDto> noShowAppointment(
         @AuthenticationPrincipal Jwt jwt,
-        @RequestBody @Valid CreateAppointmentRequestDto requestDto
-    ){  
-        return ResponseEntity.ok().build();
+        @PathVariable UUID appointmentId
+    ){
+        UUID receptionistId = JwtUtil.getUserId(jwt);
+        Appointment appointment = appointmentService.noShowAppointment(receptionistId, appointmentId);
+        CancelAppointmentResponseDto responseDto = appointmentMapper.toCancelAppointmentResponseDto(appointment);
+        return ResponseEntity.ok(responseDto);
     }
 }
