@@ -107,6 +107,12 @@ public class Appointment {
     @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
     private List<LabRequest> labRequests = new ArrayList<>();
 
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
+    private List<Prescription> prescriptions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
+    private List<Precheck> prechecks = new ArrayList<>();
+
     @Override
     public int hashCode() {
         final int prime = 31;

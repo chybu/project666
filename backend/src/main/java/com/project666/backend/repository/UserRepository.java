@@ -12,4 +12,7 @@ import com.project666.backend.domain.entity.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID>{
     Optional<User> findByIdAndRole(UUID userId, RoleEnum role);
+    Optional<User> findByIdAndDeletedFalse(UUID userId);
+    Optional<User> findByIdAndRoleAndDeletedFalse(UUID userId, RoleEnum role);
+    boolean existsByIdAndDeletedFalse(UUID userId);
 }

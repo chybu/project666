@@ -15,7 +15,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.entity.Appointment;
@@ -30,8 +29,6 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
-
-import org.springframework.beans.factory.annotation.Value;
 
 @Controller
 @RequiredArgsConstructor
@@ -50,10 +47,8 @@ public class PatientController {
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
         Model model
     ) {
-        UUID patientId = OidcUserUtil.getUserId(oidcUser);
-
-        User user = userRepository.findById(patientId)
-            .orElseThrow();
+        User user = requireActiveUser(oidcUser);
+        UUID patientId = user.getId();
 
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
@@ -74,10 +69,11 @@ public class PatientController {
         @AuthenticationPrincipal OidcUser oidcUser,
         Model model
     ) {
+        User user = requireActiveUser(oidcUser);
         ListAppointmentRequest request = new ListAppointmentRequest();
         request.setStatus(AppointmentStatusEnum.CONFIRMED);
         request.setFrom(LocalDate.now());
-        UUID patientId = OidcUserUtil.getUserId(oidcUser);
+        UUID patientId = user.getId();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("startTime").ascending());
         Page<Appointment> appointmentPage =
             appointmentService.listAppointmentForPatient(patientId, request, pageable);
@@ -108,10 +104,7 @@ public String profile(
     @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
     Model model
 ){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-    User user = userRepository.findById(userId)
-        .orElseThrow();
+    User user = requireActiveUser(oidcUser);
 
     keycloakService.syncUser(authorizedClient, user);
     userRepository.save(user);
@@ -121,35 +114,16 @@ public String profile(
     return "patient/dashboard/profile";
 }
 
-@PostMapping("/profile/update-name")
-@PreAuthorize("hasRole('PATIENT')")
-public String updateName(
-    @AuthenticationPrincipal OidcUser oidcUser,
-    @RequestParam String firstName,
-    @RequestParam String lastName
-){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-    User user = userRepository.findById(userId)
-        .orElseThrow();
-
-    user.setFirstName(firstName);
-    user.setLastName(lastName);
-
-    userRepository.save(user);
-
-    return "redirect:/patient/dashboard/profile";
-}
-
 @PostMapping("/delete-account")
 @PreAuthorize("hasRole('PATIENT')")
 public String deleteAccount(
     @AuthenticationPrincipal OidcUser oidcUser
 ){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
+    User user = requireActiveUser(oidcUser);
 
-    keycloakService.deleteUser(userId);
-    userRepository.deleteById(userId);
+    keycloakService.deleteUser(user.getId());
+    user.setDeleted(true);
+    userRepository.save(user);
 
     return "redirect:/logout";
 }
@@ -169,6 +143,12 @@ public String redirectToKeycloakPassword() {
     @GetMapping("/dashboard/security")
     public String security() {
         return "patient/dashboard/security";
+    }
+
+    private User requireActiveUser(OidcUser oidcUser) {
+        UUID userId = OidcUserUtil.getUserId(oidcUser);
+        return userRepository.findByIdAndDeletedFalse(userId)
+            .orElseThrow();
     }
 
 }

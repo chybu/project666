@@ -2,6 +2,7 @@ package com.project666.backend.domain.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateLabRequestResponseDto {
+    private UUID id;
     private String patientFullName;
     private String doctorFullName;
     private LocalDateTime appointmentStartTime;

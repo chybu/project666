@@ -30,7 +30,6 @@ import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.exception.MismatchedParameterException;
 import com.project666.backend.mapper.LabMapper;
 import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.LabRequestRepository;
@@ -60,22 +59,15 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabRequest createLabRequest(UUID doctorId, CreateLabRequestRequest request) {
-        User doctor = userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            )
-        );
+        validateCreateLabRequest(request);
 
-        Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
+        User doctor = requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        Appointment appointment = appointmentRepository.findByIdAndDoctorId(request.getAppointmentId(), doctorId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Appointment with ID %s not found", request.getAppointmentId())
             )
         );
-
-        // make sure only the doctor in the appointment can make lab request for it
-        if (!appointment.getDoctor().getId().equals(doctorId)){
-            throw new MismatchedParameterException(String.format("Doctor with ID %s cannot make lab request for appointment %s", doctorId, appointment.getId()));
-        }
 
         // only when the receptionist confirms the patient going to the appointment then the doctor can make the lab request for that appointment
         if (!appointment.getStatus().equals(AppointmentStatusEnum.COMPLETED)){
@@ -83,6 +75,7 @@ public class LabServiceImpl implements LabService{
         }
 
         User patient = appointment.getPatient();
+        requireActiveUserByRole(patient.getId(), RoleEnum.PATIENT);
         checkDuplicateLabRequest(patient.getId(), request.getLabTests());
 
         LabRequest labRequest = new LabRequest();
@@ -110,15 +103,14 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabRequest cancelLabRequest(UUID doctorId, UUID requestId) {
-        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("Doctor with ID %s not found", doctorId)
-            ));
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
 
         LabRequest labRequest = labRequestRepository.findByIdAndDoctorId(requestId, doctorId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Lab request with ID %s not found", requestId)
             ));
+
+        requireActiveUserByRole(labRequest.getPatient().getId(), RoleEnum.PATIENT);
 
         if (labRequest.getStatus() == LabRequestStatusEnum.COMPLETED) {
             throw new IllegalArgumentException("Cannot cancel a completed lab request");
@@ -139,19 +131,19 @@ public class LabServiceImpl implements LabService{
 
     @Override
     public Page<LabTest> listLabTestForLabTechnician(UUID labTechnicianId, ListLabTestRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.LAB_TECHNICIAN, labTechnicianId);
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        validateUserLookups(userLookupMap.values());
 
         // build specification
         Specification<LabTest> spec = LabTestSpecification.alwaysTrue();
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId!=null) spec = spec.and(LabTestSpecification.byPatient(patientId));
 
-        UUID doctorId = roleMap.get(RoleEnum.DOCTOR);
+        UUID doctorId = getLookupId(userLookupMap, RoleEnum.DOCTOR);
         if (doctorId!=null) spec = spec.and(LabTestSpecification.byDoctor(doctorId));
 
         spec = spec.and(LabTestSpecification.byLabTechnician(labTechnicianId));
@@ -176,10 +168,10 @@ public class LabServiceImpl implements LabService{
 
     @Override
     public Page<PatientLabRequestResponseDto> listLabRequestForPatient(UUID patientId, ListLabRequestRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, patientId);
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        validateUserLookups(userLookupMap.values());
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
@@ -189,7 +181,7 @@ public class LabServiceImpl implements LabService{
 
         spec = spec.and(LabRequestSpecification.byPatient(patientId));
 
-        UUID doctorId = roleMap.get(RoleEnum.DOCTOR);
+        UUID doctorId = getLookupId(userLookupMap, RoleEnum.DOCTOR);
         if (doctorId!=null) spec = spec.and(LabRequestSpecification.byDoctor(doctorId));
 
         UUID appointmentId = request.getAppointmentId();
@@ -201,10 +193,10 @@ public class LabServiceImpl implements LabService{
 
     @Override
     public Page<LabRequest> listLabRequestForDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable) {
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, doctorId);
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        validateUserLookups(userLookupMap.values());
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
@@ -212,7 +204,7 @@ public class LabServiceImpl implements LabService{
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId!=null) spec = spec.and(LabRequestSpecification.byPatient(patientId));
 
         spec = spec.and(LabRequestSpecification.byDoctor(doctorId));
@@ -225,10 +217,10 @@ public class LabServiceImpl implements LabService{
 
     @Override
     public Page<LabRequest> listLabRequestForNewDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable) {
-        userRepository.findByIdAndRole(doctorId, RoleEnum.DOCTOR)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("DOCTOR with ID %s not found", doctorId)
-            ));
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        validateUserLookups(userLookupMap.values());
 
         List<UUID> approvedPatientIds = patientRecordAccessRepository
             .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
@@ -261,13 +253,8 @@ public class LabServiceImpl implements LabService{
             spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
         }
 
-        UUID patientId = request.getPatientId();
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId != null) {
-            userRepository.findByIdAndRole(patientId, RoleEnum.PATIENT)
-                .orElseThrow(() -> new NoSuchElementException(
-                    String.format("PATIENT with ID %s not found", patientId)
-                ));
-
             spec = spec.and(LabRequestSpecification.byPatient(patientId));
         }
 
@@ -282,12 +269,11 @@ public class LabServiceImpl implements LabService{
 
     @Override
     public Page<LabRequest> listLabRequestForLabTechnician(UUID labTechnicianId, ListLabRequestRequest request, Pageable pageable) {
-        
-        Map<RoleEnum, UUID> roleMap = new HashMap<>();
-        roleMap.put(RoleEnum.LAB_TECHNICIAN, labTechnicianId);
-        roleMap.put(RoleEnum.PATIENT, request.getPatientId());
-        roleMap.put(RoleEnum.DOCTOR, request.getDoctorId());
-        checkForRoleExistance(roleMap);
+        Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
+        userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));
+        userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
+        userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
+        validateUserLookups(userLookupMap.values());
         
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
@@ -295,10 +281,10 @@ public class LabServiceImpl implements LabService{
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
-        UUID patientId = roleMap.get(RoleEnum.PATIENT);
+        UUID patientId = getLookupId(userLookupMap, RoleEnum.PATIENT);
         if (patientId!=null) spec = spec.and(LabRequestSpecification.byPatient(patientId));
 
-        UUID doctorId = roleMap.get(RoleEnum.DOCTOR);
+        UUID doctorId = getLookupId(userLookupMap, RoleEnum.DOCTOR);
         if (doctorId!=null) spec = spec.and(LabRequestSpecification.byDoctor(doctorId));
 
         return labRequestRepository.findAll(spec, pageable);
@@ -307,15 +293,14 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabTest claimLabTest(UUID labTechnicianId, UUID labTestId) {
-        User labTechnician = userRepository.findByIdAndRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("Lab technician with ID %s not found", labTechnicianId)
-            ));
+        User labTechnician = requireActiveUserByRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN);
 
         LabTest labTest = labTestRepository.findById(labTestId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Lab test with ID %s not found", labTestId)
             ));
+
+        requireActiveUserByRole(labTest.getPatient().getId(), RoleEnum.PATIENT);
 
         if (labTest.getStatus() != LabTestStatusEnum.REQUESTED) {
             throw new IllegalArgumentException("Only requested lab tests can be claimed");
@@ -333,15 +318,14 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabTest updateLabTest(UUID labTechnicianId, UpdateLabTestRequest request) {
-        userRepository.findByIdAndRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("Lab technician with ID %s not found", labTechnicianId)
-            ));
+        requireActiveUserByRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN);
         
         LabTest labTest = labTestRepository.findByIdAndLabTechnicianId(request.getLabTestId(), labTechnicianId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Lab test with ID %s not found", request.getLabTestId())
             ));
+
+        requireActiveUserByRole(labTest.getPatient().getId(), RoleEnum.PATIENT);
 
         if (labTest.getStatus() != LabTestStatusEnum.IN_PROGRESS) {
             throw new IllegalArgumentException("Only in-progress lab tests can be updated");
@@ -374,15 +358,14 @@ public class LabServiceImpl implements LabService{
     @Override
     @Transactional
     public LabTest submitLabTest(UUID labTechnicianId, UUID labTestId) {
-        userRepository.findByIdAndRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("Lab technician with ID %s not found", labTechnicianId)
-            ));
+        requireActiveUserByRole(labTechnicianId, RoleEnum.LAB_TECHNICIAN);
 
         LabTest labTest = labTestRepository.findByIdAndLabTechnicianId(labTestId, labTechnicianId)
             .orElseThrow(() -> new NoSuchElementException(
                 String.format("Lab test with ID %s not found", labTestId)
             ));
+
+        requireActiveUserByRole(labTest.getPatient().getId(), RoleEnum.PATIENT);
 
         if (labTest.getStatus() != LabTestStatusEnum.IN_PROGRESS) {
             throw new IllegalArgumentException("Only in-progress lab tests can be submitted");
@@ -409,16 +392,6 @@ public class LabServiceImpl implements LabService{
             if (!labTest.getStatus().equals(LabTestStatusEnum.COMPLETED)) return false;
         }
         return true;
-    }
-
-    private void checkForRoleExistance(Map<RoleEnum, UUID> roleMap){
-        roleMap.forEach((role, id) -> {
-            if (id!=null){
-                userRepository.findByIdAndRole(id, role).orElseThrow(() -> new NoSuchElementException(
-                    String.format("%s with ID %s not found", role.name(), id)
-                ));
-            }
-        });
     }
 
     private void checkDuplicateLabRequest(UUID patientId, List<CreateLabRequestRequest.LabTestRequest> labTests) {
@@ -452,5 +425,58 @@ public class LabServiceImpl implements LabService{
                 throw new IllegalArgumentException("Duplicated active lab test: " + name);
             }
         }
+    }
+
+    private void validateCreateLabRequest(CreateLabRequestRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Create lab request is required");
+        }
+
+        if (request.getAppointmentId() == null) {
+            throw new IllegalArgumentException("Lab request appointmentId is required");
+        }
+
+        if (request.getLabTests() == null || request.getLabTests().isEmpty()) {
+            throw new IllegalArgumentException("Lab request must contain at least one lab test");
+        }
+
+        for (CreateLabRequestRequest.LabTestRequest labTestRequest : request.getLabTests()) {
+            if (labTestRequest == null || labTestRequest.getName() == null || labTestRequest.getName().isBlank()) {
+                throw new IllegalArgumentException("Lab test name is required");
+            }
+        }
+    }
+
+    private User requireActiveUserByRole(UUID userId, RoleEnum role) {
+        return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("%s with ID %s not found", role.name(), userId)
+            ));
+    }
+
+    private void validateUserLookups(Iterable<UserLookup> userLookups) {
+        for (UserLookup userLookup : userLookups) {
+            if (userLookup == null || userLookup.id() == null) {
+                continue;
+            }
+
+            boolean exists = userLookup.filter()
+                ? userRepository.findByIdAndRole(userLookup.id(), userLookup.role()).isPresent()
+                : userRepository.findByIdAndRoleAndDeletedFalse(userLookup.id(), userLookup.role()).isPresent();
+
+            if (!exists) {
+                throw new NoSuchElementException(
+                    String.format("%s with ID %s not found", userLookup.role().name(), userLookup.id())
+                );
+            }
+        }
+    }
+
+    private UUID getLookupId(Map<RoleEnum, UserLookup> userLookupMap, RoleEnum role) {
+        UserLookup lookup = userLookupMap.get(role);
+        return lookup != null ? lookup.id() : null;
+    }
+
+    private record UserLookup(UUID id, RoleEnum role, boolean filter) {
     }
 }

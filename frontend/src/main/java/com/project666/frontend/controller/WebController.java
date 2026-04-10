@@ -29,7 +29,11 @@ public class WebController {
     ){
 
         if (authentication.getPrincipal() instanceof OidcUser oidcUser){
-            userService.provisionUser(oidcUser);
+            try {
+                userService.provisionUser(oidcUser);
+            } catch (IllegalStateException ex) {
+                return "redirect:/logout";
+            }
         }
 
         RoleEnum role = SecurityUtil.getUserRole(authentication);
@@ -44,6 +48,9 @@ public class WebController {
         }
         else if(RoleEnum.NURSE.equals(role)){
             return "redirect:/nurse/dashboard/home";
+        }
+        else if(RoleEnum.ACCOUNTANT.equals(role)){
+            return "redirect:/accountant/dashboard/home";
         }
 
         return "redirect:/error";
