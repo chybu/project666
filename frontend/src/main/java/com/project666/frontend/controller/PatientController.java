@@ -31,8 +31,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 
-import org.springframework.beans.factory.annotation.Value;
-
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/patient")
@@ -119,26 +117,6 @@ public String profile(
     model.addAttribute("user", user);
 
     return "patient/dashboard/profile";
-}
-
-@PostMapping("/profile/update-name")
-@PreAuthorize("hasRole('PATIENT')")
-public String updateName(
-    @AuthenticationPrincipal OidcUser oidcUser,
-    @RequestParam String firstName,
-    @RequestParam String lastName
-){
-    UUID userId = OidcUserUtil.getUserId(oidcUser);
-
-    User user = userRepository.findById(userId)
-        .orElseThrow();
-
-    user.setFirstName(firstName);
-    user.setLastName(lastName);
-
-    userRepository.save(user);
-
-    return "redirect:/patient/dashboard/profile";
 }
 
 @PostMapping("/delete-account")

@@ -21,9 +21,6 @@ import com.project666.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
-
-
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/doctor")

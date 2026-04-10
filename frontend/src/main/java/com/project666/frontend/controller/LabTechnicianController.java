@@ -21,7 +21,6 @@ import com.project666.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/labtechnician")
