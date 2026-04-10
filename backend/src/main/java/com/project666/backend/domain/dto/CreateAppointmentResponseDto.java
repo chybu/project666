@@ -1,6 +1,7 @@
 package com.project666.backend.domain.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.domain.entity.AppointmentTypeEnum;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAppointmentResponseDto {
+    private UUID id;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private AppointmentTypeEnum type;

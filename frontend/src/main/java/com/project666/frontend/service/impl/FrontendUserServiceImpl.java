@@ -29,13 +29,20 @@ public class FrontendUserServiceImpl implements FrontenndUserService{
         UUID keycloakId = OidcUserUtil.getUserId(oidcUser);
 
         User user = userRepository.findById(keycloakId)
-            .orElse(new User());
+            .orElseGet(User::new);
+
+        if (user.isDeleted()) {
+            throw new IllegalStateException(
+                String.format("User with ID %s has been deleted", keycloakId)
+            );
+        }
 
         user.setId(keycloakId);
         user.setEmail(oidcUser.getClaimAsString("email"));
         user.setName(oidcUser.getClaimAsString("preferred_username"));
         user.setFirstName(oidcUser.getClaimAsString("given_name"));
         user.setLastName(oidcUser.getClaimAsString("family_name"));
+        user.setDeleted(false);
         
         Map<String, Object> realmAccess = oidcUser.getClaim("realm_access");
         RoleEnum role = RoleEnum.getUserRole(realmAccess);

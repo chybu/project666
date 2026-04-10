@@ -28,7 +28,13 @@ public class BackendUserServiceImpl implements BackendUserService{
     public void provisionUser(Jwt jwt) {
         UUID keycloakId = JwtUtil.getUserId(jwt);
 
-        if (userRepository.existsById(keycloakId)) {
+        User existingUser = userRepository.findById(keycloakId).orElse(null);
+        if (existingUser != null) {
+            if (existingUser.isDeleted()) {
+                throw new IllegalStateException(
+                    String.format("User with ID %s has been deleted", keycloakId)
+                );
+            }
             return;
         }
 
@@ -42,6 +48,7 @@ public class BackendUserServiceImpl implements BackendUserService{
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
         RoleEnum role = RoleEnum.getUserRole(realmAccess);
         user.setRole(role);
+        user.setDeleted(false);
 
         try {
             userRepository.saveAndFlush(user);

@@ -81,9 +81,16 @@ public class AppointmentController {
         @RequestBody @Valid CreateAppointmentRequestDto requestDto
     ){
         CreateAppointmentRequest request = appointmentMapper.fromCreateAppointmentRequestDto(requestDto);
-        UUID creatorId = JwtUtil.getUserId(jwt);
-
-        Appointment createdAppointment = appointmentService.createAppointment(creatorId, request);
+        RoleEnum role = JwtUtil.getRole(jwt);
+        UUID userId = JwtUtil.getUserId(jwt);
+        Appointment createdAppointment;
+        switch (role){
+            case PATIENT -> createdAppointment = appointmentService.createAppointmentForPatient(userId, request);
+            case RECEPTIONIST -> createdAppointment = appointmentService.createAppointmentForReceptionist(userId, request);
+            default -> throw new IllegalArgumentException(
+                String.format("%s role is not known", role.name())
+            );
+        }
         CreateAppointmentResponseDto responseDto = appointmentMapper.toCreateAppointmentResponseDto(createdAppointment);
 
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
@@ -102,7 +109,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/list")
-    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST', 'NURSE')")
     public ResponseEntity<Page<ListAppointmentResponseDto>> listAppointments(
         @AuthenticationPrincipal Jwt jwt,
         Pageable pageable,
@@ -117,17 +124,24 @@ public class AppointmentController {
             case PATIENT -> appointments = appointmentService.listAppointmentForPatient(requesterId, request, pageable);
             case DOCTOR -> appointments = appointmentService.listAppointmentForDoctor(requesterId, request, pageable);
             case RECEPTIONIST -> appointments = appointmentService.listAppointmentForReceptionist(requesterId, request, pageable);
-            default -> throw new IllegalArgumentException(String.format("%s role is not known", role.name()));
+            case NURSE -> appointments = appointmentService.listAppointmentForNurse(requesterId, request, pageable);
+            default -> throw new IllegalArgumentException(
+                String.format("%s role is not known", role.name())
+            );
         }
          
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
     }
 
-    @PostMapping(path = "/test")
-    public ResponseEntity<CreateAppointmentResponseDto> test(
+    @PutMapping("/{appointmentId}/no-show")
+    @PreAuthorize("hasRole('RECEPTIONIST')")
+    public ResponseEntity<CancelAppointmentResponseDto> noShowAppointment(
         @AuthenticationPrincipal Jwt jwt,
-        @RequestBody @Valid CreateAppointmentRequestDto requestDto
-    ){  
-        return ResponseEntity.ok().build();
+        @PathVariable UUID appointmentId
+    ){
+        UUID receptionistId = JwtUtil.getUserId(jwt);
+        Appointment appointment = appointmentService.noShowAppointment(receptionistId, appointmentId);
+        CancelAppointmentResponseDto responseDto = appointmentMapper.toCancelAppointmentResponseDto(appointment);
+        return ResponseEntity.ok(responseDto);
     }
 }
