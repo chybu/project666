@@ -13,9 +13,14 @@ import com.project666.backend.domain.entity.RoleEnum;
 
 public interface AppointmentService {
     /**
-     * Creates a confirmed appointment.
+     * Creates a confirmed appointment for patient.
      */
-    Appointment createAppointment(UUID creatorId, CreateAppointmentRequest request);
+    Appointment createAppointmentForPatient(UUID patientId, CreateAppointmentRequest request);
+
+    /**
+     * Creates a confirmed appointment for receptionist.
+     */
+    Appointment createAppointmentForReceptionist(UUID receptionistId, CreateAppointmentRequest request);
 
     /**
      * Confirms patient check-in for an appointment.

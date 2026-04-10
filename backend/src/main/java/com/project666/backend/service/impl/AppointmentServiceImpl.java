@@ -61,49 +61,16 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     @Override
     @Transactional
-    public Appointment createAppointment(UUID creatorId, CreateAppointmentRequest createAppointmentRequest) {
-        validateCreateAppointmentRequest(createAppointmentRequest);
-        
-        LocalDateTime startTime = createAppointmentRequest.getStartTime();
-        AppointmentTypeEnum type = createAppointmentRequest.getType();
-        LocalDateTime endTime = getEndTime(startTime, type);
-
-        checkWithinCreateWindow(startTime);
-
-        checkTimeInWorkingHour(startTime, endTime);
-
-        User creator = requireActiveUser(creatorId);
-
-        UUID doctorId = createAppointmentRequest.getDoctorId();
-        User doctor = requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
-        
-        UUID patientId = createAppointmentRequest.getPatientId();
+    public Appointment createAppointmentForPatient(UUID patientId, CreateAppointmentRequest createAppointmentRequest) {
         User patient = requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+        return createAppointmentHelper(patient, createAppointmentRequest);
+    }
 
-        checkOverlapAppointment(startTime, endTime, doctorId, patientId);
-
-        Appointment appointment = new Appointment();
-        appointment.setStartTime(startTime);
-        appointment.setEndTime(endTime);
-        appointment.setType(type);
-        appointment.setStatus(AppointmentStatusEnum.CONFIRMED);
-        appointment.setCreator(creator);
-        appointment.setDoctor(doctor);
-        appointment.setPatient(patient);
-
-        try {
-            return appointmentRepository.saveAndFlush(appointment);
-        } catch (DataIntegrityViolationException ex) {
-            // check if the db constrainst is violated
-            Throwable cause = ex.getMostSpecificCause();
-            
-            String message = cause != null ? cause.getMessage() : "";
-
-            if (message.contains(DOCTOR_BUSY_CONSTRAINT_NAME) || message.contains(PATIENT_OVERLAP_APPOINTMENT_CONSTRAINT_NAME)) {
-                throw new OverlapAppointmentException();
-            }
-            throw ex;
-        }
+    @Override
+    @Transactional
+    public Appointment createAppointmentForReceptionist(UUID receptionistId, CreateAppointmentRequest createAppointmentRequest) {
+        User receptionist = requireActiveUserByRole(receptionistId, RoleEnum.RECEPTIONIST);
+        return createAppointmentHelper(receptionist, createAppointmentRequest);
     }
 
     @Override
@@ -413,13 +380,6 @@ public class AppointmentServiceImpl implements AppointmentService{
         return startTime.plus(duration).plus(precheck_duration);
     }
 
-    private User requireActiveUser(UUID userId) {
-        return userRepository.findByIdAndDeletedFalse(userId)
-            .orElseThrow(() -> new NoSuchElementException(
-                String.format("User with ID %s not found", userId)
-            ));
-    }
-
     private User requireActiveUserByRole(UUID userId, RoleEnum role) {
         return userRepository.findByIdAndRoleAndDeletedFalse(userId, role)
             .orElseThrow(() -> new NoSuchElementException(
@@ -451,5 +411,56 @@ public class AppointmentServiceImpl implements AppointmentService{
     }
 
     private record UserLookup(UUID id, RoleEnum role, boolean filter) {
+    }
+
+    private Appointment createAppointmentHelper(User creator, CreateAppointmentRequest createAppointmentRequest){
+        validateCreateAppointmentRequest(createAppointmentRequest);
+        
+        LocalDateTime startTime = createAppointmentRequest.getStartTime();
+        AppointmentTypeEnum type = createAppointmentRequest.getType();
+        LocalDateTime endTime = getEndTime(startTime, type);
+
+        checkWithinCreateWindow(startTime);
+
+        checkTimeInWorkingHour(startTime, endTime);
+
+        UUID doctorId = createAppointmentRequest.getDoctorId();
+        User doctor = requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+        
+        User patient;
+        UUID patientId;
+        if (creator.getRole().equals(RoleEnum.PATIENT)) {
+            patient = creator;
+            patientId = patient.getId();
+        }
+        else{
+            patientId = createAppointmentRequest.getPatientId();
+            patient = requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+        }
+        
+        checkOverlapAppointment(startTime, endTime, doctorId, patientId);
+
+        Appointment appointment = new Appointment();
+        appointment.setStartTime(startTime);
+        appointment.setEndTime(endTime);
+        appointment.setType(type);
+        appointment.setStatus(AppointmentStatusEnum.CONFIRMED);
+        appointment.setCreator(creator);
+        appointment.setDoctor(doctor);
+        appointment.setPatient(patient);
+
+        try {
+            return appointmentRepository.saveAndFlush(appointment);
+        } catch (DataIntegrityViolationException ex) {
+            // check if the db constrainst is violated
+            Throwable cause = ex.getMostSpecificCause();
+            
+            String message = cause != null ? cause.getMessage() : "";
+
+            if (message.contains(DOCTOR_BUSY_CONSTRAINT_NAME) || message.contains(PATIENT_OVERLAP_APPOINTMENT_CONSTRAINT_NAME)) {
+                throw new OverlapAppointmentException();
+            }
+            throw ex;
+        }
     }
 }

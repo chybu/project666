@@ -81,9 +81,16 @@ public class AppointmentController {
         @RequestBody @Valid CreateAppointmentRequestDto requestDto
     ){
         CreateAppointmentRequest request = appointmentMapper.fromCreateAppointmentRequestDto(requestDto);
-        UUID creatorId = JwtUtil.getUserId(jwt);
-
-        Appointment createdAppointment = appointmentService.createAppointment(creatorId, request);
+        RoleEnum role = JwtUtil.getRole(jwt);
+        UUID userId = JwtUtil.getUserId(jwt);
+        Appointment createdAppointment;
+        switch (role){
+            case PATIENT -> createdAppointment = appointmentService.createAppointmentForPatient(userId, request);
+            case RECEPTIONIST -> createdAppointment = appointmentService.createAppointmentForReceptionist(userId, request);
+            default -> throw new IllegalArgumentException(
+                String.format("%s role is not known", role.name())
+            );
+        }
         CreateAppointmentResponseDto responseDto = appointmentMapper.toCreateAppointmentResponseDto(createdAppointment);
 
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
@@ -118,7 +125,9 @@ public class AppointmentController {
             case DOCTOR -> appointments = appointmentService.listAppointmentForDoctor(requesterId, request, pageable);
             case RECEPTIONIST -> appointments = appointmentService.listAppointmentForReceptionist(requesterId, request, pageable);
             case NURSE -> appointments = appointmentService.listAppointmentForNurse(requesterId, request, pageable);
-            default -> throw new IllegalArgumentException(String.format("%s role is not known", role.name()));
+            default -> throw new IllegalArgumentException(
+                String.format("%s role is not known", role.name())
+            );
         }
          
         return ResponseEntity.ok(appointments.map(appointmentMapper::toListAppointmentResponseDto));
