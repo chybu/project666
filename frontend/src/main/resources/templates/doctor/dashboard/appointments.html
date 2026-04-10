@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Doctor Appointments</title>
+
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <div id="content">
+
+            <!-- Topbar -->
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
+
+                <!-- Appointments Table -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Upcoming Appointments
+                        </h6>
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- Empty state -->
+                        <div th:if="${#lists.isEmpty(appointments)}">
+                            <p class="mb-0 text-muted">
+                                No appointments found.
+                            </p>
+                        </div>
+
+                        <!-- Table -->
+                        <div th:unless="${#lists.isEmpty(appointments)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                <tr th:each="appointment : ${appointments}">
+                                    <td th:text="${#temporals.format(appointment.startTime, 'MMM dd, yyyy')}"></td>
+
+                                    <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
+
+                                    <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
+
+                                    <!-- ⚠️ might fail if LAZY loading isn't initialized -->
+                                    <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
+
+                                    <td th:text="${appointment.type}"></td>
+
+                                    <td th:text="${appointment.status}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

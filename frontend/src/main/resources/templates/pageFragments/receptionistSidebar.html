@@ -1,13 +1,11 @@
-<div th:fragment="sidebar">
-    <div class="d-flex flex-column vh-100 bg-gradient-primary sidebar sidebar-dark accordion">
+<div th:fragment="sidebar" class="bg-gradient-primary sidebar sidebar-dark accordion" style="min-height: 100vh;">
+    <div class="d-flex flex-column h-100">
 
-        <!-- Logo -->
         <div class="sidebar-logo text-center py-4">
             <img th:src="@{/images/logo.png}" alt="Duplex Logo"
                  class="img-fluid" style="max-height: 100px;">
         </div>
 
-        <!-- Menu -->
         <div class="flex-grow-1 d-flex flex-column justify-content-center">
             <ul class="navbar-nav text-center">
 
@@ -38,7 +36,6 @@
             </ul>
         </div>
 
-        <!-- Logout -->
         <div class="sidebar-footer text-center py-4">
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="btn btn-danger btn-block">Logout</button>

@@ -1,0 +1,21 @@
+html, body {
+    height: 100%;
+}
+
+#wrapper {
+    display: flex;
+    align-items: stretch !important;
+    min-height: 100vh;
+}
+
+#content-wrapper {
+    flex: 1;
+}
+
+.sidebar {
+    min-height: 100vh !important;
+}
+.sidebar .nav-link {
+    font-weight: 500;
+    padding: 12px 0;
+}
