@@ -20,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.entity.Appointment;
@@ -37,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+
 
 @Controller
 @RequiredArgsConstructor

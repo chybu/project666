@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
@@ -67,6 +68,7 @@ public class DoctorController {
             Model model
     ) {
         User user = requireActiveUser(oidcUser);
+        UUID doctorId = user.getId();
 
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
