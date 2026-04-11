@@ -3,6 +3,7 @@
 <head>
     <title>Receptionist Dashboard</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link th:href="@{/dashboard/css/custom.css}" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -25,11 +26,189 @@
 
                 <!-- Calendar -->
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Calendar</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            Appointment Calendar
+                        </h6>
+
+                        <div>
+                            <a class="btn btn-sm btn-outline-primary mr-2"
+                               th:href="@{/receptionist/dashboard/home(year=${prevYear}, month=${prevMonth})}">
+                                Prev
+                            </a>
+
+                            <span class="font-weight-bold text-gray-800 mx-2"
+                                  th:text="${#strings.capitalize(#strings.toLowerCase(currentMonthName)) + ' ' + currentYear}">
+                            </span>
+
+                            <a class="btn btn-sm btn-outline-primary ml-2"
+                               th:href="@{/receptionist/dashboard/home(year=${nextYear}, month=${nextMonth})}">
+                                Next
+                            </a>
+                        </div>
                     </div>
+
                     <div class="card-body">
-                        Calendar goes here (FullCalendar later)
+                        <style>
+                            .calendar-grid {
+                                display: grid;
+                                grid-template-columns: repeat(7, 1fr);
+                                gap: 10px;
+                            }
+
+                            .calendar-weekday {
+                                font-weight: 700;
+                                text-align: center;
+                                padding: 10px 0;
+                                background: #f8f9fc;
+                                border: 1px solid #e3e6f0;
+                                border-radius: 6px;
+                            }
+
+                            .calendar-day {
+                                min-height: 140px;
+                                border: 1px solid #e3e6f0;
+                                border-radius: 8px;
+                                padding: 8px;
+                                background: #fff;
+                            }
+
+                            .calendar-day.empty {
+                                background: #f8f9fc;
+                            }
+
+                            .calendar-day.today {
+                                border: 2px solid #4e73df;
+                            }
+
+                            .selected-day {
+                                background: #eef4ff;
+                                border: 2px solid #1cc88a;
+                            }
+
+                            .calendar-date {
+                                font-weight: 700;
+                                margin-bottom: 8px;
+                                color: #5a5c69;
+                            }
+
+                            .calendar-event {
+                                font-size: 0.8rem;
+                                padding: 4px 6px;
+                                margin-bottom: 6px;
+                                border-radius: 6px;
+                                background: #e8f0fe;
+                                color: #2e59d9;
+                                line-height: 1.2;
+                            }
+
+                            .calendar-event-time {
+                                font-weight: 700;
+                                display: block;
+                            }
+                        </style>
+
+                        <div class="calendar-grid mb-2">
+                            <div class="calendar-weekday">Sun</div>
+                            <div class="calendar-weekday">Mon</div>
+                            <div class="calendar-weekday">Tue</div>
+                            <div class="calendar-weekday">Wed</div>
+                            <div class="calendar-weekday">Thu</div>
+                            <div class="calendar-weekday">Fri</div>
+                            <div class="calendar-weekday">Sat</div>
+                        </div>
+
+                        <div class="calendar-grid">
+                            <div th:each="day : ${calendarDays}"
+                                 th:class="'calendar-day'
+                                    + (${day == null} ? ' empty' : '')
+                                    + (${day != null and day.equals(today)} ? ' today' : '')
+                                    + (${day != null and selectedDate != null and day.equals(selectedDate)} ? ' selected-day' : '')">
+
+                                <div th:if="${day != null}">
+                                    <a th:href="@{/receptionist/dashboard/home(year=${currentYear}, month=${currentMonth}, selectedDate=${day})}"
+                                       style="text-decoration: none; color: inherit; display: block; height: 100%;">
+
+                                        <div class="calendar-date" th:text="${day.getDayOfMonth()}"></div>
+
+                                        <div th:if="${appointmentsByDate.containsKey(day)}">
+                                            <div th:each="appointment : ${appointmentsByDate.get(day)}"
+                                                 class="calendar-event">
+                                                <span class="calendar-event-time"
+                                                      th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></span>
+                                                <span th:text="${appointment.type}"></span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Day Modal -->
+                <div class="modal fade" id="dayAppointmentsModal" tabindex="-1" role="dialog"
+                     aria-labelledby="dayAppointmentsModalLabel" aria-hidden="true"
+                     th:if="${selectedDate != null}">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title"
+                                    id="dayAppointmentsModalLabel"
+                                    th:text="'Appointments for ' + ${#temporals.format(selectedDate, 'MMM dd, yyyy')}">
+                                </h5>
+                                <a type="button" class="close"
+                                   th:href="@{/receptionist/dashboard/home(year=${currentYear}, month=${currentMonth})}">
+                                    <span>&times;</span>
+                                </a>
+                            </div>
+
+                            <div class="modal-body">
+                                <div th:if="${#lists.isEmpty(selectedDayAppointments)}">
+                                    <p class="mb-0 text-muted">No appointments for this day.</p>
+                                </div>
+
+                                <div th:unless="${#lists.isEmpty(selectedDayAppointments)}" class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="appointment : ${selectedDayAppointments}">
+                                            <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
+                                            <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
+                                            <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
+                                            <td th:text="${appointment.doctor.firstName + ' ' + appointment.doctor.lastName}"></td>
+                                            <td th:text="${appointment.type}"></td>
+                                            <td th:text="${appointment.status}"></td>
+
+                                            <td>
+                                                <form th:action="@{/receptionist/dashboard/cancel-appointment}" method="post">
+                                                    <input type="hidden" name="appointmentId" th:value="${appointment.id}" />
+                                                    <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <a class="btn btn-secondary"
+                                   th:href="@{/receptionist/dashboard/home(year=${currentYear}, month=${currentMonth})}">
+                                    Close
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -59,6 +238,12 @@
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+<script th:if="${selectedDate != null}">
+    $(document).ready(function () {
+        $('#dayAppointmentsModal').modal('show');
+    });
+</script>
 
 </body>
 </html>
