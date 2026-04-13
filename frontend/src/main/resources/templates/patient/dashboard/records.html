@@ -85,13 +85,13 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr th:each="lt : ${lr.labTests}">
-                                            <td th:text="${lt.name}"></td>
-                                            <td th:text="${lt.code}"></td>
-                                            <td th:text="${lt.unit}"></td>
-                                            <td th:text="${lt.status}"></td>
-                                            <td th:text="${lt.result}"></td>
-                                            <td th:text="${lt.labTechnicianFullName}"></td>
+                                        <tr th:each="labTest : ${lr.labTests}">
+                                            <td th:text="${labTest.name}"></td>
+                                            <td th:text="${labTest.code}"></td>
+                                            <td th:text="${labTest.unit}"></td>
+                                            <td th:text="${labTest.status}"></td>
+                                            <td th:text="${labTest.result}"></td>
+                                            <td th:text="${labTest.labTechnicianFullName}"></td>
                                         </tr>
                                     </tbody>
                                 </table>

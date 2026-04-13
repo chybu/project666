@@ -295,6 +295,7 @@ public String records(
     return "patient/dashboard/records";
 }
 
+@Transactional
 @GetMapping("/dashboard/accessRequests")
 public String accessRequests(
     @AuthenticationPrincipal OidcUser oidcUser,
@@ -325,6 +326,51 @@ public String accessRequests(
     return "patient/dashboard/accessRequests";
 }
 
+
+@PostMapping("/dashboard/accessRequests/{id}/approve")
+public String approveAccessRequest(
+    @PathVariable UUID id,
+    @AuthenticationPrincipal OidcUser oidcUser,
+    org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
+) {
+    User user = requireActiveUser(oidcUser);
+    try {
+        patientRecordAccessService.approve(user.getId(), id);
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+    }
+    return "redirect:/patient/dashboard/accessRequests";
+}
+
+@PostMapping("/dashboard/accessRequests/{id}/deny")
+public String denyAccessRequest(
+    @PathVariable UUID id,
+    @AuthenticationPrincipal OidcUser oidcUser,
+    org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
+) {
+    User user = requireActiveUser(oidcUser);
+    try {
+        patientRecordAccessService.deny(user.getId(), id);
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+    }
+    return "redirect:/patient/dashboard/accessRequests";
+}
+
+@PostMapping("/dashboard/accessRequests/{id}/revoke")
+public String revokeAccessRequest(
+    @PathVariable UUID id,
+    @AuthenticationPrincipal OidcUser oidcUser,
+    org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
+) {
+    User user = requireActiveUser(oidcUser);
+    try {
+        patientRecordAccessService.revoke(user.getId(), id);
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+    }
+    return "redirect:/patient/dashboard/accessRequests";
+}
 
 @GetMapping("/dashboard/profile")
 @PreAuthorize("hasRole('PATIENT')")

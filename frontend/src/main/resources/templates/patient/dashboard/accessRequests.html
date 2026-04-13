@@ -32,7 +32,7 @@
                             <tbody>
                                 <tr th:each="ar : ${allRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.type}"></td>
+                                    <td th:text="${ar.recordType}"></td>
                                     <td th:text="${ar.status}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
@@ -58,7 +58,7 @@
                             <tbody>
                                 <tr th:each="ar : ${pendingRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.type}"></td>
+                                    <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
@@ -93,7 +93,7 @@
                             <tbody>
                                 <tr th:each="ar : ${approvedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.type}"></td>
+                                    <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
@@ -123,7 +123,7 @@
                             <tbody>
                                 <tr th:each="ar : ${rejectedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.type}"></td>
+                                    <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
                             </tbody>
@@ -147,7 +147,7 @@
                             <tbody>
                                 <tr th:each="ar : ${revokedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.type}"></td>
+                                    <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
                             </tbody>
