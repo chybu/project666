@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Book Appointment</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Book Appointment</h1>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+
+                        <form th:action="@{/patient/dashboard/book-appointment}" method="post">
+
+                            <div class="form-group">
+                                <label for="doctorId">Doctor</label>
+                                <select id="doctorId" name="doctorId" class="form-control" required>
+                                    <option value="" disabled selected>Select a doctor</option>
+                                    <option th:each="doctor : ${doctors}"
+                                            th:value="${doctor.id}"
+                                            th:text="${doctor.firstName + ' ' + doctor.lastName}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="type">Appointment Type</label>
+                                <select id="type" name="type" class="form-control" required>
+                                    <option value="" disabled selected>Select a type</option>
+                                    <option th:each="apptType : ${appointmentTypes}"
+                                            th:value="${apptType}"
+                                            th:text="${apptType}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="startTime">Date &amp; Time</label>
+                                <input type="datetime-local" id="startTime" name="startTime"
+                                       class="form-control" required
+                                       th:min="${minDateTime}" th:max="${maxDateTime}" />
+                                <small class="form-text text-muted">
+                                    Must be 3–31 days from today, between 8:00 AM and 6:00 PM.
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Book Appointment</button>
+                            <a th:href="@{/patient/dashboard/reviewAppointments}" class="btn btn-secondary ml-2">Cancel</a>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

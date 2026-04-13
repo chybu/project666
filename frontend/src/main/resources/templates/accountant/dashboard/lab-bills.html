@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lab Bills</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <div th:replace="pageFragments/accountantSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+
+            <div th:replace="pageFragments/accountantTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Lab Bills</h1>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <!-- Tabs -->
+                <div class="mb-3">
+                    <a th:href="@{/accountant/dashboard/lab-bills(tab='viewing')}"
+                       class="btn btn-sm btn-secondary"
+                       th:classappend="${tab == 'viewing'} ? ' active'">
+                        Processing
+                    </a>
+                    <a th:href="@{/accountant/dashboard/lab-bills(tab='unpaid')}"
+                       class="btn btn-sm btn-warning"
+                       th:classappend="${tab == 'unpaid'} ? ' active'">
+                        Unpaid
+                    </a>
+                    <a th:href="@{/accountant/dashboard/lab-bills(tab='paid')}"
+                       class="btn btn-sm btn-success"
+                       th:classappend="${tab == 'paid'} ? ' active'">
+                        Paid
+                    </a>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(bills)}">
+                            No bills found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(bills)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Lab Test</th>
+                                        <th>Amount</th>
+                                        <th>Insurance Cover</th>
+                                        <th>Patient Payment</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th th:if="${tab == 'unpaid'}">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="bill : ${bills}">
+                                        <td th:text="${bill.patient != null ? bill.patient.firstName + ' ' + bill.patient.lastName : 'N/A'}"></td>
+                                        <td th:text="${bill.labTest != null ? bill.labTest.name : 'N/A'}"></td>
+                                        <td th:text="${bill.amount}"></td>
+                                        <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
+                                        <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
+                                        <td th:text="${bill.status}"></td>
+                                        <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                        <td th:if="${tab == 'unpaid'}">
+                                            <form th:action="@{/accountant/dashboard/confirm-payment}" method="post">
+                                                <input type="hidden" name="billId" th:value="${bill.id}" />
+                                                <input type="hidden" name="redirectTo" value="lab-bills" />
+                                                <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/accountantFooter :: footer"></div>
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.project666.backend.domain.CreateAppointmentRequest;
 import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.ListLabBillRequest;
 import com.project666.backend.domain.ListLabRequestRequest;
@@ -36,6 +39,7 @@ import com.project666.backend.domain.dto.PatientLabRequestResponseDto;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentBill;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
+import com.project666.backend.domain.entity.AppointmentTypeEnum;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.BillService;
 import com.project666.backend.service.LabService;
@@ -467,6 +471,51 @@ public String redirectToKeycloakPassword() {
     @GetMapping("/dashboard/security")
     public String security() {
         return "patient/dashboard/security";
+    }
+
+    @GetMapping("/dashboard/bookAppointment")
+    public String showBookAppointmentPage(
+            @AuthenticationPrincipal OidcUser oidcUser,
+            Model model
+    ) {
+        requireActiveUser(oidcUser);
+
+        List<User> doctors = userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR);
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        model.addAttribute("minDateTime", java.time.LocalDateTime.now().plusDays(3).format(fmt));
+        model.addAttribute("maxDateTime", java.time.LocalDateTime.now().plusDays(31).format(fmt));
+        model.addAttribute("doctors", doctors);
+        model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
+
+        return "patient/dashboard/bookAppointment";
+    }
+
+    @PostMapping("/dashboard/book-appointment")
+    public String bookAppointment(
+            @AuthenticationPrincipal OidcUser oidcUser,
+            @RequestParam UUID doctorId,
+            @RequestParam AppointmentTypeEnum type,
+            @RequestParam String startTime,
+            RedirectAttributes redirectAttributes
+    ) {
+        User user = requireActiveUser(oidcUser);
+
+        try {
+            CreateAppointmentRequest request = new CreateAppointmentRequest();
+            request.setPatientId(user.getId());
+            request.setDoctorId(doctorId);
+            request.setType(type);
+            request.setStartTime(java.time.LocalDateTime.parse(startTime));
+
+            appointmentService.createAppointmentForPatient(user.getId(), request);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/patient/dashboard/bookAppointment";
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage", "Appointment booked successfully.");
+        return "redirect:/patient/dashboard/reviewAppointments";
     }
 
     private User requireActiveUser(OidcUser oidcUser) {
