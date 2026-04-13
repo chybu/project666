@@ -193,6 +193,12 @@
                                             <td>
                                                 <form th:action="@{/receptionist/dashboard/cancel-appointment}" method="post">
                                                     <input type="hidden" name="appointmentId" th:value="${appointment.id}" />
+                                                    <input type="hidden" name="cancelReason" value="Cancelled by receptionist from calendar" />
+                                                    <input type="hidden" name="cancellationInitiator" value="RECEPTIONIST" />
+                                                    <input type="hidden" name="sourcePage" value="home" />
+                                                    <input type="hidden" name="year" th:value="${currentYear}" />
+                                                    <input type="hidden" name="month" th:value="${currentMonth}" />
+                                                    <input type="hidden" name="selectedDate" th:value="${selectedDate}" />
                                                     <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
                                                 </form>
                                             </td>
