@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,7 @@ import com.project666.backend.domain.entity.PatientRecordAccess;
 import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.service.PatientRecordAccessService;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import lombok.RequiredArgsConstructor;
@@ -388,26 +390,34 @@ public String profile(
 
     return "patient/dashboard/profile";
 }
+
 @PostMapping("/dashboard/cancel-appointment")
 public String cancelAppointment(
         @RequestParam UUID appointmentId,
-        @AuthenticationPrincipal OidcUser oidcUser
+        @AuthenticationPrincipal OidcUser oidcUser,
+        RedirectAttributes redirectAttributes
 ) {
     UUID userId = OidcUserUtil.getUserId(oidcUser);
 
-    CancelAppointmentRequest request = new CancelAppointmentRequest();
-    request.setAppointmentId(appointmentId);
-    request.setCancelReason("Cancelled by patient from dashboard");
-    request.setCancellationInitiator(CancellationInitiatorEnum.PATIENT);
+    try {
+        CancelAppointmentRequest request = new CancelAppointmentRequest();
+        request.setAppointmentId(appointmentId);
+        request.setCancelReason("Cancelled by patient from dashboard");
+        request.setCancellationInitiator(CancellationInitiatorEnum.PATIENT);
 
-    appointmentService.cancelAppointment(
-            userId,
-            RoleEnum.PATIENT,
-            request
-    );
+        appointmentService.cancelAppointment(
+                userId,
+                RoleEnum.PATIENT,
+                request
+        );
+
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", e.getMessage());
+    }
 
     return "redirect:/patient/dashboard/home";
 }
+
 @PostMapping("/profile/update-name")
 @PreAuthorize("hasRole('PATIENT')")
 public String updateName(

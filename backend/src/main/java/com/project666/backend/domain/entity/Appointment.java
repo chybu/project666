@@ -21,6 +21,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -87,9 +88,6 @@ public class Appointment {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
-    /**
-     * Version to deal with race in updating services like confirm, cancel, etc
-     */
     @Version
     private Long version;
 
@@ -112,6 +110,20 @@ public class Appointment {
 
     @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL)
     private List<Precheck> prechecks = new ArrayList<>();
+
+    @Transient
+    private boolean hasPrescription;
+
+    public boolean isHasPrescription() {
+        return prescriptions != null && !prescriptions.isEmpty();
+    }
+
+    @Transient
+    private boolean hasLabRequest;
+
+    public boolean isHasLabRequest() {
+        return labRequests != null && !labRequests.isEmpty();
+    }
 
     @Override
     public int hashCode() {

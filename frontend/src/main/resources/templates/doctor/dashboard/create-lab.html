@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Lab Request</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Create Lab Request</h1>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+
+                        <form th:action="@{/doctor/labs/create}" method="post">
+
+                            <input type="hidden" name="appointmentId" th:value="${request.appointmentId}" />
+
+                            <div class="form-group">
+                                <label>Test Code</label>
+                                <input type="text"
+                                       name="labTests[0].code"
+                                       class="form-control"
+                                       placeholder="e.g. CBC, BMP, XR-CHEST"
+                                       pattern="[A-Za-z0-9\-]+"
+                                       title="Letters, numbers, or dashes only"
+                                       required>
+                                <small class="form-text text-muted">
+                                    Short identifier for the test (letters/numbers, no spaces preferred)
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Test Name</label>
+                                <input type="text"
+                                       name="labTests[0].name"
+                                       class="form-control"
+                                       placeholder="e.g. Complete Blood Count"
+                                       required>
+                                <small class="form-text text-muted">
+                                    Full descriptive name of the test
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Unit</label>
+                                <input type="text"
+                                       name="labTests[0].unit"
+                                       class="form-control"
+                                       placeholder="e.g. mg/dL, mmHg, bpm">
+                                <small class="form-text text-muted">
+                                    Measurement unit (leave blank if not applicable)
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Doctor Note</label>
+                                <textarea name="labTests[0].doctorNote"
+                                          class="form-control"
+                                          placeholder="Optional notes or instructions for the lab"></textarea>
+                                <small class="form-text text-muted">
+                                    Optional: add context, urgency, or instructions
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                Submit Lab Request
+                            </button>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

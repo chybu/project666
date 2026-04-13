@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Prescription</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Create Prescription</h1>
+
+                <form th:action="@{/doctor/prescriptions/create}" method="post" th:object="${request}">
+
+                    <input type="hidden" th:field="*{appointmentId}" />
+
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control" th:field="*{startDate}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" class="form-control" th:field="*{endDate}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Total Refills</label>
+                        <input type="number" class="form-control" th:field="*{totalRefills}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Refill Interval (Days)</label>
+                        <input type="number" class="form-control" th:field="*{refillIntervalDays}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Medicine Name</label>
+                        <input type="text" class="form-control" name="medicines[0].medicineName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dosage</label>
+                        <input type="text" class="form-control" name="medicines[0].dosage">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Frequency</label>
+                        <input type="text" class="form-control" name="medicines[0].frequency">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Instructions</label>
+                        <input type="text" class="form-control" name="medicines[0].instructions">
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Create Prescription</button>
+                    <a th:href="@{/doctor/dashboard/prescriptions}" class="btn btn-secondary">Cancel</a>
+
+                </form>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>
