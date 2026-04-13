@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Create Appointment</title>
+  <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+  <link th:href="@{/dashboard/css/custom.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+  <div th:replace="pageFragments/receptionistSidebar :: sidebar"></div>
+
+  <div id="content-wrapper" class="d-flex flex-column">
+    <div id="content">
+
+      <div th:replace="pageFragments/receptionistTopbar :: topbar"></div>
+
+      <div class="container-fluid">
+
+        <h1 class="h3 mb-4 text-gray-800">Create Appointment</h1>
+
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">New Appointment</h6>
+          </div>
+          <div class="card-body">
+
+            <div th:if="${generalError}" class="alert alert-danger" th:text="${generalError}"></div>
+
+            <form th:action="@{/receptionist/dashboard/create-appointment}" method="post">
+
+              <div class="form-group">
+                <label for="patientId">Patient</label>
+                <select class="form-control"
+                        th:classappend="${patientIdError} ? ' is-invalid' : ''"
+                        id="patientId"
+                        name="patientId"
+                        required>
+                  <option value="">Select patient</option>
+                  <option th:each="patient : ${patients}"
+                          th:value="${patient.id}"
+                          th:text="${patient.firstName + ' ' + patient.lastName + ' (' + patient.email + ')'}"
+                          th:selected="${patientId != null and patientId == patient.id.toString()}">
+                  </option>
+                </select>
+                <div class="invalid-feedback d-block"
+                     th:if="${patientIdError}"
+                     th:text="${patientIdError}"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="doctorId">Doctor</label>
+                <select class="form-control"
+                        th:classappend="${doctorIdError} ? ' is-invalid' : ''"
+                        id="doctorId"
+                        name="doctorId"
+                        required>
+                  <option value="">Select doctor</option>
+                  <option th:each="doctor : ${doctors}"
+                          th:value="${doctor.id}"
+                          th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                          th:selected="${doctorId != null and doctorId == doctor.id.toString()}">
+                  </option>
+                </select>
+                <div class="invalid-feedback d-block"
+                     th:if="${doctorIdError}"
+                     th:text="${doctorIdError}"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="type">Appointment Type</label>
+                <select class="form-control" id="type" name="type" required>
+                  <option value="">Select type</option>
+                  <option th:each="appointmentType : ${T(com.project666.backend.domain.entity.AppointmentTypeEnum).values()}"
+                          th:value="${appointmentType}"
+                          th:text="${appointmentType}"
+                          th:selected="${type != null and type.name() == appointmentType.name()}">
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="startTime">Start Time</label>
+                <input type="datetime-local"
+                       class="form-control"
+                       id="startTime"
+                       name="startTime"
+                       th:value="${startTime != null ? #temporals.format(startTime, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                       required>
+
+                <small class="form-text text-muted">
+                  Schedule at least 3 days ahead and within clinic working hours. Office hours are 8am - 6pm.
+                </small>
+              </div>
+
+
+              <button type="submit" class="btn btn-primary">Create Appointment</button>
+              <a th:href="@{/receptionist/dashboard/appointments}" class="btn btn-secondary">Cancel</a>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div th:replace="pageFragments/receptionistFooter :: footer"></div>
+  </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>
