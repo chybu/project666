@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Medical Records</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+<body id="page-top">
+<div id="wrapper">
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
+            <div class="container-fluid">
+                <h1 class="h3 mb-4 text-gray-800">Medical Records</h1>
+
+                <!-- Prechecks -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        Prechecks
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${prechecks == null or #lists.isEmpty(prechecks)}">
+                            No precheck records found.
+                        </div>
+                        <div th:if="${prechecks != null and !#lists.isEmpty(prechecks)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Pulse</th>
+                                        <th>Sugar</th>
+                                        <th>Temperature</th>
+                                        <th>Height</th>
+                                        <th>Weight</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="pc : ${prechecks}">
+                                        <td th:text="${pc.createdAt}"></td>
+                                        <td th:text="${pc.status}"></td>
+                                        <td th:text="${pc.pulse}"></td>
+                                        <td th:text="${pc.sugar}"></td>
+                                        <td th:text="${pc.temperature}"></td>
+                                        <td th:text="${pc.height}"></td>
+                                        <td th:text="${pc.weight}"></td>
+                                        <td th:text="${pc.note}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lab Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        Lab Requests
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${labRequests == null or #lists.isEmpty(labRequests)}">
+                            No lab records found.
+                        </div>
+                        <div th:if="${labRequests != null and !#lists.isEmpty(labRequests)}">
+                            <div th:each="lr : ${labRequests}" class="mb-4">
+                                <div class="mb-2">
+                                    <strong>Date:</strong> <span th:text="${lr.createdAt}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Status:</strong> <span th:text="${lr.status}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Doctor:</strong> <span th:text="${lr.doctorFullName}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Appointment:</strong> <span th:text="${lr.appointmentStartTime}"></span>
+                                </div>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Test Name</th>
+                                            <th>Code</th>
+                                            <th>Unit</th>
+                                            <th>Status</th>
+                                            <th>Result</th>
+                                            <th>Lab Technician</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="lt : ${lr.labTests}">
+                                            <td th:text="${lt.name}"></td>
+                                            <td th:text="${lt.code}"></td>
+                                            <td th:text="${lt.unit}"></td>
+                                            <td th:text="${lt.status}"></td>
+                                            <td th:text="${lt.result}"></td>
+                                            <td th:text="${lt.labTechnicianFullName}"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
+    </div>
+</div>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+</body>
+</html>
