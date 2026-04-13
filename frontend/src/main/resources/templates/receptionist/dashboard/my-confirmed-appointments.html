@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Confirmed Appointments</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link th:href="@{/dashboard/css/custom.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="~{pageFragments/receptionistSidebar :: sidebar}"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+
+            <div th:replace="~{pageFragments/receptionistTopbar :: topbar}"></div>
+
+            <div class="container-fluid">
+
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">My Confirmed Appointments</h1>
+                    <a th:href="@{/receptionist/dashboard/appointments}" class="btn btn-secondary btn-sm">
+                        Back to Operational View
+                    </a>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Filter My Confirmed Appointments</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" th:action="@{/receptionist/dashboard/my-confirmed-appointments}">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control"
+                                            id="patientId"
+                                            name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${patientId != null and patientId == patient.id.toString()}">
+                                        </option>
+                                    </select>
+                                    <small class="text-danger" th:if="${patientIdError}" th:text="${patientIdError}"></small>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="doctorId">Doctor</label>
+                                    <select class="form-control"
+                                            id="doctorId"
+                                            name="doctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${doctorId != null and doctorId == doctor.id.toString()}">
+                                        </option>
+                                    </select>
+                                    <small class="text-danger" th:if="${doctorIdError}" th:text="${doctorIdError}"></small>
+                                </div>
+
+
+                                <div class="form-group col-md-2">
+                                    <label for="type">Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option value="">All</option>
+                                        <option th:each="appointmentType : ${T(com.project666.backend.domain.entity.AppointmentTypeEnum).values()}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${type != null and type.name() == appointmentType.name()}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="from">From</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="from"
+                                           name="from"
+                                           th:value="${from}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="end">End</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="end"
+                                           name="end"
+                                           th:value="${end}">
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/receptionist/dashboard/my-confirmed-appointments}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Confirmed by Me</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(appointments)}" class="text-muted">
+                            No confirmed appointments found.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(appointments)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Confirmed At</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="appointment : ${appointments}">
+                                    <td th:text="${appointment.confirmedAt != null ? #temporals.format(appointment.confirmedAt, 'MMM dd, yyyy h:mm a') : 'N/A'}"></td>
+                                    <td th:text="${#temporals.format(appointment.startTime, 'MMM dd, yyyy h:mm a')}"></td>
+                                    <td th:text="${#temporals.format(appointment.endTime, 'MMM dd, yyyy h:mm a')}"></td>
+                                    <td th:text="${appointment.patient != null ? appointment.patient.firstName + ' ' + appointment.patient.lastName : 'N/A'}"></td>
+                                    <td th:text="${appointment.doctor != null ? appointment.doctor.firstName + ' ' + appointment.doctor.lastName : 'N/A'}"></td>
+                                    <td th:text="${appointment.type}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="${appointment.status.name() == 'CONFIRMED'} ? ' badge-primary' :
+                                                              (${appointment.status.name() == 'COMPLETED'} ? ' badge-success' :
+                                                              (${appointment.status.name() == 'CANCELLED'} ? ' badge-danger' :
+                                                              (${appointment.status.name() == 'NO_SHOW'} ? ' badge-warning' : ' badge-secondary')))"
+                                              th:text="${appointment.status}">
+                                        </span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3 d-flex justify-content-between" th:if="${appointmentPage != null}">
+                            <a class="btn btn-outline-primary btn-sm"
+                               th:if="${!appointmentPage.first}"
+                               th:href="@{/receptionist/dashboard/my-confirmed-appointments(
+                                    page=${currentPage - 1},
+                                    patientId=${patientId},
+                                    doctorId=${doctorId},
+                                    type=${type},
+                                    from=${from},
+                                    end=${end}
+                               )}">
+                                Previous
+                            </a>
+                            <span th:if="${appointmentPage.first}"></span>
+
+                            <a class="btn btn-outline-primary btn-sm"
+                               th:if="${!appointmentPage.last}"
+                               th:href="@{/receptionist/dashboard/my-confirmed-appointments(
+                                    page=${currentPage + 1},
+                                    patientId=${patientId},
+                                    doctorId=${doctorId},
+                                    type=${type},
+                                    from=${from},
+                                    end=${end}
+                               )}">
+                                Next
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="~{pageFragments/receptionistFooter :: footer}"></div>
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

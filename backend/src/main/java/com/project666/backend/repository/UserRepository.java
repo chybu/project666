@@ -2,6 +2,8 @@ package com.project666.backend.repository;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,5 +16,6 @@ public interface UserRepository extends JpaRepository<User, UUID>{
     Optional<User> findByIdAndRole(UUID userId, RoleEnum role);
     Optional<User> findByIdAndDeletedFalse(UUID userId);
     Optional<User> findByIdAndRoleAndDeletedFalse(UUID userId, RoleEnum role);
+    List<User> findAllByRoleAndDeletedFalse(RoleEnum role);
     boolean existsByIdAndDeletedFalse(UUID userId);
 }

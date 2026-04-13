@@ -32,28 +32,38 @@
             <form th:action="@{/receptionist/dashboard/create-appointment}" method="post">
 
               <div class="form-group">
-                <label for="patientId">Patient UUID</label>
-                <input type="text"
-                       class="form-control"
-                       th:classappend="${patientIdError} ? ' is-invalid' : ''"
-                       id="patientId"
-                       name="patientId"
-                       th:value="${patientId}"
-                       required>
+                <label for="patientId">Patient</label>
+                <select class="form-control"
+                        th:classappend="${patientIdError} ? ' is-invalid' : ''"
+                        id="patientId"
+                        name="patientId"
+                        required>
+                  <option value="">Select patient</option>
+                  <option th:each="patient : ${patients}"
+                          th:value="${patient.id}"
+                          th:text="${patient.firstName + ' ' + patient.lastName + ' (' + patient.email + ')'}"
+                          th:selected="${patientId != null and patientId == patient.id.toString()}">
+                  </option>
+                </select>
                 <div class="invalid-feedback d-block"
                      th:if="${patientIdError}"
                      th:text="${patientIdError}"></div>
               </div>
 
               <div class="form-group">
-                <label for="doctorId">Doctor UUID</label>
-                <input type="text"
-                       class="form-control"
-                       th:classappend="${doctorIdError} ? ' is-invalid' : ''"
-                       id="doctorId"
-                       name="doctorId"
-                       th:value="${doctorId}"
-                       required>
+                <label for="doctorId">Doctor</label>
+                <select class="form-control"
+                        th:classappend="${doctorIdError} ? ' is-invalid' : ''"
+                        id="doctorId"
+                        name="doctorId"
+                        required>
+                  <option value="">Select doctor</option>
+                  <option th:each="doctor : ${doctors}"
+                          th:value="${doctor.id}"
+                          th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                          th:selected="${doctorId != null and doctorId == doctor.id.toString()}">
+                  </option>
+                </select>
                 <div class="invalid-feedback d-block"
                      th:if="${doctorIdError}"
                      th:text="${doctorIdError}"></div>

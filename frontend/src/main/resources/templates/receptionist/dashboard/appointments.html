@@ -30,23 +30,33 @@
                         <form method="get" th:action="@{/receptionist/dashboard/appointments}">
                             <div class="form-row">
                                 <div class="form-group col-md-3">
-                                    <label for="patientId">Patient ID</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="patientId"
-                                           name="patientId"
-                                           th:value="${patientId}">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control"
+                                            id="patientId"
+                                            name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${patientId != null and patientId == patient.id.toString()}">
+                                        </option>
+                                    </select>
                                     <small class="text-danger" th:if="${patientIdError}" th:text="${patientIdError}"></small>
                                 </div>
 
 
                                 <div class="form-group col-md-3">
-                                    <label for="doctorId">Doctor ID</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="doctorId"
-                                           name="doctorId"
-                                           th:value="${doctorId}">
+                                    <label for="doctorId">Doctor</label>
+                                    <select class="form-control"
+                                            id="doctorId"
+                                            name="doctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${doctorId != null and doctorId == doctor.id.toString()}">
+                                        </option>
+                                    </select>
                                     <small class="text-danger" th:if="${doctorIdError}" th:text="${doctorIdError}"></small>
                                 </div>
 
@@ -178,6 +188,9 @@
                                                 <button type="submit" class="btn btn-sm btn-warning btn-block">
                                                     Mark No Show
                                                 </button>
+                                                <small class="form-text text-muted">
+                                                    Marking no-show will generate a cancellation fee bill.
+                                                </small>
                                             </form>
 
                                             <form th:action="@{/receptionist/dashboard/cancel-appointment}"
@@ -198,6 +211,9 @@
                                                         <option value="RECEPTIONIST">Receptionist</option>
                                                         <option value="RECEPTIONIST_ON_BEHALF_OF_PATIENT">On behalf of patient</option>
                                                     </select>
+                                                    <small class="form-text text-muted mb-2">
+                                                        Late cancellations on behalf of the patient may generate a cancellation fee.
+                                                    </small>
                                                 </div>
 
                                                 <div class="form-group mb-2">

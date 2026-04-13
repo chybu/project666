@@ -218,7 +218,151 @@ public class ReceptionistController {
         model.addAttribute("doctorIdError", doctorIdError);
         model.addAttribute("now", java.time.LocalDateTime.now());
 
+        addUserSelectors(model);
         return "receptionist/dashboard/appointments";
+    }
+
+    @GetMapping("/dashboard/my-confirmed-appointments")
+    public String myConfirmedAppointments(
+            @AuthenticationPrincipal OidcUser oidcUser,
+            @RequestParam(required = false) String patientId,
+            @RequestParam(required = false) String doctorId,
+            @RequestParam(required = false) AppointmentTypeEnum type,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate end,
+            @RequestParam(defaultValue = "0") int page,
+            Model model
+    ) {
+        User user = requireActiveUser(oidcUser);
+        UUID receptionistId = user.getId();
+
+        UUID parsedPatientId = null;
+        UUID parsedDoctorId = null;
+
+        String patientIdError = null;
+        String doctorIdError = null;
+
+        if (patientId != null && !patientId.isBlank()) {
+            try {
+                parsedPatientId = UUID.fromString(patientId.trim());
+            } catch (IllegalArgumentException e) {
+                patientIdError = "Patient UUID must be a valid UUID.";
+            }
+        }
+
+        if (doctorId != null && !doctorId.isBlank()) {
+            try {
+                parsedDoctorId = UUID.fromString(doctorId.trim());
+            } catch (IllegalArgumentException e) {
+                doctorIdError = "Doctor UUID must be a valid UUID.";
+            }
+        }
+
+        Page appointmentPage = Page.empty();
+        List appointments = new ArrayList();
+
+        if (patientIdError == null && doctorIdError == null) {
+            ListAppointmentRequest request = new ListAppointmentRequest();
+            request.setPatientId(parsedPatientId);
+            request.setDoctorId(parsedDoctorId);
+            request.setType(type);
+            request.setFrom(from);
+            request.setEnd(end);
+
+            Pageable pageable = PageRequest.of(page, 20, Sort.by("confirmedAt").descending());
+
+            appointmentPage = appointmentService.listAppointmentForReceptionist(
+                    receptionistId,
+                    request,
+                    pageable
+            );
+
+            appointments = appointmentPage.getContent();
+        }
+
+        model.addAttribute("appointmentPage", appointmentPage);
+        model.addAttribute("appointments", appointments);
+
+        model.addAttribute("patientId", patientId);
+        model.addAttribute("doctorId", doctorId);
+        model.addAttribute("type", type);
+        model.addAttribute("from", from);
+        model.addAttribute("end", end);
+        model.addAttribute("currentPage", page);
+
+        model.addAttribute("patientIdError", patientIdError);
+        model.addAttribute("doctorIdError", doctorIdError);
+
+        addUserSelectors(model);
+        return "receptionist/dashboard/my-confirmed-appointments";
+    }
+
+    @GetMapping("/dashboard/check-in")
+    public String checkInPage(
+            @AuthenticationPrincipal OidcUser oidcUser,
+            @RequestParam(required = false) String patientId,
+            @RequestParam(required = false) String doctorId,
+            @RequestParam(defaultValue = "0") int page,
+            Model model
+    ) {
+        User user = requireActiveUser(oidcUser);
+        UUID receptionistId = user.getId();
+
+        UUID parsedPatientId = null;
+        UUID parsedDoctorId = null;
+
+        String patientIdError = null;
+        String doctorIdError = null;
+
+        if (patientId != null && !patientId.isBlank()) {
+            try {
+                parsedPatientId = UUID.fromString(patientId.trim());
+            } catch (IllegalArgumentException e) {
+                patientIdError = "Patient UUID must be a valid UUID.";
+            }
+        }
+
+        if (doctorId != null && !doctorId.isBlank()) {
+            try {
+                parsedDoctorId = UUID.fromString(doctorId.trim());
+            } catch (IllegalArgumentException e) {
+                doctorIdError = "Doctor UUID must be a valid UUID.";
+            }
+        }
+
+        Page<Appointment> appointmentPage = Page.empty();
+        List<Appointment> appointments = new ArrayList<>();
+
+        if (patientIdError == null && doctorIdError == null) {
+            ListAppointmentRequest request = new ListAppointmentRequest();
+            request.setPatientId(parsedPatientId);
+            request.setDoctorId(parsedDoctorId);
+            request.setStatus(AppointmentStatusEnum.CONFIRMED);
+            request.setFrom(LocalDate.now());
+            request.setEnd(LocalDate.now());
+
+            Pageable pageable = PageRequest.of(page, 20, Sort.by("startTime").ascending());
+
+            appointmentPage = appointmentService.searchAnyAppointmentForReceptionist(
+                    receptionistId,
+                    request,
+                    pageable
+            );
+
+            appointments = appointmentPage.getContent();
+        }
+
+        model.addAttribute("appointmentPage", appointmentPage);
+        model.addAttribute("appointments", appointments);
+        model.addAttribute("patientId", patientId);
+        model.addAttribute("doctorId", doctorId);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("patientIdError", patientIdError);
+        model.addAttribute("doctorIdError", doctorIdError);
+        model.addAttribute("now", LocalDateTime.now());
+
+        addUserSelectors(model);
+        return "receptionist/dashboard/check-in";
     }
 
     @GetMapping("/dashboard/notifications")
@@ -244,8 +388,10 @@ public class ReceptionistController {
 
     @GetMapping("/dashboard/create-appointment")
     public String createAppointmentPage(Model model) {
+        addUserSelectors(model);
         return "receptionist/dashboard/create-appointment";
     }
+
 
     @PostMapping("/dashboard/create-appointment")
     public String createAppointment(
@@ -293,6 +439,7 @@ public class ReceptionistController {
             model.addAttribute("startTime", startTime);
             model.addAttribute("patientIdError", patientIdError);
             model.addAttribute("doctorIdError", doctorIdError);
+            addUserSelectors(model);
             return "receptionist/dashboard/create-appointment";
         }
 
@@ -344,7 +491,7 @@ public class ReceptionistController {
             model.addAttribute("patientIdError", patientIdError);
             model.addAttribute("doctorIdError", doctorIdError);
             model.addAttribute("generalError", generalError);
-
+            addUserSelectors(model);
             return "receptionist/dashboard/create-appointment";
         }
     }
@@ -364,6 +511,19 @@ public class ReceptionistController {
         UUID receptionistId = user.getId();
 
         appointmentService.confirmAppointment(receptionistId, appointmentId);
+
+        if ("check-in".equals(sourcePage)) {
+            StringBuilder redirectUrl = new StringBuilder("redirect:/receptionist/dashboard/check-in?page=" + page);
+
+            if (patientId != null && !patientId.isBlank()) {
+                redirectUrl.append("&patientId=").append(patientId);
+            }
+            if (doctorId != null && !doctorId.isBlank()) {
+                redirectUrl.append("&doctorId=").append(doctorId);
+            }
+
+            return redirectUrl.toString();
+        }
 
         StringBuilder redirectUrl = new StringBuilder("redirect:/receptionist/dashboard/appointments?page=" + page);
 
@@ -515,9 +675,18 @@ public class ReceptionistController {
         return keycloakService.getPasswordRedirect();
     }
 
+    private void addUserSelectors(Model model) {
+        model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
+        model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+    }
+
     private User requireActiveUser(OidcUser oidcUser) {
         UUID userId = OidcUserUtil.getUserId(oidcUser);
         return userRepository.findByIdAndDeletedFalse(userId)
             .orElseThrow();
+    }
+    private void addCreateAppointmentFormData(Model model) {
+        model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
+        model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
     }
 }
