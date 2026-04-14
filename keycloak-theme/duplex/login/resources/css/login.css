@@ -1,0 +1,186 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f8f9fc 0%, #e8edf8 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5a5c69;
+}
+
+/* ── Card ── */
+body > div {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0.5rem 2rem rgba(58, 59, 69, 0.15);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ── Logo ── */
+#kc-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+#kc-header::before {
+    content: '';
+    display: block;
+    height: 64px;
+    background: url('../img/logo.png') center / contain no-repeat;
+    margin-bottom: 0.5rem;
+}
+
+#kc-header-wrapper {
+    display: none;
+}
+
+/* ── Page title ── */
+#kc-page-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4e73df;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+/* ── Form groups ── */
+#kc-form-login > div {
+    margin-bottom: 1.25rem;
+}
+
+/* ── Labels ── */
+#kc-form-login label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #5a5c69;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Text / password inputs ── */
+#username,
+#password {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #e3e6f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #3a3b45;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#username:focus,
+#password:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.15);
+}
+
+/* ── Password row (input + show/hide button) ── */
+#kc-form-login .pf-v5-c-input-group,
+#kc-form-login div > div {
+    display: flex;
+    gap: 0.4rem;
+    align-items: stretch;
+}
+
+#kc-form-login div > div #password {
+    flex: 1;
+    width: auto;
+}
+
+#kc-form-login div > div button[type="button"] {
+    padding: 0 0.65rem;
+    border: 1px solid #e3e6f0;
+    border-radius: 6px;
+    background: #f8f9fc;
+    cursor: pointer;
+    color: #5a5c69;
+    font-size: 0.85rem;
+    transition: background-color 0.15s;
+}
+
+#kc-form-login div > div button[type="button"]:hover {
+    background: #e3e6f0;
+}
+
+/* ── Options row (remember me / forgot password) ── */
+#kc-form-options {
+    font-size: 0.85rem;
+}
+
+/* ── Submit button ── */
+#kc-form-buttons {
+    margin-top: 0.5rem;
+}
+
+#kc-login {
+    width: 100%;
+    padding: 0.65rem;
+    background: #4e73df;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#kc-login:hover  { background: #2e59d9; }
+#kc-login:active { background: #2653d4; }
+
+/* ── Register link ── */
+#kc-info {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: #858796;
+}
+
+#kc-registration a {
+    color: #4e73df;
+    font-weight: 700;
+    text-decoration: none;
+    margin-left: 0.25rem;
+}
+
+#kc-registration a:hover {
+    color: #2e59d9;
+    text-decoration: underline;
+}
+
+/* ── Alert messages ── */
+#kc-content .pf-v5-c-alert,
+.alert-error,
+.alert-warning,
+.alert-success,
+.alert-info {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+}
+
+.alert-error   { background: #fde8e6; border-left: 4px solid #e74a3b; color: #c0392b; }
+.alert-success { background: #e8f8f1; border-left: 4px solid #1cc88a; color: #0e6b4a; }
+.alert-warning { background: #fef9e7; border-left: 4px solid #f6c23e; color: #9a7d0a; }
+.alert-info    { background: #eaf4fb; border-left: 4px solid #36b9cc; color: #1a6274; }

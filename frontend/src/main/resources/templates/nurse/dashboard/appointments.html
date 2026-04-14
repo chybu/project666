@@ -21,38 +21,155 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
+                <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    Precheck submitted successfully.
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+                <div th:if="${param.cancelled}" class="alert alert-info alert-dismissible fade show" role="alert">
+                    Precheck cancelled successfully.
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+                <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    An error occurred. Please try again.
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            Upcoming Appointments
-                        </h6>
+                        <style>
+                            .typeahead-wrapper { position: relative; }
+                            .typeahead-list {
+                                display: none;
+                                position: absolute;
+                                z-index: 1000;
+                                background: #fff;
+                                border: 1px solid #e3e6f0;
+                                border-radius: 4px;
+                                width: 100%;
+                                max-height: 200px;
+                                overflow-y: auto;
+                                margin: 0;
+                                padding: 0;
+                                list-style: none;
+                            }
+                            .typeahead-list li {
+                                padding: 8px 12px;
+                                cursor: pointer;
+                            }
+                            .typeahead-list li:hover { background: #f8f9fc; }
+                        </style>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Today's Confirmed Appointments</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
+                        </div>
+                        <form th:action="@{/nurse/dashboard/appointments}" method="get">
+                            <div class="form-row align-items-end">
+                                <div class="form-group col-md-5 mb-2">
+                                    <label class="small mb-1">Patient</label>
+                                    <div class="typeahead-wrapper">
+                                        <input type="text" class="form-control form-control-sm typeahead-input" id="patientDisplay"
+                                               placeholder="All patients" autocomplete="off"
+                                               th:value="${filterPatientName}">
+                                        <input type="hidden" name="filterPatientId" id="filterPatientId"
+                                               th:value="${filterPatientId}">
+                                        <ul class="typeahead-list" id="patientList">
+                                            <li data-value="">All patients</li>
+                                            <li th:each="p : ${patients}"
+                                                th:data-value="${p.id}"
+                                                th:text="${p.firstName + ' ' + p.lastName}"></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-5 mb-2">
+                                    <label class="small mb-1">Doctor</label>
+                                    <div class="typeahead-wrapper">
+                                        <input type="text" class="form-control form-control-sm typeahead-input" id="doctorDisplay"
+                                               placeholder="All doctors" autocomplete="off"
+                                               th:value="${filterDoctorName}">
+                                        <input type="hidden" name="filterDoctorId" id="filterDoctorId"
+                                               th:value="${filterDoctorId}">
+                                        <ul class="typeahead-list" id="doctorList">
+                                            <li data-value="">All doctors</li>
+                                            <li th:each="d : ${doctors}"
+                                                th:data-value="${d.id}"
+                                                th:text="${d.firstName + ' ' + d.lastName}"></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="form-group col-auto mb-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                    <a th:href="@{/nurse/dashboard/appointments}" class="btn btn-secondary btn-sm ml-1">Reset</a>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="card-body">
 
-                        <div class="table-responsive">
+                        <div th:if="${#lists.isEmpty(appointments)}" class="text-muted">
+                            No upcoming confirmed appointments.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(appointments)}" class="table-responsive">
                             <table class="table table-bordered">
 
                                 <thead>
                                     <tr>
                                         <th>Patient</th>
-                                        <th>Date</th>
+                                        <th>Date &amp; Time</th>
                                         <th>Doctor</th>
+                                        <th>Type</th>
+                                        <th>Precheck Status</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
-                                    <tr th:each="appointment : ${appointments}">
-                                        <td th:text="${appointment.patientName}">John Doe</td>
-                                        <td th:text="${appointment.startTime}">Date</td>
-                                        <td th:text="${appointment.doctorName}">Dr</td>
+                                    <tr th:each="appointment : ${appointments}"
+                                        th:with="myPrecheck=${precheckByAppointment[appointment.id]}">
+                                        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}">John Doe</td>
+                                        <td th:text="${#temporals.format(appointment.startTime, 'MMM dd, yyyy h:mm a')}">Date</td>
+                                        <td th:text="${appointment.doctor.firstName + ' ' + appointment.doctor.lastName}">Dr. Smith</td>
+                                        <td th:text="${appointment.type}">Type</td>
                                         <td>
-                                            <button class="btn btn-primary btn-sm"
+                                            <span th:if="${myPrecheck != null}"
+                                                  class="badge badge-success">Precheck Done</span>
+                                            <span th:if="${myPrecheck == null}"
+                                                  class="badge badge-warning">Pending</span>
+                                        </td>
+                                        <td>
+                                            <button th:if="${myPrecheck == null}"
+                                                    class="btn btn-primary btn-sm"
                                                     data-toggle="modal"
-                                                    data-target="#intakeModal">
-                                                Enter Information
+                                                    data-target="#intakeModal"
+                                                    th:attr="data-appointment-id=${appointment.id},
+                                                             data-patient-name=${appointment.patient.firstName + ' ' + appointment.patient.lastName}">
+                                                Enter Vitals
                                             </button>
+                                            <div th:if="${myPrecheck != null}" class="d-flex" style="gap: 0.5rem;">
+                                                <button class="btn btn-info btn-sm"
+                                                        data-toggle="modal"
+                                                        data-target="#viewPrecheckModal"
+                                                        th:attr="data-precheck-id=${myPrecheck.id},
+                                                                 data-pulse=${myPrecheck.pulse},
+                                                                 data-sugar=${myPrecheck.sugar},
+                                                                 data-temperature=${myPrecheck.temperature},
+                                                                 data-height=${myPrecheck.height},
+                                                                 data-weight=${myPrecheck.weight},
+                                                                 data-note=${myPrecheck.note},
+                                                                 data-patient-id=${appointment.patient.id},
+                                                                 data-patient-name=${appointment.patient.firstName + ' ' + appointment.patient.lastName}">
+                                                    View Precheck
+                                                </button>
+                                                <form th:action="@{/nurse/dashboard/cancel-precheck}" method="post" style="margin:0;">
+                                                    <input type="hidden" name="precheckId" th:value="${myPrecheck.id}">
+                                                    <button type="submit" class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('Cancel this precheck?')">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -71,46 +188,152 @@
     </div>
 </div>
 
-<!-- Intake Modal -->
+<!-- Intake Modal: Enter Vitals -->
 <div class="modal fade" id="intakeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title">Patient Intake</h5>
+                <h5 class="modal-title">Patient Intake — <span id="intakePatientName"></span></h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <form th:action="@{/nurse/dashboard/submit-precheck}" method="post">
+                <div class="modal-body">
+
+                    <input type="hidden" id="intakeAppointmentId" name="appointmentId" value="">
+
+                    <div class="form-group">
+                        <label>Pulse <small class="text-muted">(bpm)</small></label>
+                        <input type="number" class="form-control" name="pulse"
+                               min="1" max="300" placeholder="e.g. 72" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Blood Sugar <small class="text-muted">(mmol/L)</small></label>
+                        <input type="number" class="form-control" name="sugar"
+                               step="0.1" min="0" placeholder="e.g. 5.4" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Temperature <small class="text-muted">(°C)</small></label>
+                        <input type="number" class="form-control" name="temperature"
+                               step="0.1" min="30" max="45" placeholder="e.g. 36.6" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Height <small class="text-muted">(cm)</small></label>
+                        <input type="number" class="form-control" name="height"
+                               step="0.1" min="0" placeholder="e.g. 175.0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Weight <small class="text-muted">(kg)</small></label>
+                        <input type="number" class="form-control" name="weight"
+                               step="0.1" min="0" placeholder="e.g. 70.5" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes <small class="text-muted">(optional)</small></label>
+                        <textarea class="form-control" name="note" rows="3"
+                                  placeholder="Any additional observations..."></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Submit Precheck</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<!-- View Precheck Modal -->
+<div class="modal fade" id="viewPrecheckModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Precheck — <span id="viewPatientName"></span></h5>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
 
             <div class="modal-body">
-
-                <form>
-                    <div class="form-group">
-                        <label>Weight</label>
-                        <input type="text" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Height</label>
-                        <input type="text" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Blood Pressure</label>
-                        <input type="text" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Upload Document</label>
-                        <input type="file" class="form-control">
-                    </div>
-                </form>
-
+                <table class="table table-sm table-borderless mb-3">
+                    <tbody>
+                        <tr>
+                            <th class="text-right pr-3" style="width:40%;">Pulse</th>
+                            <td id="viewPulse"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-right pr-3">Blood Sugar</th>
+                            <td id="viewSugar"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-right pr-3">Temperature</th>
+                            <td id="viewTemperature"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-right pr-3">Height</th>
+                            <td id="viewHeight"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-right pr-3">Weight</th>
+                            <td id="viewWeight"></td>
+                        </tr>
+                        <tr>
+                            <th class="text-right pr-3">Notes</th>
+                            <td id="viewNote"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" id="viewHistoryBtn" class="btn btn-outline-secondary btn-sm"
+                        onclick="openHistory()">
+                    View Past Prechecks
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Past Prechecks History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Past Prechecks</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Nurse</th>
+                                <th>Pulse</th>
+                                <th>Blood Sugar</th>
+                                <th>Temperature</th>
+                                <th>Height</th>
+                                <th>Weight</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
             <div class="modal-footer">
-                <button class="btn btn-success">Save</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
-
         </div>
     </div>
 </div>
@@ -118,6 +341,90 @@
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+<script th:inline="javascript">
+    var historyByPatient = /*[[${historyByPatient}]]*/ {};
+
+    function setupTypeahead(inputId, listId, hiddenId) {
+        var $input = $('#' + inputId);
+        var $list = $('#' + listId);
+        var $hidden = $('#' + hiddenId);
+
+        function filter() {
+            var q = $input.val().toLowerCase();
+            $list.find('li').each(function() {
+                var text = $(this).text().toLowerCase();
+                $(this).toggle($(this).data('value') === '' || text.includes(q));
+            });
+        }
+
+        $input.on('focus', function() { filter(); $list.show(); });
+        $input.on('input', function() { $hidden.val(''); filter(); $list.show(); });
+
+        $list.on('click', 'li', function() {
+            var val = $(this).data('value');
+            $hidden.val(val !== undefined ? val : '');
+            $input.val(val ? $(this).text().trim() : '');
+            $list.hide();
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#' + inputId + ', #' + listId).length) {
+                $list.hide();
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        setupTypeahead('patientDisplay', 'patientList', 'filterPatientId');
+        setupTypeahead('doctorDisplay', 'doctorList', 'filterDoctorId');
+    });
+    var currentPatientId = null;
+
+    // Populate intake modal with appointment data
+    $('#intakeModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        $('#intakeAppointmentId').val(button.data('appointment-id'));
+        $('#intakePatientName').text(button.data('patient-name'));
+    });
+
+    // Populate view precheck modal with precheck data
+    $('#viewPrecheckModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        $('#viewPatientName').text(button.data('patient-name'));
+        $('#viewPulse').text(button.data('pulse') + ' bpm');
+        $('#viewSugar').text(button.data('sugar') + ' mmol/L');
+        $('#viewTemperature').text(button.data('temperature') + ' °C');
+        $('#viewHeight').text(button.data('height') + ' cm');
+        $('#viewWeight').text(button.data('weight') + ' kg');
+        var note = button.data('note');
+        $('#viewNote').text(note && note !== 'null' ? note : '—');
+
+        currentPatientId = button.data('patient-id').toString();
+        var history = historyByPatient[currentPatientId] || [];
+        $('#viewHistoryBtn').toggle(history.length > 0);
+    });
+
+    function openHistory() {
+        var history = historyByPatient[currentPatientId] || [];
+        var tbody = $('#historyTableBody');
+        tbody.empty();
+        history.forEach(function(p) {
+            var tr = $('<tr>');
+            tr.append($('<td>').text(p.createdAt));
+            tr.append($('<td>').text(p.nurseName));
+            tr.append($('<td>').text(p.pulse + ' bpm'));
+            tr.append($('<td>').text(p.sugar + ' mmol/L'));
+            tr.append($('<td>').text(p.temperature + ' °C'));
+            tr.append($('<td>').text(p.height + ' cm'));
+            tr.append($('<td>').text(p.weight + ' kg'));
+            tr.append($('<td>').text(p.note || '—'));
+            tbody.append(tr);
+        });
+        $('#viewPrecheckModal').modal('hide');
+        $('#historyModal').modal('show');
+    }
+</script>
 
 </body>
 </html>

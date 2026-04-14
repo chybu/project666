@@ -3,6 +3,7 @@
 <head>
     <title>Nurse Dashboard</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link th:href="@{/dashboard/css/custom.css}" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -21,17 +22,41 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Nurse Dashboard</h1>
 
-                <!-- Calendar -->
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Calendar</h6>
+                        <h6 class="m-0 font-weight-bold text-primary"
+                            th:text="'Appointments for ' + ${#temporals.format(today, 'MMMM dd, yyyy')}">
+                        </h6>
                     </div>
                     <div class="card-body">
-                        Calendar goes here
+                        <div th:if="${#lists.isEmpty(todayAppointments)}" class="text-muted">
+                            No appointments scheduled for today.
+                        </div>
+                        <div th:unless="${#lists.isEmpty(todayAppointments)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Patient</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="appointment : ${todayAppointments}">
+                                        <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
+                                        <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
+                                        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
+                                        <td th:text="${appointment.type}"></td>
+                                        <td th:text="${appointment.status}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Staff Bulletin -->
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Staff Bulletin</h6>
