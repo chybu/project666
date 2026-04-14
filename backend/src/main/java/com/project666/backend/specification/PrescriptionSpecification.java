@@ -44,6 +44,24 @@ public final class PrescriptionSpecification {
             cb.equal(root.get("status"), status);
     }
 
+    public static Specification<Prescription> byStartDate(LocalDate startDate) {
+        return (root, query, cb) ->
+            startDate == null ? null :
+            cb.equal(root.get("startDate"), startDate);
+    }
+
+    public static Specification<Prescription> byEndDate(LocalDate endDate) {
+        return (root, query, cb) ->
+            endDate == null ? null :
+            cb.equal(root.get("endDate"), endDate);
+    }
+
+    public static Specification<Prescription> byRemainingRefills(Integer remainingRefills) {
+        return (root, query, cb) ->
+            remainingRefills == null ? null :
+            cb.equal(root.get("remainingRefills"), remainingRefills);
+    }
+
     public static Specification<Prescription> byCreatedAtDate(LocalDate createdAtDate) {
         return (root, query, cb) -> {
             if (createdAtDate == null) return null;

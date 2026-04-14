@@ -224,6 +224,18 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
         }
 
+        if (request.getStartDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byStartDate(request.getStartDate()));
+        }
+
+        if (request.getEndDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byEndDate(request.getEndDate()));
+        }
+
+        if (request.getRemainingRefills() != null) {
+            spec = spec.and(PrescriptionSpecification.byRemainingRefills(request.getRemainingRefills()));
+        }
+
         if (request.getCreatedAtDate() != null) {
             spec = spec.and(PrescriptionSpecification.byCreatedAtDate(request.getCreatedAtDate()));
         }

@@ -25,6 +25,8 @@ public class ListBillRequest{
     private BillTypeEnum type;
     private UUID patientId;
     private UUID confirmAccountantId;
+    private LocalDate from;
+    private LocalDate end;
     private LocalDate paidOnDate;
     private LocalDate createdAtDate;
 }

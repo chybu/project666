@@ -17,6 +17,9 @@ public class ListPrescriptionRequestDto {
     private UUID doctorId;
     private UUID appointmentId;
     private PrescriptionStatusEnum status;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private Integer remainingRefills;
     private String medicineName;
     private LocalDate createdAtDate;
 }

@@ -15,143 +15,460 @@
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-                <!-- All Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">All Requests</div>
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search All Requests</h6>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(allRequests)}">No requests found.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(allRequests)}">
-                            <thead>
+                        <form method="get"
+                              th:action="@{/patient/dashboard/accessRequests}"
+                              data-preserve-query="true"
+                              data-managed-fields="allDoctorId,allRecordType,allStatus,allFrom,allEnd">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="allDoctorId">Doctor</label>
+                                    <select class="form-control" id="allDoctorId" name="allDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${allDoctorId != null and allDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="allRecordType">Record Type</label>
+                                    <select class="form-control" id="allRecordType" name="allRecordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${allRecordType != null and allRecordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="allStatus">Status</label>
+                                    <select class="form-control" id="allStatus" name="allStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${accessRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${allStatus != null and allStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="allFrom">Min Date</label>
+                                    <input type="date" class="form-control" id="allFrom" name="allFrom" th:value="${allFrom}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="allEnd">Max Date</label>
+                                    <input type="date" class="form-control" id="allEnd" name="allEnd" th:value="${allEnd}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}"
+                                   class="btn btn-secondary btn-sm access-reset"
+                                   data-clear-fields="allDoctorId,allRecordType,allStatus,allFrom,allEnd">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${allFilterError}" class="alert alert-danger mt-3" th:text="${allFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">All Request Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(allRequests)} + ' request(s)'"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(allRequests)}" class="text-muted">No requests found.</div>
+
+                        <div th:if="${!#lists.isEmpty(allRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Status</th>
                                     <th>Date</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr th:each="ar : ${allRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${ar.status}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Pending Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">Pending</div>
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Pending Requests</h6>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(pendingRequests)}">No pending requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(pendingRequests)}">
-                            <thead>
+                        <form method="get"
+                              th:action="@{/patient/dashboard/accessRequests}"
+                              data-preserve-query="true"
+                              data-managed-fields="pendingDoctorId,pendingRecordType,pendingFrom,pendingEnd">
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="pendingDoctorId">Doctor</label>
+                                    <select class="form-control" id="pendingDoctorId" name="pendingDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${pendingDoctorId != null and pendingDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="pendingRecordType">Record Type</label>
+                                    <select class="form-control" id="pendingRecordType" name="pendingRecordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${pendingRecordType != null and pendingRecordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="pendingFrom">Min Date</label>
+                                    <input type="date" class="form-control" id="pendingFrom" name="pendingFrom" th:value="${pendingFrom}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="pendingEnd">Max Date</label>
+                                    <input type="date" class="form-control" id="pendingEnd" name="pendingEnd" th:value="${pendingEnd}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}"
+                                   class="btn btn-secondary btn-sm access-reset"
+                                   data-clear-fields="pendingDoctorId,pendingRecordType,pendingFrom,pendingEnd">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${pendingFilterError}" class="alert alert-danger mt-3" th:text="${pendingFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Pending Request Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(pendingRequests)} + ' request(s)'"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(pendingRequests)}" class="text-muted">No pending requests.</div>
+
+                        <div th:if="${!#lists.isEmpty(pendingRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Date</th>
                                     <th>Actions</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr th:each="ar : ${pendingRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
-                                              method="post" style="display:inline">
+                                              method="post"
+                                              data-preserve-query="true"
+                                              style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-success">Approve</button>
                                         </form>
                                         <form th:action="@{/patient/dashboard/accessRequests/{id}/deny(id=${ar.id})}"
-                                              method="post" style="display:inline">
+                                              method="post"
+                                              data-preserve-query="true"
+                                              style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-danger">Deny</button>
                                         </form>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Approved Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">Approved</div>
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Approved Requests</h6>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(approvedRequests)}">No approved requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(approvedRequests)}">
-                            <thead>
+                        <form method="get"
+                              th:action="@{/patient/dashboard/accessRequests}"
+                              data-preserve-query="true"
+                              data-managed-fields="approvedDoctorId,approvedRecordType,approvedFrom,approvedEnd">
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="approvedDoctorId">Doctor</label>
+                                    <select class="form-control" id="approvedDoctorId" name="approvedDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${approvedDoctorId != null and approvedDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="approvedRecordType">Record Type</label>
+                                    <select class="form-control" id="approvedRecordType" name="approvedRecordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${approvedRecordType != null and approvedRecordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="approvedFrom">Min Date</label>
+                                    <input type="date" class="form-control" id="approvedFrom" name="approvedFrom" th:value="${approvedFrom}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="approvedEnd">Max Date</label>
+                                    <input type="date" class="form-control" id="approvedEnd" name="approvedEnd" th:value="${approvedEnd}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}"
+                                   class="btn btn-secondary btn-sm access-reset"
+                                   data-clear-fields="approvedDoctorId,approvedRecordType,approvedFrom,approvedEnd">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${approvedFilterError}" class="alert alert-danger mt-3" th:text="${approvedFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Approved Request Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(approvedRequests)} + ' request(s)'"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(approvedRequests)}" class="text-muted">No approved requests.</div>
+
+                        <div th:if="${!#lists.isEmpty(approvedRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Date</th>
                                     <th>Actions</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr th:each="ar : ${approvedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
                                         <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
-                                              method="post" style="display:inline">
+                                              method="post"
+                                              data-preserve-query="true"
+                                              style="display:inline">
                                             <button type="submit" class="btn btn-sm btn-warning">Revoke</button>
                                         </form>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Rejected Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">Rejected</div>
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Rejected Requests</h6>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(rejectedRequests)}">No rejected requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(rejectedRequests)}">
-                            <thead>
+                        <form method="get"
+                              th:action="@{/patient/dashboard/accessRequests}"
+                              data-preserve-query="true"
+                              data-managed-fields="rejectedDoctorId,rejectedRecordType,rejectedFrom,rejectedEnd">
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="rejectedDoctorId">Doctor</label>
+                                    <select class="form-control" id="rejectedDoctorId" name="rejectedDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${rejectedDoctorId != null and rejectedDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="rejectedRecordType">Record Type</label>
+                                    <select class="form-control" id="rejectedRecordType" name="rejectedRecordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${rejectedRecordType != null and rejectedRecordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="rejectedFrom">Min Date</label>
+                                    <input type="date" class="form-control" id="rejectedFrom" name="rejectedFrom" th:value="${rejectedFrom}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="rejectedEnd">Max Date</label>
+                                    <input type="date" class="form-control" id="rejectedEnd" name="rejectedEnd" th:value="${rejectedEnd}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}"
+                                   class="btn btn-secondary btn-sm access-reset"
+                                   data-clear-fields="rejectedDoctorId,rejectedRecordType,rejectedFrom,rejectedEnd">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${rejectedFilterError}" class="alert alert-danger mt-3" th:text="${rejectedFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Rejected Request Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(rejectedRequests)} + ' request(s)'"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(rejectedRequests)}" class="text-muted">No rejected requests.</div>
+
+                        <div th:if="${!#lists.isEmpty(rejectedRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Date</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr th:each="ar : ${rejectedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Revoked Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">Revoked</div>
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Revoked Requests</h6>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(revokedRequests)}">No revoked requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(revokedRequests)}">
-                            <thead>
+                        <form method="get"
+                              th:action="@{/patient/dashboard/accessRequests}"
+                              data-preserve-query="true"
+                              data-managed-fields="revokedDoctorId,revokedRecordType,revokedFrom,revokedEnd">
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="revokedDoctorId">Doctor</label>
+                                    <select class="form-control" id="revokedDoctorId" name="revokedDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${revokedDoctorId != null and revokedDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="revokedRecordType">Record Type</label>
+                                    <select class="form-control" id="revokedRecordType" name="revokedRecordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${revokedRecordType != null and revokedRecordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="revokedFrom">Min Date</label>
+                                    <input type="date" class="form-control" id="revokedFrom" name="revokedFrom" th:value="${revokedFrom}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="revokedEnd">Max Date</label>
+                                    <input type="date" class="form-control" id="revokedEnd" name="revokedEnd" th:value="${revokedEnd}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}"
+                                   class="btn btn-secondary btn-sm access-reset"
+                                   data-clear-fields="revokedDoctorId,revokedRecordType,revokedFrom,revokedEnd">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${revokedFilterError}" class="alert alert-danger mt-3" th:text="${revokedFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Revoked Request Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(revokedRequests)} + ' request(s)'"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(revokedRequests)}" class="text-muted">No revoked requests.</div>
+
+                        <div th:if="${!#lists.isEmpty(revokedRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Date</th>
                                 </tr>
-                            </thead>
-                            <tbody>
+                                </thead>
+                                <tbody>
                                 <tr th:each="ar : ${revokedRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -163,5 +480,55 @@
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const currentParams = new URLSearchParams(window.location.search);
+
+        document.querySelectorAll("form[data-preserve-query='true']").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                const managedFields = new Set(
+                    (form.dataset.managedFields || "")
+                        .split(",")
+                        .map(function (field) { return field.trim(); })
+                        .filter(Boolean)
+                );
+
+                currentParams.forEach(function (value, key) {
+                    if (managedFields.has(key)) {
+                        return;
+                    }
+
+                    if (form.querySelector("[name='" + key + "']")) {
+                        return;
+                    }
+
+                    const hiddenInput = document.createElement("input");
+                    hiddenInput.type = "hidden";
+                    hiddenInput.name = key;
+                    hiddenInput.value = value;
+                    form.appendChild(hiddenInput);
+                });
+            });
+        });
+
+        document.querySelectorAll(".access-reset").forEach(function (link) {
+            const preservedParams = new URLSearchParams(window.location.search);
+            const clearedFields = (link.dataset.clearFields || "")
+                .split(",")
+                .map(function (field) { return field.trim(); })
+                .filter(Boolean);
+
+            clearedFields.forEach(function (field) {
+                preservedParams.delete(field);
+            });
+
+            const nextHref = preservedParams.toString()
+                ? link.href + "?" + preservedParams.toString()
+                : link.href;
+
+            link.setAttribute("href", nextHref);
+        });
+    });
+</script>
 </body>
 </html>

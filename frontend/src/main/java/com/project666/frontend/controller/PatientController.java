@@ -1,5 +1,6 @@
 package com.project666.frontend.controller;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import java.time.YearMonth;
@@ -40,6 +41,8 @@ import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentBill;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.domain.entity.AppointmentTypeEnum;
+import com.project666.backend.domain.entity.BaseBill;
+import com.project666.backend.domain.entity.BillStatusEnum;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.BillService;
 import com.project666.backend.service.LabService;
@@ -53,16 +56,19 @@ import com.project666.backend.domain.CancelAppointmentRequest;
 import com.project666.backend.domain.ListAppointmentBillRequest;
 import com.project666.backend.domain.entity.CancellationInitiatorEnum;
 import com.project666.backend.domain.entity.LabBill;
+import com.project666.backend.domain.entity.LabRequestStatusEnum;
 import com.project666.backend.domain.entity.Precheck;
+import com.project666.backend.domain.entity.PrecheckStatusEnum;
 import com.project666.backend.domain.entity.Prescription;
+import com.project666.backend.domain.entity.PrescriptionStatusEnum;
 import com.project666.backend.domain.entity.RoleEnum;
 
 import com.project666.backend.domain.ListPatientRecordAccessRequest;
 import com.project666.backend.domain.entity.PatientRecordAccess;
 import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
+import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.service.PatientRecordAccessService;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 import lombok.RequiredArgsConstructor;
@@ -173,26 +179,57 @@ public class PatientController {
     public String reviewAppointments(
     @AuthenticationPrincipal OidcUser oidcUser,
     @RequestParam(required = false) String filter,
+    @RequestParam(required = false) UUID doctorId,
+    @RequestParam(required = false) AppointmentTypeEnum type,
+    @RequestParam(required = false) AppointmentStatusEnum status,
+    @RequestParam(required = false) LocalDate from,
+    @RequestParam(required = false) LocalDate end,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
+    String activeFilter = normalizeAppointmentFilter(filter);
 
     ListAppointmentRequest request = new ListAppointmentRequest();
+    request.setDoctorId(doctorId);
+    request.setType(type);
 
-    if ("past".equalsIgnoreCase(filter)) {
-        request.setFrom(LocalDate.of(1900, 1, 1));
+    LocalDate effectiveFrom = from;
+    LocalDate effectiveEnd = end;
+    AppointmentStatusEnum effectiveStatus = null;
+
+    if ("past".equals(activeFilter)) {
+        if (effectiveEnd == null) {
+            effectiveEnd = LocalDate.now().minusDays(1);
+        }
+        effectiveStatus = status;
     } else {
-        request.setFrom(LocalDate.now());
+        if (effectiveFrom == null) {
+            effectiveFrom = LocalDate.now();
+        }
     }
 
-    Pageable pageable = PageRequest.of(0, 20, Sort.by("startTime").ascending());
+    request.setStatus(effectiveStatus);
+    request.setFrom(effectiveFrom);
+    request.setEnd(effectiveEnd);
+
+    Pageable pageable = "past".equals(activeFilter)
+        ? PageRequest.of(0, 20, Sort.by("startTime").descending())
+        : PageRequest.of(0, 20, Sort.by("startTime").ascending());
 
     Page<Appointment> appointmentPage =
         appointmentService.listAppointmentForPatient(patientId, request, pageable);
 
     model.addAttribute("appointments", appointmentPage.getContent());
-    model.addAttribute("filter", filter == null ? "upcoming" : filter);
+    model.addAttribute("filter", activeFilter);
+    model.addAttribute("doctorId", doctorId);
+    model.addAttribute("type", type);
+    model.addAttribute("status", effectiveStatus);
+    model.addAttribute("from", effectiveFrom);
+    model.addAttribute("end", effectiveEnd);
+    model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+    model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
+    model.addAttribute("appointmentStatuses", AppointmentStatusEnum.values());
 
     return "patient/dashboard/reviewAppointments";
 }
@@ -200,26 +237,76 @@ public class PatientController {
 @GetMapping("/dashboard/finances")
 public String finances(
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam(required = false) LocalDate appointmentFrom,
+    @RequestParam(required = false) LocalDate appointmentEnd,
+    @RequestParam(required = false) BigDecimal appointmentMinAmount,
+    @RequestParam(required = false) BigDecimal appointmentMaxAmount,
+    @RequestParam(required = false) BillStatusEnum appointmentStatus,
+    @RequestParam(required = false) LocalDate labFrom,
+    @RequestParam(required = false) LocalDate labEnd,
+    @RequestParam(required = false) BigDecimal labMinAmount,
+    @RequestParam(required = false) BigDecimal labMaxAmount,
+    @RequestParam(required = false) BillStatusEnum labStatus,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
 
-    Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+    Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
+    List<AppointmentBill> appointmentBills = new ArrayList<>();
+    List<LabBill> labBills = new ArrayList<>();
+    String appointmentBillError = null;
+    String labBillError = null;
 
+    try {
+        ListAppointmentBillRequest appointmentRequest = new ListAppointmentBillRequest();
+        appointmentRequest.setMinAmount(appointmentMinAmount);
+        appointmentRequest.setMaxAmount(appointmentMaxAmount);
+        appointmentRequest.setStatus(appointmentStatus);
 
-    ListAppointmentBillRequest appointmentRequest = new ListAppointmentBillRequest();
+        Page<AppointmentBill> appointmentBillPage =
+            billService.listAppointmentBillForPatient(patientId, appointmentRequest, pageable);
+        appointmentBills = filterBillsByCreatedAtRange(
+            appointmentBillPage.getContent(),
+            appointmentFrom,
+            appointmentEnd
+        );
+    } catch (IllegalArgumentException e) {
+        appointmentBillError = e.getMessage();
+    }
 
-    Page<AppointmentBill> appointmentBills =
-        billService.listAppointmentBillForPatient(patientId, appointmentRequest, pageable);
+    try {
+        ListLabBillRequest labRequest = new ListLabBillRequest();
+        labRequest.setMinAmount(labMinAmount);
+        labRequest.setMaxAmount(labMaxAmount);
+        labRequest.setStatus(labStatus);
 
-    ListLabBillRequest labRequest = new ListLabBillRequest();
+        Page<LabBill> labBillPage =
+            billService.listLabBillForPatient(patientId, labRequest, pageable);
+        labBills = filterBillsByCreatedAtRange(
+            labBillPage.getContent(),
+            labFrom,
+            labEnd
+        );
+    } catch (IllegalArgumentException e) {
+        labBillError = e.getMessage();
+    }
 
-    Page<LabBill> labBills =
-        billService.listLabBillForPatient(patientId, labRequest, pageable);
-
-    model.addAttribute("appointmentBills", appointmentBills.getContent());
-    model.addAttribute("labBills", labBills.getContent());
+    model.addAttribute("appointmentBills", appointmentBills);
+    model.addAttribute("labBills", labBills);
+    model.addAttribute("appointmentFrom", appointmentFrom);
+    model.addAttribute("appointmentEnd", appointmentEnd);
+    model.addAttribute("appointmentMinAmount", appointmentMinAmount);
+    model.addAttribute("appointmentMaxAmount", appointmentMaxAmount);
+    model.addAttribute("appointmentStatus", appointmentStatus);
+    model.addAttribute("labFrom", labFrom);
+    model.addAttribute("labEnd", labEnd);
+    model.addAttribute("labMinAmount", labMinAmount);
+    model.addAttribute("labMaxAmount", labMaxAmount);
+    model.addAttribute("labStatus", labStatus);
+    model.addAttribute("appointmentBillError", appointmentBillError);
+    model.addAttribute("labBillError", labBillError);
+    model.addAttribute("billStatuses", BillStatusEnum.values());
 
     return "patient/dashboard/finances";
 }
@@ -233,6 +320,11 @@ public String finances(
 @GetMapping("/dashboard/pharmacy")
 public String pharmacy(
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam(required = false) LocalDate startDate,
+    @RequestParam(required = false) LocalDate endDate,
+    @RequestParam(required = false) Integer remainingRefills,
+    @RequestParam(required = false) PrescriptionStatusEnum status,
+    @RequestParam(required = false) UUID doctorId,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
@@ -241,11 +333,24 @@ public String pharmacy(
     Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
 
     ListPrescriptionRequest request = new ListPrescriptionRequest();
+    request.setStartDate(startDate);
+    request.setEndDate(endDate);
+    request.setRemainingRefills(remainingRefills);
+    request.setStatus(status);
+    request.setDoctorId(doctorId);
 
     Page<Prescription> prescriptions =
         prescriptionService.listPrescriptionForPatient(patientId, request, pageable);
 
     model.addAttribute("prescriptions", prescriptions.getContent());
+    model.addAttribute("now", java.time.LocalDateTime.now());
+    model.addAttribute("startDate", startDate);
+    model.addAttribute("endDate", endDate);
+    model.addAttribute("remainingRefills", remainingRefills);
+    model.addAttribute("status", status);
+    model.addAttribute("doctorId", doctorId);
+    model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+    model.addAttribute("prescriptionStatuses", PrescriptionStatusEnum.values());
 
     return "patient/dashboard/pharmacy";
 }
@@ -253,6 +358,11 @@ public String pharmacy(
 @PostMapping("/dashboard/pharmacy/consume-refill")
 public String consumeRefill(
     @RequestParam UUID prescriptionId,
+    @RequestParam(required = false) LocalDate startDate,
+    @RequestParam(required = false) LocalDate endDate,
+    @RequestParam(required = false) Integer remainingRefills,
+    @RequestParam(required = false) PrescriptionStatusEnum status,
+    @RequestParam(required = false) UUID doctorId,
     @AuthenticationPrincipal OidcUser oidcUser,
     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
 ) {
@@ -265,38 +375,84 @@ public String consumeRefill(
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
     }
 
-    return "redirect:/patient/dashboard/pharmacy";
+    return buildPharmacyRedirect(startDate, endDate, remainingRefills, status, doctorId);
 }
 
 @Transactional
 @GetMapping("/dashboard/records")
 public String records(
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam(required = false) LocalDate precheckFrom,
+    @RequestParam(required = false) LocalDate precheckEnd,
+    @RequestParam(required = false) UUID precheckNurseId,
+    @RequestParam(required = false) PrecheckStatusEnum precheckStatus,
+    @RequestParam(required = false) LocalDate labFrom,
+    @RequestParam(required = false) LocalDate labEnd,
+    @RequestParam(required = false) UUID labDoctorId,
+    @RequestParam(required = false) LabRequestStatusEnum labStatus,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
 
-    Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+    Pageable precheckPageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
+    Pageable labPageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
 
     ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
-    Page<Precheck> prechecks =
-        precheckService.listPrecheckForPatient(patientId, precheckRequest, pageable);
+    precheckRequest.setNurseId(precheckNurseId);
+    precheckRequest.setStatus(precheckStatus);
 
-    ListLabRequestRequest labRequest = new ListLabRequestRequest();
-    Page<PatientLabRequestResponseDto> labRequestPage =
-        labService.listLabRequestForPatient(patientId, labRequest, pageable);
-
-    List<PatientLabRequestResponseDto> safeLabRequests = new ArrayList<>();
-    for (PatientLabRequestResponseDto dto : labRequestPage.getContent()) {
-        if (dto.getLabTests() == null) {
-            dto.setLabTests(new ArrayList<>());
-        }
-        safeLabRequests.add(dto);
+    List<Precheck> prechecks = new ArrayList<>();
+    String precheckFilterError = null;
+    try {
+        Page<Precheck> precheckPage =
+            precheckService.listPrecheckForPatient(patientId, precheckRequest, precheckPageable);
+        prechecks = filterPrechecksByCreatedAtRange(
+            precheckPage.getContent(),
+            precheckFrom,
+            precheckEnd
+        );
+    } catch (IllegalArgumentException e) {
+        precheckFilterError = e.getMessage();
     }
 
-    model.addAttribute("prechecks", prechecks.getContent());
+    ListLabRequestRequest labRequest = new ListLabRequestRequest();
+    labRequest.setDoctorId(labDoctorId);
+    labRequest.setStatus(labStatus);
+
+    List<PatientLabRequestResponseDto> safeLabRequests = new ArrayList<>();
+    String labRequestFilterError = null;
+    try {
+        Page<PatientLabRequestResponseDto> labRequestPage =
+            labService.listLabRequestForPatient(patientId, labRequest, labPageable);
+
+        for (PatientLabRequestResponseDto dto : labRequestPage.getContent()) {
+            if (dto.getLabTests() == null) {
+                dto.setLabTests(new ArrayList<>());
+            }
+            safeLabRequests.add(dto);
+        }
+        safeLabRequests = filterLabRequestsByCreatedAtRange(safeLabRequests, labFrom, labEnd);
+    } catch (IllegalArgumentException e) {
+        labRequestFilterError = e.getMessage();
+    }
+
+    model.addAttribute("prechecks", prechecks);
     model.addAttribute("labRequests", safeLabRequests);
+    model.addAttribute("precheckFrom", precheckFrom);
+    model.addAttribute("precheckEnd", precheckEnd);
+    model.addAttribute("precheckNurseId", precheckNurseId);
+    model.addAttribute("precheckStatus", precheckStatus);
+    model.addAttribute("precheckStatuses", PrecheckStatusEnum.values());
+    model.addAttribute("nurses", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.NURSE));
+    model.addAttribute("precheckFilterError", precheckFilterError);
+    model.addAttribute("labFrom", labFrom);
+    model.addAttribute("labEnd", labEnd);
+    model.addAttribute("labDoctorId", labDoctorId);
+    model.addAttribute("labStatus", labStatus);
+    model.addAttribute("labRequestStatuses", LabRequestStatusEnum.values());
+    model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+    model.addAttribute("labRequestFilterError", labRequestFilterError);
 
     return "patient/dashboard/records";
 }
@@ -305,29 +461,150 @@ public String records(
 @GetMapping("/dashboard/accessRequests")
 public String accessRequests(
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam(required = false) UUID allDoctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum allRecordType,
+    @RequestParam(required = false) PatientRecordAccessStatusEnum allStatus,
+    @RequestParam(required = false) LocalDate allFrom,
+    @RequestParam(required = false) LocalDate allEnd,
+    @RequestParam(required = false) UUID pendingDoctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum pendingRecordType,
+    @RequestParam(required = false) LocalDate pendingFrom,
+    @RequestParam(required = false) LocalDate pendingEnd,
+    @RequestParam(required = false) UUID approvedDoctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum approvedRecordType,
+    @RequestParam(required = false) LocalDate approvedFrom,
+    @RequestParam(required = false) LocalDate approvedEnd,
+    @RequestParam(required = false) UUID rejectedDoctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum rejectedRecordType,
+    @RequestParam(required = false) LocalDate rejectedFrom,
+    @RequestParam(required = false) LocalDate rejectedEnd,
+    @RequestParam(required = false) UUID revokedDoctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum revokedRecordType,
+    @RequestParam(required = false) LocalDate revokedFrom,
+    @RequestParam(required = false) LocalDate revokedEnd,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
 
-    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+    Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
 
-    ListPatientRecordAccessRequest allRequest = new ListPatientRecordAccessRequest();
-    ListPatientRecordAccessRequest pendingRequest = new ListPatientRecordAccessRequest();
-    ListPatientRecordAccessRequest approvedRequest = new ListPatientRecordAccessRequest();
-    ListPatientRecordAccessRequest rejectedRequest = new ListPatientRecordAccessRequest();
-    ListPatientRecordAccessRequest revokedRequest = new ListPatientRecordAccessRequest();
+    List<PatientRecordAccess> allRequests = new ArrayList<>();
+    List<PatientRecordAccess> pendingRequests = new ArrayList<>();
+    List<PatientRecordAccess> approvedRequests = new ArrayList<>();
+    List<PatientRecordAccess> rejectedRequests = new ArrayList<>();
+    List<PatientRecordAccess> revokedRequests = new ArrayList<>();
 
-    pendingRequest.setStatus(PatientRecordAccessStatusEnum.PENDING);
-    approvedRequest.setStatus(PatientRecordAccessStatusEnum.APPROVED);
-    rejectedRequest.setStatus(PatientRecordAccessStatusEnum.REJECTED);
-    revokedRequest.setStatus(PatientRecordAccessStatusEnum.REVOKED);
+    String allFilterError = null;
+    String pendingFilterError = null;
+    String approvedFilterError = null;
+    String rejectedFilterError = null;
+    String revokedFilterError = null;
 
-    model.addAttribute("allRequests", patientRecordAccessService.listPatientRecordAccess(patientId, allRequest, pageable).getContent());
-    model.addAttribute("pendingRequests", patientRecordAccessService.listPatientRecordAccess(patientId, pendingRequest, pageable).getContent());
-    model.addAttribute("approvedRequests", patientRecordAccessService.listPatientRecordAccess(patientId, approvedRequest, pageable).getContent());
-    model.addAttribute("rejectedRequests", patientRecordAccessService.listPatientRecordAccess(patientId, rejectedRequest, pageable).getContent());
-    model.addAttribute("revokedRequests", patientRecordAccessService.listPatientRecordAccess(patientId, revokedRequest, pageable).getContent());
+    try {
+        allRequests = listPatientAccessRequests(
+            patientId,
+            allDoctorId,
+            allRecordType,
+            allStatus,
+            allFrom,
+            allEnd,
+            pageable
+        );
+    } catch (IllegalArgumentException e) {
+        allFilterError = e.getMessage();
+    }
+
+    try {
+        pendingRequests = listPatientAccessRequests(
+            patientId,
+            pendingDoctorId,
+            pendingRecordType,
+            PatientRecordAccessStatusEnum.PENDING,
+            pendingFrom,
+            pendingEnd,
+            pageable
+        );
+    } catch (IllegalArgumentException e) {
+        pendingFilterError = e.getMessage();
+    }
+
+    try {
+        approvedRequests = listPatientAccessRequests(
+            patientId,
+            approvedDoctorId,
+            approvedRecordType,
+            PatientRecordAccessStatusEnum.APPROVED,
+            approvedFrom,
+            approvedEnd,
+            pageable
+        );
+    } catch (IllegalArgumentException e) {
+        approvedFilterError = e.getMessage();
+    }
+
+    try {
+        rejectedRequests = listPatientAccessRequests(
+            patientId,
+            rejectedDoctorId,
+            rejectedRecordType,
+            PatientRecordAccessStatusEnum.REJECTED,
+            rejectedFrom,
+            rejectedEnd,
+            pageable
+        );
+    } catch (IllegalArgumentException e) {
+        rejectedFilterError = e.getMessage();
+    }
+
+    try {
+        revokedRequests = listPatientAccessRequests(
+            patientId,
+            revokedDoctorId,
+            revokedRecordType,
+            PatientRecordAccessStatusEnum.REVOKED,
+            revokedFrom,
+            revokedEnd,
+            pageable
+        );
+    } catch (IllegalArgumentException e) {
+        revokedFilterError = e.getMessage();
+    }
+
+    model.addAttribute("allRequests", allRequests);
+    model.addAttribute("pendingRequests", pendingRequests);
+    model.addAttribute("approvedRequests", approvedRequests);
+    model.addAttribute("rejectedRequests", rejectedRequests);
+    model.addAttribute("revokedRequests", revokedRequests);
+    model.addAttribute("allDoctorId", allDoctorId);
+    model.addAttribute("allRecordType", allRecordType);
+    model.addAttribute("allStatus", allStatus);
+    model.addAttribute("allFrom", allFrom);
+    model.addAttribute("allEnd", allEnd);
+    model.addAttribute("pendingDoctorId", pendingDoctorId);
+    model.addAttribute("pendingRecordType", pendingRecordType);
+    model.addAttribute("pendingFrom", pendingFrom);
+    model.addAttribute("pendingEnd", pendingEnd);
+    model.addAttribute("approvedDoctorId", approvedDoctorId);
+    model.addAttribute("approvedRecordType", approvedRecordType);
+    model.addAttribute("approvedFrom", approvedFrom);
+    model.addAttribute("approvedEnd", approvedEnd);
+    model.addAttribute("rejectedDoctorId", rejectedDoctorId);
+    model.addAttribute("rejectedRecordType", rejectedRecordType);
+    model.addAttribute("rejectedFrom", rejectedFrom);
+    model.addAttribute("rejectedEnd", rejectedEnd);
+    model.addAttribute("revokedDoctorId", revokedDoctorId);
+    model.addAttribute("revokedRecordType", revokedRecordType);
+    model.addAttribute("revokedFrom", revokedFrom);
+    model.addAttribute("revokedEnd", revokedEnd);
+    model.addAttribute("allFilterError", allFilterError);
+    model.addAttribute("pendingFilterError", pendingFilterError);
+    model.addAttribute("approvedFilterError", approvedFilterError);
+    model.addAttribute("rejectedFilterError", rejectedFilterError);
+    model.addAttribute("revokedFilterError", revokedFilterError);
+    model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+    model.addAttribute("recordTypes", PatientRecordTypeEnum.values());
+    model.addAttribute("accessRequestStatuses", PatientRecordAccessStatusEnum.values());
 
     return "patient/dashboard/accessRequests";
 }
@@ -337,6 +614,7 @@ public String accessRequests(
 public String approveAccessRequest(
     @PathVariable UUID id,
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam Map<String, String> redirectParams,
     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
 ) {
     User user = requireActiveUser(oidcUser);
@@ -345,13 +623,14 @@ public String approveAccessRequest(
     } catch (Exception e) {
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
     }
-    return "redirect:/patient/dashboard/accessRequests";
+    return buildAccessRequestsRedirect(redirectParams);
 }
 
 @PostMapping("/dashboard/accessRequests/{id}/deny")
 public String denyAccessRequest(
     @PathVariable UUID id,
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam Map<String, String> redirectParams,
     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
 ) {
     User user = requireActiveUser(oidcUser);
@@ -360,13 +639,14 @@ public String denyAccessRequest(
     } catch (Exception e) {
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
     }
-    return "redirect:/patient/dashboard/accessRequests";
+    return buildAccessRequestsRedirect(redirectParams);
 }
 
 @PostMapping("/dashboard/accessRequests/{id}/revoke")
 public String revokeAccessRequest(
     @PathVariable UUID id,
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam Map<String, String> redirectParams,
     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes
 ) {
     User user = requireActiveUser(oidcUser);
@@ -375,7 +655,7 @@ public String revokeAccessRequest(
     } catch (Exception e) {
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
     }
-    return "redirect:/patient/dashboard/accessRequests";
+    return buildAccessRequestsRedirect(redirectParams);
 }
 
 @GetMapping("/dashboard/profile")
@@ -398,6 +678,11 @@ public String profile(
 @PostMapping("/dashboard/cancel-appointment")
 public String cancelAppointment(
         @RequestParam UUID appointmentId,
+        @RequestParam(required = false) String filter,
+        @RequestParam(required = false) UUID doctorId,
+        @RequestParam(required = false) AppointmentTypeEnum type,
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate end,
         @AuthenticationPrincipal OidcUser oidcUser,
         RedirectAttributes redirectAttributes
 ) {
@@ -419,7 +704,7 @@ public String cancelAppointment(
         redirectAttributes.addFlashAttribute("error", e.getMessage());
     }
 
-    return "redirect:/patient/dashboard/home";
+    return buildReviewAppointmentsRedirect(filter, doctorId, type, from, end);
 }
 
 @PostMapping("/profile/update-name")
@@ -522,6 +807,224 @@ public String redirectToKeycloakPassword() {
         UUID userId = OidcUserUtil.getUserId(oidcUser);
         return userRepository.findByIdAndDeletedFalse(userId)
             .orElseThrow();
+    }
+
+    private String normalizeAppointmentFilter(String filter) {
+        return "past".equalsIgnoreCase(filter) ? "past" : "upcoming";
+    }
+
+    private String buildReviewAppointmentsRedirect(
+        String filter,
+        UUID doctorId,
+        AppointmentTypeEnum type,
+        LocalDate from,
+        LocalDate end
+    ) {
+        StringBuilder redirectUrl = new StringBuilder(
+            "redirect:/patient/dashboard/reviewAppointments?filter=" + normalizeAppointmentFilter(filter)
+        );
+
+        if (doctorId != null) {
+            redirectUrl.append("&doctorId=").append(doctorId);
+        }
+
+        if (type != null) {
+            redirectUrl.append("&type=").append(type);
+        }
+
+        if (from != null) {
+            redirectUrl.append("&from=").append(from);
+        }
+
+        if (end != null) {
+            redirectUrl.append("&end=").append(end);
+        }
+
+        return redirectUrl.toString();
+    }
+
+    private String buildPharmacyRedirect(
+        LocalDate startDate,
+        LocalDate endDate,
+        Integer remainingRefills,
+        PrescriptionStatusEnum status,
+        UUID doctorId
+    ) {
+        StringBuilder redirectUrl = new StringBuilder("redirect:/patient/dashboard/pharmacy");
+        List<String> queryParams = new ArrayList<>();
+
+        if (startDate != null) {
+            queryParams.add("startDate=" + startDate);
+        }
+
+        if (endDate != null) {
+            queryParams.add("endDate=" + endDate);
+        }
+
+        if (remainingRefills != null) {
+            queryParams.add("remainingRefills=" + remainingRefills);
+        }
+
+        if (status != null) {
+            queryParams.add("status=" + status);
+        }
+
+        if (doctorId != null) {
+            queryParams.add("doctorId=" + doctorId);
+        }
+
+        if (!queryParams.isEmpty()) {
+            redirectUrl.append("?").append(String.join("&", queryParams));
+        }
+
+        return redirectUrl.toString();
+    }
+
+    private <T extends BaseBill> List<T> filterBillsByCreatedAtRange(
+        List<T> bills,
+        LocalDate from,
+        LocalDate end
+    ) {
+        if (from != null && end != null && from.isAfter(end)) {
+            throw new IllegalArgumentException("from must be on or before end");
+        }
+
+        if (from == null && end == null) {
+            return bills;
+        }
+
+        return bills.stream()
+            .filter(bill -> {
+                LocalDate createdAtDate = bill.getCreatedAt().toLocalDate();
+                return (from == null || !createdAtDate.isBefore(from))
+                    && (end == null || !createdAtDate.isAfter(end));
+            })
+            .toList();
+    }
+
+    private List<Precheck> filterPrechecksByCreatedAtRange(
+        List<Precheck> prechecks,
+        LocalDate from,
+        LocalDate end
+    ) {
+        if (from != null && end != null && from.isAfter(end)) {
+            throw new IllegalArgumentException("precheckFrom must be on or before precheckEnd");
+        }
+
+        if (from == null && end == null) {
+            return prechecks;
+        }
+
+        return prechecks.stream()
+            .filter(precheck -> {
+                LocalDate createdAtDate = precheck.getCreatedAt().toLocalDate();
+                return (from == null || !createdAtDate.isBefore(from))
+                    && (end == null || !createdAtDate.isAfter(end));
+            })
+            .toList();
+    }
+
+    private List<PatientLabRequestResponseDto> filterLabRequestsByCreatedAtRange(
+        List<PatientLabRequestResponseDto> labRequests,
+        LocalDate from,
+        LocalDate end
+    ) {
+        if (from != null && end != null && from.isAfter(end)) {
+            throw new IllegalArgumentException("labFrom must be on or before labEnd");
+        }
+
+        if (from == null && end == null) {
+            return labRequests;
+        }
+
+        return labRequests.stream()
+            .filter(labRequest -> {
+                LocalDate createdAtDate = labRequest.getCreatedAt().toLocalDate();
+                return (from == null || !createdAtDate.isBefore(from))
+                    && (end == null || !createdAtDate.isAfter(end));
+            })
+            .toList();
+    }
+
+    private List<PatientRecordAccess> listPatientAccessRequests(
+        UUID patientId,
+        UUID doctorId,
+        PatientRecordTypeEnum recordType,
+        PatientRecordAccessStatusEnum status,
+        LocalDate from,
+        LocalDate end,
+        Pageable pageable
+    ) {
+        ListPatientRecordAccessRequest request = new ListPatientRecordAccessRequest();
+        request.setDoctorId(doctorId);
+        request.setType(recordType);
+        request.setStatus(status);
+
+        Page<PatientRecordAccess> accessPage =
+            patientRecordAccessService.listPatientRecordAccess(patientId, request, pageable);
+
+        return filterAccessRequestsByCreatedAtRange(accessPage.getContent(), from, end);
+    }
+
+    private List<PatientRecordAccess> filterAccessRequestsByCreatedAtRange(
+        List<PatientRecordAccess> accessRequests,
+        LocalDate from,
+        LocalDate end
+    ) {
+        if (from != null && end != null && from.isAfter(end)) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
+
+        if (from == null && end == null) {
+            return accessRequests;
+        }
+
+        return accessRequests.stream()
+            .filter(accessRequest -> {
+                LocalDate createdAtDate = accessRequest.getCreatedAt().toLocalDate();
+                return (from == null || !createdAtDate.isBefore(from))
+                    && (end == null || !createdAtDate.isAfter(end));
+            })
+            .toList();
+    }
+
+    private String buildAccessRequestsRedirect(Map<String, String> redirectParams) {
+        StringBuilder redirectUrl = new StringBuilder("redirect:/patient/dashboard/accessRequests");
+        List<String> queryParams = new ArrayList<>();
+
+        appendQueryParam(queryParams, "allDoctorId", redirectParams.get("allDoctorId"));
+        appendQueryParam(queryParams, "allRecordType", redirectParams.get("allRecordType"));
+        appendQueryParam(queryParams, "allStatus", redirectParams.get("allStatus"));
+        appendQueryParam(queryParams, "allFrom", redirectParams.get("allFrom"));
+        appendQueryParam(queryParams, "allEnd", redirectParams.get("allEnd"));
+        appendQueryParam(queryParams, "pendingDoctorId", redirectParams.get("pendingDoctorId"));
+        appendQueryParam(queryParams, "pendingRecordType", redirectParams.get("pendingRecordType"));
+        appendQueryParam(queryParams, "pendingFrom", redirectParams.get("pendingFrom"));
+        appendQueryParam(queryParams, "pendingEnd", redirectParams.get("pendingEnd"));
+        appendQueryParam(queryParams, "approvedDoctorId", redirectParams.get("approvedDoctorId"));
+        appendQueryParam(queryParams, "approvedRecordType", redirectParams.get("approvedRecordType"));
+        appendQueryParam(queryParams, "approvedFrom", redirectParams.get("approvedFrom"));
+        appendQueryParam(queryParams, "approvedEnd", redirectParams.get("approvedEnd"));
+        appendQueryParam(queryParams, "rejectedDoctorId", redirectParams.get("rejectedDoctorId"));
+        appendQueryParam(queryParams, "rejectedRecordType", redirectParams.get("rejectedRecordType"));
+        appendQueryParam(queryParams, "rejectedFrom", redirectParams.get("rejectedFrom"));
+        appendQueryParam(queryParams, "rejectedEnd", redirectParams.get("rejectedEnd"));
+        appendQueryParam(queryParams, "revokedDoctorId", redirectParams.get("revokedDoctorId"));
+        appendQueryParam(queryParams, "revokedRecordType", redirectParams.get("revokedRecordType"));
+        appendQueryParam(queryParams, "revokedFrom", redirectParams.get("revokedFrom"));
+        appendQueryParam(queryParams, "revokedEnd", redirectParams.get("revokedEnd"));
+
+        if (!queryParams.isEmpty()) {
+            redirectUrl.append("?").append(String.join("&", queryParams));
+        }
+
+        return redirectUrl.toString();
+    }
+
+    private void appendQueryParam(List<String> queryParams, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            queryParams.add(key + "=" + value);
+        }
     }
 
 }
