@@ -24,8 +24,8 @@
 
                 <!-- CREATE REQUEST -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Request Access
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Request Access</h6>
                     </div>
 
                     <div class="card-body">
@@ -68,13 +68,74 @@
                     </div>
                 </div>
 
-                <!-- LIST REQUESTS -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Your Requests
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Access Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(accessRequests)} + ' request(s)'"></span>
                     </div>
 
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/access-requests}" class="mb-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control" id="patientId" name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="p : ${patients}"
+                                                th:value="${p.id}"
+                                                th:text="${p.firstName + ' ' + p.lastName}"
+                                                th:selected="${patientId != null and patientId == p.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="type">Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option value="">All</option>
+                                        <option th:each="recordType : ${recordTypes}"
+                                                th:value="${recordType}"
+                                                th:text="${recordType}"
+                                                th:selected="${type != null and type == recordType}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${accessRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${status != null and status == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="minDate">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="maxDate">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/access-requests}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <div class="mb-4"></div>
 
                         <div th:if="${#lists.isEmpty(accessRequests)}">
                             No access requests found.

@@ -21,68 +21,92 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Create Lab Request</h1>
 
-                <div class="card shadow mb-4">
-                    <div class="card-body">
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-                        <form th:action="@{/doctor/labs/create}" method="post">
+                <form th:action="@{/doctor/labs/create}" method="post" th:object="${request}">
+                    <input type="hidden" th:field="*{appointmentId}" />
 
-                            <input type="hidden" name="appointmentId" th:value="${request.appointmentId}" />
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Lab Tests</h6>
+                            <button type="button" class="btn btn-primary btn-sm" id="addLabTestButton">Add Lab Test</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="labTestRows">
+                                <div class="card border-left-primary shadow-sm mb-3 lab-test-row"
+                                     th:each="labTest, labTestStat : ${request.labTests}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="m-0 font-weight-bold text-primary lab-test-title"
+                                                th:text="'Lab Test ' + ${labTestStat.index + 1}"></h6>
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-lab-test-button">
+                                                Delete Lab Test
+                                            </button>
+                                        </div>
 
-                            <div class="form-group">
-                                <label>Test Code</label>
-                                <input type="text"
-                                       name="labTests[0].code"
-                                       class="form-control"
-                                       placeholder="e.g. CBC, BMP, XR-CHEST"
-                                       pattern="[A-Za-z0-9\-]+"
-                                       title="Letters, numbers, or dashes only"
-                                       required>
-                                <small class="form-text text-muted">
-                                    Short identifier for the test (letters/numbers, no spaces preferred)
-                                </small>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label data-label-for="code"
+                                                       th:for="|code_${labTestStat.index}|">Test Code</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="code"
+                                                       th:id="|code_${labTestStat.index}|"
+                                                       th:name="|labTests[${labTestStat.index}].code|"
+                                                       th:value="${labTest.code}"
+                                                       placeholder="e.g. CBC, BMP, XR-CHEST"
+                                                       pattern="[A-Za-z0-9\-]+"
+                                                       title="Letters, numbers, or dashes only"
+                                                       required>
+                                            </div>
+
+                                            <div class="form-group col-md-6">
+                                                <label data-label-for="name"
+                                                       th:for="|name_${labTestStat.index}|">Test Name</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="name"
+                                                       th:id="|name_${labTestStat.index}|"
+                                                       th:name="|labTests[${labTestStat.index}].name|"
+                                                       th:value="${labTest.name}"
+                                                       placeholder="e.g. Complete Blood Count"
+                                                       required>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label data-label-for="unit"
+                                                       th:for="|unit_${labTestStat.index}|">Unit</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="unit"
+                                                       th:id="|unit_${labTestStat.index}|"
+                                                       th:name="|labTests[${labTestStat.index}].unit|"
+                                                       th:value="${labTest.unit}"
+                                                       placeholder="e.g. mg/dL, mmHg, bpm">
+                                            </div>
+
+                                            <div class="form-group col-md-6">
+                                                <label data-label-for="doctorNote"
+                                                       th:for="|doctorNote_${labTestStat.index}|">Doctor Note</label>
+                                                <textarea class="form-control"
+                                                          data-field="doctorNote"
+                                                          th:id="|doctorNote_${labTestStat.index}|"
+                                                          th:name="|labTests[${labTestStat.index}].doctorNote|"
+                                                          th:text="${labTest.doctorNote}"
+                                                          placeholder="Optional notes or instructions for the lab"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label>Test Name</label>
-                                <input type="text"
-                                       name="labTests[0].name"
-                                       class="form-control"
-                                       placeholder="e.g. Complete Blood Count"
-                                       required>
-                                <small class="form-text text-muted">
-                                    Full descriptive name of the test
-                                </small>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Unit</label>
-                                <input type="text"
-                                       name="labTests[0].unit"
-                                       class="form-control"
-                                       placeholder="e.g. mg/dL, mmHg, bpm">
-                                <small class="form-text text-muted">
-                                    Measurement unit (leave blank if not applicable)
-                                </small>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Doctor Note</label>
-                                <textarea name="labTests[0].doctorNote"
-                                          class="form-control"
-                                          placeholder="Optional notes or instructions for the lab"></textarea>
-                                <small class="form-text text-muted">
-                                    Optional: add context, urgency, or instructions
-                                </small>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary">
-                                Submit Lab Request
-                            </button>
-
-                        </form>
-
+                            <button type="submit" class="btn btn-success">Submit Lab Request</button>
+                            <a th:href="@{/doctor/dashboard/labs}" class="btn btn-secondary">Cancel</a>
+                        </div>
                     </div>
-                </div>
+                </form>
 
             </div>
         </div>
@@ -92,9 +116,123 @@
     </div>
 </div>
 
+<template id="labTestRowTemplate">
+    <div class="card border-left-primary shadow-sm mb-3 lab-test-row">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="m-0 font-weight-bold text-primary lab-test-title">Lab Test</h6>
+                <button type="button" class="btn btn-outline-danger btn-sm remove-lab-test-button">
+                    Delete Lab Test
+                </button>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label data-label-for="code">Test Code</label>
+                    <input type="text"
+                           class="form-control"
+                           data-field="code"
+                           placeholder="e.g. CBC, BMP, XR-CHEST"
+                           pattern="[A-Za-z0-9\-]+"
+                           title="Letters, numbers, or dashes only"
+                           required>
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label data-label-for="name">Test Name</label>
+                    <input type="text"
+                           class="form-control"
+                           data-field="name"
+                           placeholder="e.g. Complete Blood Count"
+                           required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label data-label-for="unit">Unit</label>
+                    <input type="text"
+                           class="form-control"
+                           data-field="unit"
+                           placeholder="e.g. mg/dL, mmHg, bpm">
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label data-label-for="doctorNote">Doctor Note</label>
+                    <textarea class="form-control"
+                              data-field="doctorNote"
+                              placeholder="Optional notes or instructions for the lab"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const labTestRows = document.getElementById("labTestRows");
+        const addLabTestButton = document.getElementById("addLabTestButton");
+        const labTestRowTemplate = document.getElementById("labTestRowTemplate");
+
+        function refreshLabTestRows() {
+            const rows = Array.from(labTestRows.querySelectorAll(".lab-test-row"));
+
+            rows.forEach(function (row, index) {
+                const title = row.querySelector(".lab-test-title");
+                if (title) {
+                    title.textContent = "Lab Test " + (index + 1);
+                }
+
+                row.querySelectorAll("[data-field]").forEach(function (input) {
+                    const field = input.dataset.field;
+                    const inputId = field + "_" + index;
+                    input.name = "labTests[" + index + "]." + field;
+                    input.id = inputId;
+
+                    const label = row.querySelector("[data-label-for='" + field + "']");
+                    if (label) {
+                        label.setAttribute("for", inputId);
+                    }
+                });
+
+                const deleteButton = row.querySelector(".remove-lab-test-button");
+                if (deleteButton) {
+                    deleteButton.disabled = rows.length === 1;
+                }
+            });
+        }
+
+        function addLabTestRow() {
+            const fragment = labTestRowTemplate.content.cloneNode(true);
+            labTestRows.appendChild(fragment);
+            refreshLabTestRows();
+        }
+
+        addLabTestButton.addEventListener("click", function () {
+            addLabTestRow();
+        });
+
+        labTestRows.addEventListener("click", function (event) {
+            const removeButton = event.target.closest(".remove-lab-test-button");
+            if (!removeButton) {
+                return;
+            }
+
+            const rows = labTestRows.querySelectorAll(".lab-test-row");
+            if (rows.length === 1) {
+                return;
+            }
+
+            removeButton.closest(".lab-test-row").remove();
+            refreshLabTestRows();
+        });
+
+        refreshLabTestRows();
+    });
+</script>
 
 </body>
 </html>

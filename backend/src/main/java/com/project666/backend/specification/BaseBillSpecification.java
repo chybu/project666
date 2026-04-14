@@ -101,4 +101,24 @@ public final class BaseBillSpecification {
             );
         };
     }
+
+    public static <T extends BaseBill> Specification<T> byCreatedAtRange(
+        LocalDate from,
+        LocalDate end
+    ) {
+        return (root, query, cb) -> {
+            if (from == null && end == null) return null;
+            if (from != null && end != null) {
+                return cb.between(
+                    root.get("createdAt"),
+                    from.atStartOfDay(),
+                    end.atTime(LocalTime.MAX)
+                );
+            }
+            if (from != null) {
+                return cb.greaterThanOrEqualTo(root.get("createdAt"), from.atStartOfDay());
+            }
+            return cb.lessThanOrEqualTo(root.get("createdAt"), end.atTime(LocalTime.MAX));
+        };
+    }
 }

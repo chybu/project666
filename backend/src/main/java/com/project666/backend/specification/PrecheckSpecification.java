@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import com.project666.backend.domain.entity.AppointmentTypeEnum;
 import com.project666.backend.domain.entity.Precheck;
 import com.project666.backend.domain.entity.PrecheckStatusEnum;
 
@@ -48,6 +49,12 @@ public final class PrecheckSpecification {
             cb.equal(root.get("status"), status);
     }
 
+    public static Specification<Precheck> byAppointmentType(AppointmentTypeEnum type) {
+        return (root, query, cb) ->
+            type == null ? null :
+            cb.equal(root.get("appointment").get("type"), type);
+    }
+
     public static Specification<Precheck> byCreatedAtDate(LocalDate createdAtDate) {
         return (root, query, cb) -> {
             if (createdAtDate == null) {
@@ -61,6 +68,30 @@ public final class PrecheckSpecification {
                 cb.greaterThanOrEqualTo(root.get("createdAt"), start),
                 cb.lessThan(root.get("createdAt"), end)
             );
+        };
+    }
+
+    public static Specification<Precheck> byCreatedAtRange(LocalDate minDate, LocalDate maxDate) {
+        return (root, query, cb) -> {
+            if (minDate == null && maxDate == null) {
+                return null;
+            }
+
+            LocalDateTime start = minDate != null ? minDate.atStartOfDay() : null;
+            LocalDateTime endExclusive = maxDate != null ? maxDate.plusDays(1).atStartOfDay() : null;
+
+            if (start != null && endExclusive != null) {
+                return cb.and(
+                    cb.greaterThanOrEqualTo(root.get("createdAt"), start),
+                    cb.lessThan(root.get("createdAt"), endExclusive)
+                );
+            }
+
+            if (start != null) {
+                return cb.greaterThanOrEqualTo(root.get("createdAt"), start);
+            }
+
+            return cb.lessThan(root.get("createdAt"), endExclusive);
         };
     }
 }

@@ -28,6 +28,16 @@ public interface LabService {
     LabRequest cancelLabRequest(UUID doctorId, UUID requestId);
 
     /**
+     * Loads a doctor's lab request with its detail data.
+     */
+    LabRequest getLabRequestForDoctor(UUID doctorId, UUID requestId);
+
+    /**
+     * Loads a shared lab request a doctor can access through approved patient record access.
+     */
+    LabRequest getSharedLabRequestForDoctor(UUID doctorId, UUID requestId);
+
+    /**
      * Lists lab tests assigned to a lab technician, with optional filters.
      */
     Page<LabTest> listLabTestForLabTechnician(UUID labTechnicianId, ListLabTestRequest request, Pageable pageable);

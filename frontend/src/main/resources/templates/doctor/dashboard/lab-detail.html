@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lab Request Details</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+<body id="page-top">
+<div id="wrapper">
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 text-gray-800 mb-0">Lab Request Details</h1>
+                    <a th:href="${backUrl}" class="btn btn-secondary btn-sm" th:text="${backLabel}">Back to Lab Requests</a>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <strong>Patient:</strong>
+                                <span th:text="${lab.patient != null ? lab.patient.firstName + ' ' + lab.patient.lastName : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Status:</strong>
+                                <span th:text="${lab.status}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Created Date:</strong>
+                                <span th:text="${lab.createdAt != null ? #temporals.format(lab.createdAt, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Last Updated:</strong>
+                                <span th:text="${lab.lastUpdated != null ? #temporals.format(lab.lastUpdated, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Appointment Start:</strong>
+                                <span th:text="${lab.appointment != null ? #temporals.format(lab.appointment.startTime, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Appointment Type:</strong>
+                                <span th:text="${lab.appointment != null ? lab.appointment.type : 'N/A'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Tests</h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(lab.labTests)}" class="text-muted">
+                            No lab tests found.
+                        </div>
+                        <div th:unless="${#lists.isEmpty(lab.labTests)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                    <th>Result</th>
+                                    <th>Unit</th>
+                                    <th>Lab Technician</th>
+                                    <th>Doctor Note</th>
+                                    <th>Lab Technician Note</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="test : ${lab.labTests}">
+                                    <td th:text="${test.name}"></td>
+                                    <td th:text="${test.code != null ? test.code : 'N/A'}"></td>
+                                    <td th:text="${test.status}"></td>
+                                    <td th:text="${test.result != null ? test.result : 'N/A'}"></td>
+                                    <td th:text="${test.unit != null ? test.unit : 'N/A'}"></td>
+                                    <td th:text="${test.labTechnician != null ? test.labTechnician.firstName + ' ' + test.labTechnician.lastName : 'Unassigned'}"></td>
+                                    <td th:text="${test.doctorNote != null ? test.doctorNote : 'N/A'}"></td>
+                                    <td th:text="${test.labTechnicianNote != null ? test.labTechnicianNote : 'N/A'}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+    </div>
+</div>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+</body>
+</html>

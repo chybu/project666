@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ListLabRequestRequest {
     private LabRequestStatusEnum status;
+    private LocalDate minDate;
+    private LocalDate maxDate;
     private LocalDate createdAtDate;
     private UUID doctorId;
     private UUID patientId;

@@ -631,6 +631,19 @@ public class ReceptionistController {
 
         appointmentService.noShowAppointment(receptionistId, appointmentId);
 
+        if ("check-in".equals(sourcePage)) {
+            StringBuilder redirectUrl = new StringBuilder("redirect:/receptionist/dashboard/check-in?page=" + page);
+
+            if (patientId != null && !patientId.isBlank()) {
+                redirectUrl.append("&patientId=").append(patientId);
+            }
+            if (doctorId != null && !doctorId.isBlank()) {
+                redirectUrl.append("&doctorId=").append(doctorId);
+            }
+
+            return redirectUrl.toString();
+        }
+
         StringBuilder redirectUrl = new StringBuilder("redirect:/receptionist/dashboard/appointments?page=" + page);
 
         if (patientId != null && !patientId.isBlank()) {

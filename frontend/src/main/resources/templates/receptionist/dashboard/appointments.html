@@ -23,8 +23,10 @@
 
                 <!-- Filters -->
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">Search Appointments</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
                     </div>
                     <div class="card-body">
                         <form method="get" th:action="@{/receptionist/dashboard/appointments}">
@@ -95,17 +97,9 @@
                                 <a th:href="@{/receptionist/dashboard/appointments}" class="btn btn-secondary btn-sm">Reset</a>
                             </div>
                         </form>
-                    </div>
-                </div>
 
-                <!-- Results -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Appointment Results</h6>
-                        <span class="text-muted small"
-                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
-                    </div>
-                    <div class="card-body">
+                        <div class="mb-4"></div>
+
                         <div th:if="${#lists.isEmpty(appointments)}" class="text-muted">
                             No appointments found.
                         </div>
@@ -166,12 +160,12 @@
                                                 Too early for check-in
                                             </div>
 
-                                            <div th:if="${now.isAfter(appointment.startTime.plusMinutes(15)) and now.isBefore(appointment.endTime)}"
+                                            <div th:if="${now.isAfter(appointment.startTime.plusMinutes(15))}"
                                                  class="text-muted small mb-2">
                                                 Too late to check in. Pending no-show eligibility
                                             </div>
 
-                                            <form th:if="${now.isAfter(appointment.endTime)}"
+                                            <form th:if="${!now.isBefore(appointment.startTime.plusMinutes(15))}"
                                                   th:action="@{/receptionist/dashboard/no-show}"
                                                   method="post"
                                                   class="mb-2">

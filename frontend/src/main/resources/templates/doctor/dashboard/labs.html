@@ -24,11 +24,64 @@
                 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Lab Requests
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Lab Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(labs)} + ' lab request(s)'"></span>
                     </div>
-
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/labs}">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control" id="patientId" name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${patientId != null and patientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All</option>
+                                        <option th:each="labStatus : ${labRequestStatuses}"
+                                                th:value="${labStatus}"
+                                                th:text="${labStatus}"
+                                                th:selected="${status != null and status == labStatus}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="minDate">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="maxDate">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/labs}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+                        
+                        <div class="mb-4"></div>
 
                         <div th:if="${#lists.isEmpty(labs)}">
                             No lab requests found.
@@ -74,10 +127,14 @@
                                     </td>
 
                                     <td>
-                                        <form th:action="@{/doctor/labs/cancel}" method="post">
+                                        <a class="btn btn-sm btn-info mr-2"
+                                           th:href="@{/doctor/dashboard/labs/view(labId=${lab.id})}">
+                                            View
+                                        </a>
+                                        <form th:action="@{/doctor/labs/cancel}" method="post" class="d-inline">
                                             <input type="hidden" name="labId" th:value="${lab.id}" />
                                             <button class="btn btn-sm btn-danger"
-                                                    th:disabled="${lab.status.name() == 'COMPLETED'}">
+                                                    th:disabled="${lab.status.name() == 'COMPLETED' or lab.status.name() == 'CANCELLED'}">
                                                 Cancel
                                             </button>
                                         </form>

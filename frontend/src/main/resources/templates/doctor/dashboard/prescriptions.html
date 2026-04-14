@@ -23,19 +23,74 @@
 
                 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
-                <!-- ✅ CREATE PRESCRIPTION BUTTON -->
-                <div class="mb-3">
-                    <a th:href="@{/doctor/dashboard/appointments}" class="btn btn-primary">
-                        Create Prescription from Appointment
-                    </a>
-                </div>
-
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Prescriptions
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Prescription Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prescriptions)} + ' prescription(s)'"></span>
                     </div>
 
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/prescriptions}" class="mb-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control" id="patientId" name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${patientId != null and patientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All</option>
+                                        <option th:each="prescriptionStatus : ${prescriptionStatuses}"
+                                                th:value="${prescriptionStatus}"
+                                                th:text="${prescriptionStatus}"
+                                                th:selected="${status != null and status == prescriptionStatus}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="minDate">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="maxDate">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="remainingRefills">Remaining Refills</label>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="remainingRefills"
+                                           name="remainingRefills"
+                                           min="0"
+                                           th:value="${remainingRefills}">
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/prescriptions}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
 
                         <div th:if="${#lists.isEmpty(prescriptions)}">
                             No prescriptions found.
@@ -45,18 +100,21 @@
                             <table class="table table-bordered">
                                 <thead>
                                 <tr>
-                                    <th>Date</th>
                                     <th>Patient</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
                                     <th>Status</th>
                                     <th>Refills</th>
                                     <th>Actions</th>
+                                    <th>Created Date</th>
                                 </tr>
                                 </thead>
 
                                 <tbody>
                                 <tr th:each="p : ${prescriptions}">
-                                    <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy')}"></td>
                                     <td th:text="${p.patient != null ? p.patient.firstName + ' ' + p.patient.lastName : 'N/A'}"></td>
+                                    <td th:text="${p.startDate != null ? #temporals.format(p.startDate, 'MMM dd, yyyy') : 'N/A'}"></td>
+                                    <td th:text="${p.endDate != null ? #temporals.format(p.endDate, 'MMM dd, yyyy') : 'N/A'}"></td>
 
                                     <td>
                                         <span class="badge"
@@ -71,7 +129,11 @@
                                     <td th:text="${p.remainingRefills + ' / ' + p.totalRefills}"></td>
 
                                     <td>
-                                        <form th:action="@{/doctor/prescriptions/cancel}" method="post">
+                                        <a class="btn btn-sm btn-info mr-2"
+                                           th:href="@{/doctor/dashboard/prescriptions/view(prescriptionId=${p.id})}">
+                                            View
+                                        </a>
+                                        <form th:action="@{/doctor/prescriptions/cancel}" method="post" class="d-inline">
                                             <input type="hidden" name="prescriptionId" th:value="${p.id}" />
                                             <button class="btn btn-sm btn-danger"
                                                     th:disabled="${p.status.name() == 'COMPLETED' or p.status.name() == 'CANCELLED'}">
@@ -79,6 +141,7 @@
                                             </button>
                                         </form>
                                     </td>
+                                    <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy')}"></td>
                                 </tr>
                                 </tbody>
                             </table>

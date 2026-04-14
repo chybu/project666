@@ -27,8 +27,10 @@
                 </div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Filter My Confirmed Appointments</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Confirmed by Me</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
                     </div>
                     <div class="card-body">
                         <form method="get" th:action="@{/receptionist/dashboard/my-confirmed-appointments}">
@@ -100,16 +102,8 @@
                                 <a th:href="@{/receptionist/dashboard/my-confirmed-appointments}" class="btn btn-secondary btn-sm">Reset</a>
                             </div>
                         </form>
-                    </div>
-                </div>
 
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Confirmed by Me</h6>
-                        <span class="text-muted small"
-                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
-                    </div>
-                    <div class="card-body">
+                        <div class="mb-4"></div>
                         <div th:if="${#lists.isEmpty(appointments)}" class="text-muted">
                             No confirmed appointments found.
                         </div>

@@ -18,5 +18,7 @@ public class ListPatientRecordAccessRequestDto {
     private UUID doctorId;
     private PatientRecordTypeEnum type;
     private PatientRecordAccessStatusEnum status;
+    private LocalDate minDate;
+    private LocalDate maxDate;
     private LocalDate createdAtDate;
 }

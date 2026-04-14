@@ -338,7 +338,14 @@ public class BillServiceImpl implements BillService{
             );
         }
 
-        if (request.getCreatedAtDate() != null) {
+        if (request.getFrom() != null || request.getEnd() != null) {
+            spec = spec.and(
+                BaseBillSpecification.byCreatedAtRange(
+                    request.getFrom(),
+                    request.getEnd()
+                )
+            );
+        } else if (request.getCreatedAtDate() != null) {
             spec = spec.and(
                 BaseBillSpecification.byCreatedAtDate(request.getCreatedAtDate())
             );
@@ -393,6 +400,11 @@ public class BillServiceImpl implements BillService{
         if (request.getMinPatientPaymentAmount() != null && request.getMaxPatientPaymentAmount() != null
             && request.getMinPatientPaymentAmount().compareTo(request.getMaxPatientPaymentAmount()) > 0) {
             throw new IllegalArgumentException("minPatientPaymentAmount must be less than or equal to maxPatientPaymentAmount");
+        }
+
+        if (request.getFrom() != null && request.getEnd() != null
+            && request.getFrom().isAfter(request.getEnd())) {
+            throw new IllegalArgumentException("from must be on or before end");
         }
     }
 

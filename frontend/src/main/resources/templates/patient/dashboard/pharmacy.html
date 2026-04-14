@@ -13,27 +13,114 @@
             <div class="container-fluid">
                 <h1 class="h3 mb-4 text-gray-800">Pharmacy</h1>
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Prescriptions
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Prescription Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prescriptions)} + ' prescription(s)'"></span>
                     </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(prescriptions)}">
+                        <form method="get" th:action="@{/patient/dashboard/pharmacy}" class="mb-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="minDate">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="maxDate">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="remainingRefills">Remaining Refills</label>
+                                    <input type="number"
+                                           min="0"
+                                           class="form-control"
+                                           id="remainingRefills"
+                                           name="remainingRefills"
+                                           th:value="${remainingRefills}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All</option>
+                                        <option th:each="prescriptionStatus : ${prescriptionStatuses}"
+                                                th:value="${prescriptionStatus}"
+                                                th:text="${prescriptionStatus}"
+                                                th:selected="${status != null and status == prescriptionStatus}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="doctorId">Doctor</label>
+                                    <select class="form-control" id="doctorId" name="doctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${doctorId != null and doctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/pharmacy}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <div th:if="${#lists.isEmpty(prescriptions)}" class="text-muted">
                             No prescriptions found.
                         </div>
-                        <div th:each="p : ${prescriptions}" th:if="${!#lists.isEmpty(prescriptions)}" class="mb-4">
+                        <div th:each="p, stat : ${prescriptions}" th:if="${!#lists.isEmpty(prescriptions)}" class="mb-4">
+                            <hr th:if="${!stat.first}" class="my-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div>
                                     <strong>Status:</strong> <span th:text="${p.status}"></span>
                                     &nbsp;|&nbsp;
+                                    <strong>Doctor:</strong>
+                                    <span th:text="${p.doctor != null ? p.doctor.firstName + ' ' + p.doctor.lastName : 'N/A'}"></span>
+                                    &nbsp;|&nbsp;
                                     <strong>Start:</strong> <span th:text="${p.startDate}"></span>
                                     &nbsp;|&nbsp;
                                     <strong>End:</strong> <span th:text="${p.endDate}"></span>
-                                    &nbsp;|&nbsp;
-                                    <strong>Remaining Refills:</strong> <span th:text="${p.remainingRefills}"></span>
+                                    <br>
+                                    <strong>Next Eligible Refill:</strong>
+                                    <span th:if="${p.remainingRefills != null and p.remainingRefills <= 0}">
+                                        No future refills remaining
+                                    </span>
+                                    <span th:if="${p.remainingRefills != null and p.remainingRefills > 0 and p.nextEligibleRefillAt != null and !now.isBefore(p.nextEligibleRefillAt)}">
+                                        Eligible now
+                                    </span>
+                                    <span th:if="${p.remainingRefills != null and p.remainingRefills > 0 and p.nextEligibleRefillAt != null and now.isBefore(p.nextEligibleRefillAt)}"
+                                          th:text="${#temporals.format(p.nextEligibleRefillAt, 'yyyy-MM-dd h:mm a')}">
+                                    </span>
+                                    <span th:if="${p.remainingRefills != null and p.remainingRefills > 0 and p.nextEligibleRefillAt == null}">
+                                        Not available
+                                    </span>
                                 </div>
                                 <form th:action="@{/patient/dashboard/pharmacy/consume-refill}" method="post">
                                     <input type="hidden" name="prescriptionId" th:value="${p.id}"/>
+                                    <input type="hidden" name="minDate" th:value="${minDate}"/>
+                                    <input type="hidden" name="maxDate" th:value="${maxDate}"/>
+                                    <input type="hidden" name="remainingRefills" th:value="${remainingRefills}"/>
+                                    <input type="hidden" name="status" th:value="${status}"/>
+                                    <input type="hidden" name="doctorId" th:value="${doctorId}"/>
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                     <button type="submit" class="btn btn-sm btn-primary"
                                             th:disabled="${p.remainingRefills <= 0}">
@@ -49,6 +136,8 @@
                                         <th>Frequency</th>
                                         <th>Route</th>
                                         <th>Instructions</th>
+                                        <th>Remaining Refills</th>
+                                        <th>Created Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -58,6 +147,8 @@
                                         <td th:text="${med.frequency}"></td>
                                         <td th:text="${med.route}"></td>
                                         <td th:text="${med.instructions}"></td>
+                                        <td th:text="${p.remainingRefills}"></td>
+                                        <td th:text="${p.createdAt != null ? #temporals.format(p.createdAt, 'yyyy-MM-dd') : 'N/A'}"></td>
                                     </tr>
                                 </tbody>
                             </table>

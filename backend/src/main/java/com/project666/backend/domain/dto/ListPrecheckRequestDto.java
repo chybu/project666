@@ -3,6 +3,7 @@ package com.project666.backend.domain.dto;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.project666.backend.domain.entity.AppointmentTypeEnum;
 import com.project666.backend.domain.entity.PrecheckStatusEnum;
 
 import lombok.AllArgsConstructor;
@@ -17,6 +18,9 @@ public class ListPrecheckRequestDto {
     private UUID patientId;
     private UUID doctorId;
     private UUID nurseId;
+    private AppointmentTypeEnum type;
     private PrecheckStatusEnum status;
+    private LocalDate minDate;
+    private LocalDate maxDate;
     private LocalDate createdAtDate;
 }

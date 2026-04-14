@@ -115,14 +115,24 @@ public class Appointment {
     private boolean hasPrescription;
 
     public boolean isHasPrescription() {
-        return prescriptions != null && !prescriptions.isEmpty();
+        return prescriptions != null
+            && prescriptions.stream()
+                .anyMatch(prescription ->
+                    prescription != null
+                        && prescription.getStatus() != PrescriptionStatusEnum.CANCELLED
+                );
     }
 
     @Transient
     private boolean hasLabRequest;
 
     public boolean isHasLabRequest() {
-        return labRequests != null && !labRequests.isEmpty();
+        return labRequests != null
+            && labRequests.stream()
+                .anyMatch(labRequest ->
+                    labRequest != null
+                        && labRequest.getStatus() != LabRequestStatusEnum.CANCELLED
+                );
     }
 
     @Override

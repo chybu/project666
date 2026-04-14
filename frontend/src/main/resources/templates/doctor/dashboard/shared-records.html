@@ -3,103 +3,368 @@
 <head>
     <title>Shared Records</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <style>
+        .shared-record-tabs {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .shared-record-tab {
+            min-width: 120px;
+            border-radius: 999px;
+            border: 1px solid #d1d9e6;
+            background: #ffffff;
+            color: #5a5c69;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+            box-shadow: 0 0.15rem 0.45rem rgba(58, 59, 69, 0.08);
+        }
+
+        .shared-record-tab:hover,
+        .shared-record-tab:focus {
+            color: #2f3640;
+            transform: translateY(-1px);
+            box-shadow: 0 0.35rem 0.9rem rgba(58, 59, 69, 0.14);
+        }
+
+        .shared-record-tab.is-active {
+            border-color: #4e73df;
+            background: linear-gradient(135deg, #4e73df 0%, #6f8ff0 100%);
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18), 0 0.5rem 1rem rgba(78, 115, 223, 0.24);
+        }
+    </style>
 </head>
-
 <body id="page-top">
-
 <div id="wrapper">
-
     <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
-
     <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
-
         <div id="content">
-
             <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
-
             <div class="container-fluid">
-
                 <h1 class="h3 mb-4 text-gray-800">Shared Records</h1>
 
-                <!-- PRECHECKS -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Prechecks</div>
+                <div class="mb-3 shared-record-tabs">
+                    <a th:href="@{/doctor/dashboard/shared-records(tab='prechecks')}"
+                       class="btn btn-sm shared-record-tab"
+                       th:classappend="${tab == 'prechecks'} ? ' is-active'">
+                        Prechecks
+                    </a>
+                    <a th:href="@{/doctor/dashboard/shared-records(tab='labs')}"
+                       class="btn btn-sm shared-record-tab"
+                       th:classappend="${tab == 'labs'} ? ' is-active'">
+                        Lab Requests
+                    </a>
+                    <a th:href="@{/doctor/dashboard/shared-records(tab='prescriptions')}"
+                       class="btn btn-sm shared-record-tab"
+                       th:classappend="${tab == 'prescriptions'} ? ' is-active'">
+                        Prescriptions
+                    </a>
+                </div>
+
+                <div class="card shadow mb-4" th:if="${tab == 'prechecks'}">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Precheck Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prechecks)} + ' precheck(s)'"></span>
+                    </div>
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/shared-records}" class="mb-4">
+                            <input type="hidden" name="tab" value="prechecks" />
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="precheckPatientId">Patient</label>
+                                    <select class="form-control" id="precheckPatientId" name="precheckPatientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${precheckPatientId != null and precheckPatientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="precheckType">Type</label>
+                                    <select class="form-control" id="precheckType" name="precheckType">
+                                        <option value="">All</option>
+                                        <option th:each="appointmentType : ${appointmentTypes}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${precheckType != null and precheckType == appointmentType}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="precheckStatus">Status</label>
+                                    <select class="form-control" id="precheckStatus" name="precheckStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${precheckStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${precheckStatus != null and precheckStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="precheckMinDate">Min Date</label>
+                                    <input type="date" class="form-control" id="precheckMinDate" name="precheckMinDate" th:value="${precheckMinDate}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="precheckMaxDate">Max Date</label>
+                                    <input type="date" class="form-control" id="precheckMaxDate" name="precheckMaxDate" th:value="${precheckMaxDate}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/shared-records(tab='prechecks')}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
 
-                        <div th:if="${#lists.isEmpty(prechecks)}">No shared prechecks.</div>
+                        <div th:if="${precheckFilterError}" class="alert alert-danger mt-3" th:text="${precheckFilterError}"></div>
+                        <div class="mb-4"></div>
 
-                        <table th:unless="${#lists.isEmpty(prechecks)}" class="table table-bordered">
-                            <tr>
-                                <th>Date</th>
-                                <th>Patient</th>
-                                <th>Status</th>
-                            </tr>
+                        <div th:if="${#lists.isEmpty(prechecks)}" class="text-muted">No shared prechecks.</div>
 
-                            <tr th:each="p : ${prechecks}">
-                                <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy')}"></td>
-                                <td th:text="${p.patient.firstName + ' ' + p.patient.lastName}"></td>
-                                <td th:text="${p.status}"></td>
-                            </tr>
-                        </table>
-
+                        <div th:unless="${#lists.isEmpty(prechecks)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Patient</th>
+                                    <th>Pulse</th>
+                                    <th>Sugar</th>
+                                    <th>Temperature</th>
+                                    <th>Height</th>
+                                    <th>Weight</th>
+                                    <th>Note</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="p : ${prechecks}">
+                                    <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy h:mm a')}"></td>
+                                    <td th:text="${p.appointment != null ? p.appointment.type : 'N/A'}"></td>
+                                    <td th:text="${p.patient.firstName + ' ' + p.patient.lastName}"></td>
+                                    <td th:text="${p.pulse}"></td>
+                                    <td th:text="${p.sugar}"></td>
+                                    <td th:text="${p.temperature}"></td>
+                                    <td th:text="${p.height}"></td>
+                                    <td th:text="${p.weight}"></td>
+                                    <td th:text="${p.note != null ? p.note : 'N/A'}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${p.status.name() == 'VALID'} ? 'badge-success' :
+                                                'badge-secondary'"
+                                              th:text="${p.status}">
+                                        </span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- LABS -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Lab Requests</div>
+                <div class="card shadow mb-4" th:if="${tab == 'labs'}">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Shared Lab Requests</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(labs)} + ' lab request(s)'"></span>
+                    </div>
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/shared-records}" class="mb-4">
+                            <input type="hidden" name="tab" value="labs" />
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="labPatientId">Patient</label>
+                                    <select class="form-control" id="labPatientId" name="labPatientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${labPatientId != null and labPatientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="labStatus">Status</label>
+                                    <select class="form-control" id="labStatus" name="labStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${labRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${labStatus != null and labStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="labMinDate">Min Date</label>
+                                    <input type="date" class="form-control" id="labMinDate" name="labMinDate" th:value="${labMinDate}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="labMaxDate">Max Date</label>
+                                    <input type="date" class="form-control" id="labMaxDate" name="labMaxDate" th:value="${labMaxDate}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/shared-records(tab='labs')}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
 
-                        <div th:if="${#lists.isEmpty(labs)}">No shared labs.</div>
+                        <div th:if="${labFilterError}" class="alert alert-danger mt-3" th:text="${labFilterError}"></div>
+                        <div class="mb-4"></div>
 
-                        <table th:unless="${#lists.isEmpty(labs)}" class="table table-bordered">
-                            <tr>
-                                <th>Date</th>
-                                <th>Patient</th>
-                                <th>Status</th>
-                            </tr>
+                        <div th:if="${#lists.isEmpty(labs)}" class="text-muted">No shared labs.</div>
 
-                            <tr th:each="l : ${labs}">
-                                <td th:text="${#temporals.format(l.createdAt, 'MMM dd, yyyy')}"></td>
-                                <td th:text="${l.patient.firstName + ' ' + l.patient.lastName}"></td>
-                                <td th:text="${l.status}"></td>
-                            </tr>
-                        </table>
-
+                        <div th:unless="${#lists.isEmpty(labs)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Test</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="l : ${labs}">
+                                    <td th:text="${#temporals.format(l.createdAt, 'MMM dd, yyyy')}"></td>
+                                    <td th:text="${l.patient.firstName + ' ' + l.patient.lastName}"></td>
+                                    <td>
+                                        <span th:if="${l.labTests != null and !#lists.isEmpty(l.labTests)}"
+                                              th:each="test : ${l.labTests}">
+                                            <span th:text="${test.name}"></span><br/>
+                                        </span>
+                                        <span th:if="${l.labTests == null or #lists.isEmpty(l.labTests)}">
+                                            N/A
+                                        </span>
+                                    </td>
+                                    <td th:text="${l.status}"></td>
+                                    <td>
+                                        <a class="btn btn-sm btn-info"
+                                           th:href="@{/doctor/dashboard/shared-records/labs/view(labId=${l.id})}">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- PRESCRIPTIONS -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Prescriptions</div>
+                <div class="card shadow mb-4" th:if="${tab == 'prescriptions'}">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Shared Prescriptions</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prescriptions)} + ' prescription(s)'"></span>
+                    </div>
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/shared-records}" class="mb-4">
+                            <input type="hidden" name="tab" value="prescriptions" />
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="prescriptionPatientId">Patient</label>
+                                    <select class="form-control" id="prescriptionPatientId" name="prescriptionPatientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${prescriptionPatientId != null and prescriptionPatientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="prescriptionStatus">Status</label>
+                                    <select class="form-control" id="prescriptionStatus" name="prescriptionStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${prescriptionStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${prescriptionStatus != null and prescriptionStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="prescriptionRemainingRefills">Remaining Refills</label>
+                                    <input type="number"
+                                           min="0"
+                                           class="form-control"
+                                           id="prescriptionRemainingRefills"
+                                           name="prescriptionRemainingRefills"
+                                           th:value="${prescriptionRemainingRefills}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="prescriptionMinDate">Min Date</label>
+                                    <input type="date" class="form-control" id="prescriptionMinDate" name="prescriptionMinDate" th:value="${prescriptionMinDate}">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="prescriptionMaxDate">Max Date</label>
+                                    <input type="date" class="form-control" id="prescriptionMaxDate" name="prescriptionMaxDate" th:value="${prescriptionMaxDate}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/shared-records(tab='prescriptions')}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
 
-                        <div th:if="${#lists.isEmpty(prescriptions)}">No shared prescriptions.</div>
+                        <div th:if="${prescriptionFilterError}" class="alert alert-danger mt-3" th:text="${prescriptionFilterError}"></div>
+                        <div class="mb-4"></div>
 
-                        <table th:unless="${#lists.isEmpty(prescriptions)}" class="table table-bordered">
-                            <tr>
-                                <th>Date</th>
-                                <th>Patient</th>
-                                <th>Status</th>
-                            </tr>
+                        <div th:if="${#lists.isEmpty(prescriptions)}" class="text-muted">No shared prescriptions.</div>
 
-                            <tr th:each="pr : ${prescriptions}">
-                                <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>
-                                <td th:text="${pr.patient.firstName + ' ' + pr.patient.lastName}"></td>
-                                <td th:text="${pr.status}"></td>
-                            </tr>
-                        </table>
-
+                        <div th:unless="${#lists.isEmpty(prescriptions)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Refills</th>
+                                    <th>Actions</th>
+                                    <th>Created Date</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="pr : ${prescriptions}">
+                                    <td th:text="${pr.patient.firstName + ' ' + pr.patient.lastName}"></td>
+                                    <td th:text="${pr.startDate != null ? #temporals.format(pr.startDate, 'MMM dd, yyyy') : 'N/A'}"></td>
+                                    <td th:text="${pr.endDate != null ? #temporals.format(pr.endDate, 'MMM dd, yyyy') : 'N/A'}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${pr.status.name() == 'ACTIVE'} ? 'badge-success' :
+                                                (${pr.status.name() == 'COMPLETED'} ? 'badge-primary' :
+                                                'badge-secondary')"
+                                              th:text="${pr.status}">
+                                        </span>
+                                    </td>
+                                    <td th:text="${pr.remainingRefills + ' / ' + pr.totalRefills}"></td>
+                                    <td>
+                                        <a class="btn btn-sm btn-info"
+                                           th:href="@{/doctor/dashboard/shared-records/prescriptions/view(prescriptionId=${pr.id})}">
+                                            View
+                                        </a>
+                                    </td>
+                                    <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
-
         <div th:replace="pageFragments/doctorFooter :: footer"></div>
-
     </div>
 </div>
-
 </body>
 </html>

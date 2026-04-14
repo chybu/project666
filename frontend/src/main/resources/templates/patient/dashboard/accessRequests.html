@@ -15,146 +15,131 @@
 
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-                <!-- All Requests -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">All Requests</div>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Access Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(accessRequests)} + ' request(s)'"></span>
+                    </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(allRequests)}">No requests found.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(allRequests)}">
-                            <thead>
+                        <form method="get" th:action="@{/patient/dashboard/accessRequests}" class="mb-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="doctorId">Doctor</label>
+                                    <select class="form-control" id="doctorId" name="doctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${doctorId != null and doctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="recordType">Record Type</label>
+                                    <select class="form-control" id="recordType" name="recordType">
+                                        <option value="">All</option>
+                                        <option th:each="recordTypeOption : ${recordTypes}"
+                                                th:value="${recordTypeOption}"
+                                                th:text="${recordTypeOption}"
+                                                th:selected="${recordType != null and recordType == recordTypeOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option th:each="statusOption : ${accessRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${status != null and status == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="from">Min Date</label>
+                                    <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="end">Max Date</label>
+                                    <input type="date" class="form-control" id="end" name="end" th:value="${end}">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/accessRequests}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <div th:if="${filterError}" class="alert alert-danger mt-3" th:text="${filterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div th:if="${#lists.isEmpty(accessRequests)}" class="text-muted">No requests found.</div>
+
+                        <div th:if="${!#lists.isEmpty(accessRequests)}" class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead>
                                 <tr>
                                     <th>Doctor</th>
                                     <th>Record Type</th>
                                     <th>Status</th>
                                     <th>Date</th>
+                                    <th>Action</th>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="ar : ${allRequests}">
+                                </thead>
+                                <tbody>
+                                <tr th:each="ar : ${accessRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
                                     <td th:text="${ar.status}"></td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pending Requests -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Pending</div>
-                    <div class="card-body">
-                        <div th:if="${#lists.isEmpty(pendingRequests)}">No pending requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(pendingRequests)}">
-                            <thead>
-                                <tr>
-                                    <th>Doctor</th>
-                                    <th>Record Type</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="ar : ${pendingRequests}">
-                                    <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.recordType}"></td>
-                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
-                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
-                                              method="post" style="display:inline">
-                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                        </form>
-                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/deny(id=${ar.id})}"
-                                              method="post" style="display:inline">
-                                            <button type="submit" class="btn btn-sm btn-danger">Deny</button>
-                                        </form>
+                                        <div th:if="${status != null and status.name() == 'PENDING'}">
+                                            <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
+                                                  method="post"
+                                                  class="d-inline">
+                                                <input type="hidden" name="doctorId" th:value="${doctorId}" />
+                                                <input type="hidden" name="recordType" th:value="${recordType}" />
+                                                <input type="hidden" name="status" th:value="${status}" />
+                                                <input type="hidden" name="from" th:value="${from}" />
+                                                <input type="hidden" name="end" th:value="${end}" />
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form th:action="@{/patient/dashboard/accessRequests/{id}/deny(id=${ar.id})}"
+                                                  method="post"
+                                                  class="d-inline">
+                                                <input type="hidden" name="doctorId" th:value="${doctorId}" />
+                                                <input type="hidden" name="recordType" th:value="${recordType}" />
+                                                <input type="hidden" name="status" th:value="${status}" />
+                                                <input type="hidden" name="from" th:value="${from}" />
+                                                <input type="hidden" name="end" th:value="${end}" />
+                                                <button type="submit" class="btn btn-sm btn-danger">Deny</button>
+                                            </form>
+                                        </div>
+                                        <div th:if="${status != null and status.name() == 'APPROVED'}">
+                                            <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
+                                                  method="post"
+                                                  class="d-inline">
+                                                <input type="hidden" name="doctorId" th:value="${doctorId}" />
+                                                <input type="hidden" name="recordType" th:value="${recordType}" />
+                                                <input type="hidden" name="status" th:value="${status}" />
+                                                <input type="hidden" name="from" th:value="${from}" />
+                                                <input type="hidden" name="end" th:value="${end}" />
+                                                <button type="submit" class="btn btn-sm btn-warning">Revoke</button>
+                                            </form>
+                                        </div>
+                                        <span th:if="${status != null and status.name() != 'PENDING' and status.name() != 'APPROVED'}"
+                                              class="text-muted small">
+                                            No action
+                                        </span>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Approved Requests -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Approved</div>
-                    <div class="card-body">
-                        <div th:if="${#lists.isEmpty(approvedRequests)}">No approved requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(approvedRequests)}">
-                            <thead>
-                                <tr>
-                                    <th>Doctor</th>
-                                    <th>Record Type</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="ar : ${approvedRequests}">
-                                    <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.recordType}"></td>
-                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
-                                    <td>
-                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
-                                              method="post" style="display:inline">
-                                            <button type="submit" class="btn btn-sm btn-warning">Revoke</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Rejected Requests -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Rejected</div>
-                    <div class="card-body">
-                        <div th:if="${#lists.isEmpty(rejectedRequests)}">No rejected requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(rejectedRequests)}">
-                            <thead>
-                                <tr>
-                                    <th>Doctor</th>
-                                    <th>Record Type</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="ar : ${rejectedRequests}">
-                                    <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.recordType}"></td>
-                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Revoked Requests -->
-                <div class="card shadow mb-4">
-                    <div class="card-header">Revoked</div>
-                    <div class="card-body">
-                        <div th:if="${#lists.isEmpty(revokedRequests)}">No revoked requests.</div>
-                        <table class="table table-bordered" th:if="${!#lists.isEmpty(revokedRequests)}">
-                            <thead>
-                                <tr>
-                                    <th>Doctor</th>
-                                    <th>Record Type</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="ar : ${revokedRequests}">
-                                    <td th:text="${ar.doctor.fullName}"></td>
-                                    <td th:text="${ar.recordType}"></td>
-                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
         </div>
         <div th:replace="pageFragments/patientFooter :: footer"></div>
