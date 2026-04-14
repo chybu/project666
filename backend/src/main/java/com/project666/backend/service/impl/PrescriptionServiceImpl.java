@@ -1,10 +1,13 @@
 package com.project666.backend.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -264,6 +267,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             throw new IllegalArgumentException("Prescription start date and end date are required");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        if (request.getStartDate().isBefore(now.toLocalDate())) {
+            throw new IllegalArgumentException("Prescription start date cannot be in the past");
+        }
+
+        if (request.getEndDate().isBefore(now.toLocalDate())) {
+            throw new IllegalArgumentException("Prescription end date cannot be in the past");
+        }
+
         if (request.getEndDate().isBefore(request.getStartDate())) {
             throw new IllegalArgumentException("Prescription end date cannot be before start date");
         }
@@ -276,9 +288,19 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             throw new IllegalArgumentException("Prescription refill interval cannot be negative");
         }
 
+        Set<String> normalizedMedicineNames = new HashSet<>();
         for (CreatePrescriptionMedicineRequest medicine : request.getMedicines()) {
             if (medicine.getMedicineName() == null || medicine.getMedicineName().isBlank()) {
                 throw new IllegalArgumentException("Prescription medicine name is required");
+            }
+
+            String normalizedMedicineName = medicine.getMedicineName()
+                .trim()
+                .replaceAll("\\s+", " ")
+                .toLowerCase(Locale.ROOT);
+
+            if (!normalizedMedicineNames.add(normalizedMedicineName)) {
+                throw new IllegalArgumentException("Prescription cannot contain duplicate medicine names");
             }
         }
     }

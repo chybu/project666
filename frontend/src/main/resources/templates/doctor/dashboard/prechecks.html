@@ -22,23 +22,95 @@
                 <h1 class="h3 mb-4 text-gray-800">Prechecks</h1>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Patient Prechecks
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Prechecks</h6>
                     </div>
 
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/prechecks}">
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="from">Start Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="from"
+                                           name="from"
+                                           th:value="${from}">
+                                </div>
 
-                        <div th:if="${prechecks == null or #lists.isEmpty(prechecks)}">
+                                <div class="form-group col-md-2">
+                                    <label for="end">End Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="end"
+                                           name="end"
+                                           th:value="${end}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="type">Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option value="">All</option>
+                                        <option th:each="appointmentType : ${appointmentTypes}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${type != null and type == appointmentType}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control" id="patientId" name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${patientId != null and patientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option th:each="statusOption : ${precheckStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${status != null and status == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/prechecks}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <div th:if="${filterError}" class="alert alert-danger mt-3" th:text="${filterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Precheck Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(prechecks)} + ' precheck(s)'"></span>
+                        </div>
+
+                        <div th:if="${prechecks == null or #lists.isEmpty(prechecks)}" class="text-muted">
                             No prechecks found.
                         </div>
 
                         <div th:if="${prechecks != null and !#lists.isEmpty(prechecks)}"
                              class="table-responsive">
 
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-hover">
                                 <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Type</th>
                                     <th>Patient</th>
                                     <th>Pulse</th>
                                     <th>Sugar</th>
@@ -52,6 +124,7 @@
                                 <tbody>
                                 <tr th:each="pc : ${prechecks}">
                                     <td th:text="${#temporals.format(pc.createdAt, 'MMM dd, yyyy h:mm a')}"></td>
+                                    <td th:text="${pc.appointment != null ? pc.appointment.type : 'N/A'}"></td>
 
                                     <td th:text="${pc.patient != null ? pc.patient.firstName + ' ' + pc.patient.lastName : 'N/A'}"></td>
 

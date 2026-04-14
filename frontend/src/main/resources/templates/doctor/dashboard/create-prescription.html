@@ -21,48 +21,152 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Create Prescription</h1>
 
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
                 <form th:action="@{/doctor/prescriptions/create}" method="post" th:object="${request}">
 
                     <input type="hidden" th:field="*{appointmentId}" />
 
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" class="form-control" th:field="*{startDate}" required>
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Prescription Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="startDate">Start Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="startDate"
+                                           th:field="*{startDate}"
+                                           th:attr="min=${minPrescriptionDate}"
+                                           required>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="endDate">End Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="endDate"
+                                           th:field="*{endDate}"
+                                           th:attr="min=${minPrescriptionDate}"
+                                           required>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="totalRefills">Total Refills</label>
+                                    <input type="number" class="form-control" id="totalRefills" th:field="*{totalRefills}" min="0" required>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="refillIntervalDays">Refill Interval (Days)</label>
+                                    <input type="number" class="form-control" id="refillIntervalDays" th:field="*{refillIntervalDays}" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label for="generalNote">General Note</label>
+                                <textarea class="form-control"
+                                          id="generalNote"
+                                          th:field="*{generalNote}"
+                                          rows="3"
+                                          placeholder="Optional instructions for the prescription as a whole"></textarea>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" class="form-control" th:field="*{endDate}" required>
-                    </div>
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Medicines</h6>
+                            <button type="button" class="btn btn-primary btn-sm" id="addMedicineButton">Add Medicine</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="medicineRows">
+                                <div class="card border-left-primary shadow-sm mb-3 medicine-row"
+                                     th:each="medicine, medicineStat : ${request.medicines}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="m-0 font-weight-bold text-primary medicine-title"
+                                                th:text="'Medicine ' + ${medicineStat.index + 1}"></h6>
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-medicine-button">
+                                                Delete Medicine
+                                            </button>
+                                        </div>
 
-                    <div class="form-group">
-                        <label>Total Refills</label>
-                        <input type="number" class="form-control" th:field="*{totalRefills}" required>
-                    </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="medicineName"
+                                                       th:for="|medicineName_${medicineStat.index}|">Medicine Name</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="medicineName"
+                                                       th:id="|medicineName_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].medicineName|"
+                                                       th:value="${medicine.medicineName}"
+                                                       required>
+                                            </div>
 
-                    <div class="form-group">
-                        <label>Refill Interval (Days)</label>
-                        <input type="number" class="form-control" th:field="*{refillIntervalDays}" required>
-                    </div>
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="dosage"
+                                                       th:for="|dosage_${medicineStat.index}|">Dosage</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="dosage"
+                                                       th:id="|dosage_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].dosage|"
+                                                       th:value="${medicine.dosage}">
+                                            </div>
 
-                    <div class="form-group">
-                        <label>Medicine Name</label>
-                        <input type="text" class="form-control" name="medicines[0].medicineName" required>
-                    </div>
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="frequency"
+                                                       th:for="|frequency_${medicineStat.index}|">Frequency</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="frequency"
+                                                       th:id="|frequency_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].frequency|"
+                                                       th:value="${medicine.frequency}">
+                                            </div>
+                                        </div>
 
-                    <div class="form-group">
-                        <label>Dosage</label>
-                        <input type="text" class="form-control" name="medicines[0].dosage">
-                    </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="route"
+                                                       th:for="|route_${medicineStat.index}|">Route</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="route"
+                                                       th:id="|route_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].route|"
+                                                       th:value="${medicine.route}">
+                                            </div>
 
-                    <div class="form-group">
-                        <label>Frequency</label>
-                        <input type="text" class="form-control" name="medicines[0].frequency">
-                    </div>
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="quantity"
+                                                       th:for="|quantity_${medicineStat.index}|">Quantity</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="quantity"
+                                                       th:id="|quantity_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].quantity|"
+                                                       th:value="${medicine.quantity}">
+                                            </div>
 
-                    <div class="form-group">
-                        <label>Instructions</label>
-                        <input type="text" class="form-control" name="medicines[0].instructions">
+                                            <div class="form-group col-md-4">
+                                                <label data-label-for="instructions"
+                                                       th:for="|instructions_${medicineStat.index}|">Instructions</label>
+                                                <input type="text"
+                                                       class="form-control"
+                                                       data-field="instructions"
+                                                       th:id="|instructions_${medicineStat.index}|"
+                                                       th:name="|medicines[${medicineStat.index}].instructions|"
+                                                       th:value="${medicine.instructions}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-success">Create Prescription</button>
@@ -78,9 +182,118 @@
     </div>
 </div>
 
+<template id="medicineRowTemplate">
+    <div class="card border-left-primary shadow-sm mb-3 medicine-row">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="m-0 font-weight-bold text-primary medicine-title">Medicine</h6>
+                <button type="button" class="btn btn-outline-danger btn-sm remove-medicine-button">
+                    Delete Medicine
+                </button>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label data-label-for="medicineName">Medicine Name</label>
+                    <input type="text" class="form-control" data-field="medicineName" required>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label data-label-for="dosage">Dosage</label>
+                    <input type="text" class="form-control" data-field="dosage">
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label data-label-for="frequency">Frequency</label>
+                    <input type="text" class="form-control" data-field="frequency">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label data-label-for="route">Route</label>
+                    <input type="text" class="form-control" data-field="route">
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label data-label-for="quantity">Quantity</label>
+                    <input type="text" class="form-control" data-field="quantity">
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label data-label-for="instructions">Instructions</label>
+                    <input type="text" class="form-control" data-field="instructions">
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const medicineRows = document.getElementById("medicineRows");
+        const addMedicineButton = document.getElementById("addMedicineButton");
+        const medicineRowTemplate = document.getElementById("medicineRowTemplate");
+
+        function refreshMedicineRows() {
+            const rows = Array.from(medicineRows.querySelectorAll(".medicine-row"));
+
+            rows.forEach(function (row, index) {
+                const title = row.querySelector(".medicine-title");
+                if (title) {
+                    title.textContent = "Medicine " + (index + 1);
+                }
+
+                row.querySelectorAll("[data-field]").forEach(function (input) {
+                    const field = input.dataset.field;
+                    const inputId = field + "_" + index;
+                    input.name = "medicines[" + index + "]." + field;
+                    input.id = inputId;
+
+                    const label = row.querySelector("[data-label-for='" + field + "']");
+                    if (label) {
+                        label.setAttribute("for", inputId);
+                    }
+                });
+
+                const deleteButton = row.querySelector(".remove-medicine-button");
+                if (deleteButton) {
+                    deleteButton.disabled = rows.length === 1;
+                }
+            });
+        }
+
+        function addMedicineRow() {
+            const fragment = medicineRowTemplate.content.cloneNode(true);
+            medicineRows.appendChild(fragment);
+            refreshMedicineRows();
+        }
+
+        addMedicineButton.addEventListener("click", function () {
+            addMedicineRow();
+        });
+
+        medicineRows.addEventListener("click", function (event) {
+            const removeButton = event.target.closest(".remove-medicine-button");
+            if (!removeButton) {
+                return;
+            }
+
+            const rows = medicineRows.querySelectorAll(".medicine-row");
+            if (rows.length === 1) {
+                return;
+            }
+
+            removeButton.closest(".medicine-row").remove();
+            refreshMedicineRows();
+        });
+
+        refreshMedicineRows();
+    });
+</script>
 
 </body>
 </html>

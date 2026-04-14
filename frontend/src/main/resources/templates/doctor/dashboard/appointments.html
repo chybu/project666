@@ -22,20 +22,91 @@
                 <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Upcoming Appointments
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Upcoming Appointments</h6>
                     </div>
 
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/appointments}">
+                            <input type="hidden" name="completedFrom" th:value="${completedFrom}" />
+                            <input type="hidden" name="completedEnd" th:value="${completedEnd}" />
+                            <input type="hidden" name="completedType" th:value="${completedType}" />
+                            <input type="hidden" name="completedPatientId" th:value="${completedPatientId}" />
 
-                        <div th:if="${upcomingAppointments == null or #lists.isEmpty(upcomingAppointments)}">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="upcomingFrom">Start Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="upcomingFrom"
+                                           name="upcomingFrom"
+                                           th:value="${upcomingFrom}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="upcomingEnd">End Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="upcomingEnd"
+                                           name="upcomingEnd"
+                                           th:value="${upcomingEnd}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="upcomingType">Type</label>
+                                    <select class="form-control" id="upcomingType" name="upcomingType">
+                                        <option value="">All</option>
+                                        <option th:each="appointmentType : ${appointmentTypes}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${upcomingType != null and upcomingType == appointmentType}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="upcomingPatientId">Patient</label>
+                                    <select class="form-control" id="upcomingPatientId" name="upcomingPatientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${upcomingPatientId != null and upcomingPatientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/appointments(
+                                        completedFrom=${completedFrom},
+                                        completedEnd=${completedEnd},
+                                        completedType=${completedType},
+                                        completedPatientId=${completedPatientId})}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${upcomingFilterError}" class="alert alert-danger mt-3" th:text="${upcomingFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Upcoming Appointment Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(upcomingAppointments)} + ' appointment(s)'"></span>
+                        </div>
+
+                        <div th:if="${upcomingAppointments == null or #lists.isEmpty(upcomingAppointments)}" class="text-muted">
                             No upcoming appointments.
                         </div>
 
                         <div th:if="${upcomingAppointments != null and !#lists.isEmpty(upcomingAppointments)}"
                              class="table-responsive">
-
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-hover">
                                 <thead>
                                 <tr>
                                     <th>Date</th>
@@ -65,41 +136,101 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a th:if="${appointment.status.name() == 'COMPLETED' and !appointment.hasPrescription}"
-                                           th:href="@{/doctor/prescriptions/create-form(appointmentId=${appointment.id})}"
-                                           class="btn btn-sm btn-primary">
-                                            Prescription
-                                        </a>
-
-                                       <a th:if="${appointment.status.name() == 'COMPLETED' and !appointment.hasLabRequest}"
-                                            th:href="@{/doctor/labs/create-form(appointmentId=${appointment.id})}"
-                                            class="btn btn-sm btn-info">
-                                            Lab
-                                        </a>
+                                        <span class="text-muted small">No action</span>
                                     </td>
                                 </tr>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
                 </div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header">
-                        Completed Appointments
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Search Completed Appointments</h6>
                     </div>
 
                     <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/appointments}">
+                            <input type="hidden" name="upcomingFrom" th:value="${upcomingFrom}" />
+                            <input type="hidden" name="upcomingEnd" th:value="${upcomingEnd}" />
+                            <input type="hidden" name="upcomingType" th:value="${upcomingType}" />
+                            <input type="hidden" name="upcomingPatientId" th:value="${upcomingPatientId}" />
 
-                        <div th:if="${completedAppointments == null or #lists.isEmpty(completedAppointments)}">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="completedFrom">Start Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="completedFrom"
+                                           name="completedFrom"
+                                           th:value="${completedFrom}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="completedEnd">End Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="completedEnd"
+                                           name="completedEnd"
+                                           th:value="${completedEnd}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="completedType">Type</label>
+                                    <select class="form-control" id="completedType" name="completedType">
+                                        <option value="">All</option>
+                                        <option th:each="appointmentType : ${appointmentTypes}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${completedType != null and completedType == appointmentType}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="completedPatientId">Patient</label>
+                                    <select class="form-control" id="completedPatientId" name="completedPatientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${completedPatientId != null and completedPatientId == patient.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/appointments(
+                                        upcomingFrom=${upcomingFrom},
+                                        upcomingEnd=${upcomingEnd},
+                                        upcomingType=${upcomingType},
+                                        upcomingPatientId=${upcomingPatientId})}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${completedFilterError}" class="alert alert-danger mt-3" th:text="${completedFilterError}"></div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Completed Appointment Results</h6>
+                            <span class="text-muted small"
+                                  th:text="'Showing ' + ${#lists.size(completedAppointments)} + ' appointment(s)'"></span>
+                        </div>
+
+                        <div th:if="${completedAppointments == null or #lists.isEmpty(completedAppointments)}" class="text-muted">
                             No completed appointments.
                         </div>
 
                         <div th:if="${completedAppointments != null and !#lists.isEmpty(completedAppointments)}"
                              class="table-responsive">
-
-                            <table class="table table-bordered">
+                            <table class="table table-bordered table-hover">
                                 <thead>
                                 <tr>
                                     <th>Date</th>
@@ -144,7 +275,6 @@
                                 </tr>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
                 </div>

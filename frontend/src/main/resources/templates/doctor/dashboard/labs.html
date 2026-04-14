@@ -77,7 +77,7 @@
                                         <form th:action="@{/doctor/labs/cancel}" method="post">
                                             <input type="hidden" name="labId" th:value="${lab.id}" />
                                             <button class="btn btn-sm btn-danger"
-                                                    th:disabled="${lab.status.name() == 'COMPLETED'}">
+                                                    th:disabled="${lab.status.name() == 'COMPLETED' or lab.status.name() == 'CANCELLED'}">
                                                 Cancel
                                             </button>
                                         </form>
