@@ -161,6 +161,19 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     @Override
+    public Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        Prescription prescription = prescriptionRepository.findDetailByIdAndDoctorId(prescriptionId, doctorId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        requireActiveUserByRole(prescription.getPatient().getId(), RoleEnum.PATIENT);
+        return prescription;
+    }
+
+    @Override
     public Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
@@ -221,10 +234,20 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     private Specification<Prescription> baseSpecification(ListPrescriptionRequest request) {
+        validateListRequest(request);
+
         Specification<Prescription> spec = PrescriptionSpecification.alwaysTrue();
 
         if (request.getStatus() != null) {
             spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getMinDate() != null) {
+            spec = spec.and(PrescriptionSpecification.overlappingMinDate(request.getMinDate()));
+        }
+
+        if (request.getMaxDate() != null) {
+            spec = spec.and(PrescriptionSpecification.overlappingMaxDate(request.getMaxDate()));
         }
 
         if (request.getStartDate() != null) {
@@ -256,6 +279,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         }
 
         return spec;
+    }
+
+    private void validateListRequest(ListPrescriptionRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
     }
 
     private void validateCreateRequest(CreatePrescriptionRequest request) {

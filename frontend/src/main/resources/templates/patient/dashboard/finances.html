@@ -20,11 +20,13 @@
                 <h1 class="h3 mb-4 text-gray-800">Finances</h1>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Appointment Bills</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Appointment Bill Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointmentBills)} + ' bill(s)'"></span>
                     </div>
                     <div class="card-body">
-                        <form method="get" th:action="@{/patient/dashboard/finances}">
+                        <form method="get" th:action="@{/patient/dashboard/finances}" class="mb-4">
                             <input type="hidden" name="labFrom" th:value="${labFrom}" />
                             <input type="hidden" name="labEnd" th:value="${labEnd}" />
                             <input type="hidden" name="labMinAmount" th:value="${labMinAmount}" />
@@ -33,7 +35,7 @@
 
                             <div class="form-row">
                                 <div class="form-group col-md-2">
-                                    <label for="appointmentFrom">Start Date</label>
+                                    <label for="appointmentFrom">Min Date</label>
                                     <input type="date"
                                            class="form-control"
                                            id="appointmentFrom"
@@ -42,7 +44,7 @@
                                 </div>
 
                                 <div class="form-group col-md-2">
-                                    <label for="appointmentEnd">End Date</label>
+                                    <label for="appointmentEnd">Max Date</label>
                                     <input type="date"
                                            class="form-control"
                                            id="appointmentEnd"
@@ -100,16 +102,7 @@
                         </form>
 
                         <div th:if="${appointmentBillError}" class="alert alert-danger mt-3" th:text="${appointmentBillError}"></div>
-                    </div>
-                </div>
 
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Appointment Bill Results</h6>
-                        <span class="text-muted small"
-                              th:text="'Showing ' + ${#lists.size(appointmentBills)} + ' bill(s)'"></span>
-                    </div>
-                    <div class="card-body">
                         <div th:if="${#lists.isEmpty(appointmentBills)}" class="text-muted">
                             No appointment bills found.
                         </div>
@@ -136,11 +129,13 @@
                 </div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Lab Bills</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Lab Bill Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(labBills)} + ' bill(s)'"></span>
                     </div>
                     <div class="card-body">
-                        <form method="get" th:action="@{/patient/dashboard/finances}">
+                        <form method="get" th:action="@{/patient/dashboard/finances}" class="mb-4">
                             <input type="hidden" name="appointmentFrom" th:value="${appointmentFrom}" />
                             <input type="hidden" name="appointmentEnd" th:value="${appointmentEnd}" />
                             <input type="hidden" name="appointmentMinAmount" th:value="${appointmentMinAmount}" />
@@ -149,7 +144,7 @@
 
                             <div class="form-row">
                                 <div class="form-group col-md-2">
-                                    <label for="labFrom">Start Date</label>
+                                    <label for="labFrom">Min Date</label>
                                     <input type="date"
                                            class="form-control"
                                            id="labFrom"
@@ -158,7 +153,7 @@
                                 </div>
 
                                 <div class="form-group col-md-2">
-                                    <label for="labEnd">End Date</label>
+                                    <label for="labEnd">Max Date</label>
                                     <input type="date"
                                            class="form-control"
                                            id="labEnd"
@@ -216,16 +211,7 @@
                         </form>
 
                         <div th:if="${labBillError}" class="alert alert-danger mt-3" th:text="${labBillError}"></div>
-                    </div>
-                </div>
 
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Lab Bill Results</h6>
-                        <span class="text-muted small"
-                              th:text="'Showing ' + ${#lists.size(labBills)} + ' bill(s)'"></span>
-                    </div>
-                    <div class="card-body">
                         <div th:if="${#lists.isEmpty(labBills)}" class="text-muted">
                             No lab bills found.
                         </div>

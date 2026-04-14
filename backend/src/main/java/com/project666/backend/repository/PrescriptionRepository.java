@@ -3,6 +3,7 @@ package com.project666.backend.repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -17,4 +18,7 @@ public interface PrescriptionRepository extends
     Optional<Prescription> findByIdAndPatientId(UUID id, UUID patientId);
 
     Optional<Prescription> findByIdAndDoctorId(UUID id, UUID doctorId);
+
+    @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "medicines"})
+    Optional<Prescription> findDetailByIdAndDoctorId(UUID id, UUID doctorId);
 }

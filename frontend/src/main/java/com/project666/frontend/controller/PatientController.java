@@ -260,34 +260,30 @@ public String finances(
 
     try {
         ListAppointmentBillRequest appointmentRequest = new ListAppointmentBillRequest();
+        appointmentRequest.setFrom(appointmentFrom);
+        appointmentRequest.setEnd(appointmentEnd);
         appointmentRequest.setMinAmount(appointmentMinAmount);
         appointmentRequest.setMaxAmount(appointmentMaxAmount);
         appointmentRequest.setStatus(appointmentStatus);
 
         Page<AppointmentBill> appointmentBillPage =
             billService.listAppointmentBillForPatient(patientId, appointmentRequest, pageable);
-        appointmentBills = filterBillsByCreatedAtRange(
-            appointmentBillPage.getContent(),
-            appointmentFrom,
-            appointmentEnd
-        );
+        appointmentBills = appointmentBillPage.getContent();
     } catch (IllegalArgumentException e) {
         appointmentBillError = e.getMessage();
     }
 
     try {
         ListLabBillRequest labRequest = new ListLabBillRequest();
+        labRequest.setFrom(labFrom);
+        labRequest.setEnd(labEnd);
         labRequest.setMinAmount(labMinAmount);
         labRequest.setMaxAmount(labMaxAmount);
         labRequest.setStatus(labStatus);
 
         Page<LabBill> labBillPage =
             billService.listLabBillForPatient(patientId, labRequest, pageable);
-        labBills = filterBillsByCreatedAtRange(
-            labBillPage.getContent(),
-            labFrom,
-            labEnd
-        );
+        labBills = labBillPage.getContent();
     } catch (IllegalArgumentException e) {
         labBillError = e.getMessage();
     }
@@ -320,6 +316,8 @@ public String finances(
 @GetMapping("/dashboard/pharmacy")
 public String pharmacy(
     @AuthenticationPrincipal OidcUser oidcUser,
+    @RequestParam(required = false) LocalDate minDate,
+    @RequestParam(required = false) LocalDate maxDate,
     @RequestParam(required = false) LocalDate startDate,
     @RequestParam(required = false) LocalDate endDate,
     @RequestParam(required = false) Integer remainingRefills,
@@ -329,28 +327,40 @@ public String pharmacy(
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
+    LocalDate effectiveMinDate = minDate != null ? minDate : startDate;
+    LocalDate effectiveMaxDate = maxDate != null ? maxDate : endDate;
 
     Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
 
     ListPrescriptionRequest request = new ListPrescriptionRequest();
-    request.setStartDate(startDate);
-    request.setEndDate(endDate);
+    request.setMinDate(effectiveMinDate);
+    request.setMaxDate(effectiveMaxDate);
     request.setRemainingRefills(remainingRefills);
     request.setStatus(status);
     request.setDoctorId(doctorId);
 
-    Page<Prescription> prescriptions =
-        prescriptionService.listPrescriptionForPatient(patientId, request, pageable);
+    List<Prescription> prescriptions = Collections.emptyList();
+    String errorMessage = null;
+    try {
+        Page<Prescription> prescriptionPage =
+            prescriptionService.listPrescriptionForPatient(patientId, request, pageable);
+        prescriptions = prescriptionPage.getContent();
+    } catch (IllegalArgumentException e) {
+        errorMessage = e.getMessage();
+    }
 
-    model.addAttribute("prescriptions", prescriptions.getContent());
+    model.addAttribute("prescriptions", prescriptions);
     model.addAttribute("now", java.time.LocalDateTime.now());
-    model.addAttribute("startDate", startDate);
-    model.addAttribute("endDate", endDate);
+    model.addAttribute("minDate", effectiveMinDate);
+    model.addAttribute("maxDate", effectiveMaxDate);
     model.addAttribute("remainingRefills", remainingRefills);
     model.addAttribute("status", status);
     model.addAttribute("doctorId", doctorId);
     model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
     model.addAttribute("prescriptionStatuses", PrescriptionStatusEnum.values());
+    if (errorMessage != null && !model.containsAttribute("errorMessage")) {
+        model.addAttribute("errorMessage", errorMessage);
+    }
 
     return "patient/dashboard/pharmacy";
 }
@@ -358,8 +368,8 @@ public String pharmacy(
 @PostMapping("/dashboard/pharmacy/consume-refill")
 public String consumeRefill(
     @RequestParam UUID prescriptionId,
-    @RequestParam(required = false) LocalDate startDate,
-    @RequestParam(required = false) LocalDate endDate,
+    @RequestParam(required = false) LocalDate minDate,
+    @RequestParam(required = false) LocalDate maxDate,
     @RequestParam(required = false) Integer remainingRefills,
     @RequestParam(required = false) PrescriptionStatusEnum status,
     @RequestParam(required = false) UUID doctorId,
@@ -375,7 +385,7 @@ public String consumeRefill(
         redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
     }
 
-    return buildPharmacyRedirect(startDate, endDate, remainingRefills, status, doctorId);
+    return buildPharmacyRedirect(minDate, maxDate, remainingRefills, status, doctorId);
 }
 
 @Transactional
@@ -401,17 +411,15 @@ public String records(
     ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
     precheckRequest.setNurseId(precheckNurseId);
     precheckRequest.setStatus(precheckStatus);
+    precheckRequest.setMinDate(precheckFrom);
+    precheckRequest.setMaxDate(precheckEnd);
 
     List<Precheck> prechecks = new ArrayList<>();
     String precheckFilterError = null;
     try {
         Page<Precheck> precheckPage =
             precheckService.listPrecheckForPatient(patientId, precheckRequest, precheckPageable);
-        prechecks = filterPrechecksByCreatedAtRange(
-            precheckPage.getContent(),
-            precheckFrom,
-            precheckEnd
-        );
+        prechecks = precheckPage.getContent();
     } catch (IllegalArgumentException e) {
         precheckFilterError = e.getMessage();
     }
@@ -419,6 +427,8 @@ public String records(
     ListLabRequestRequest labRequest = new ListLabRequestRequest();
     labRequest.setDoctorId(labDoctorId);
     labRequest.setStatus(labStatus);
+    labRequest.setMinDate(labFrom);
+    labRequest.setMaxDate(labEnd);
 
     List<PatientLabRequestResponseDto> safeLabRequests = new ArrayList<>();
     String labRequestFilterError = null;
@@ -432,7 +442,6 @@ public String records(
             }
             safeLabRequests.add(dto);
         }
-        safeLabRequests = filterLabRequestsByCreatedAtRange(safeLabRequests, labFrom, labEnd);
     } catch (IllegalArgumentException e) {
         labRequestFilterError = e.getMessage();
     }
@@ -461,147 +470,43 @@ public String records(
 @GetMapping("/dashboard/accessRequests")
 public String accessRequests(
     @AuthenticationPrincipal OidcUser oidcUser,
-    @RequestParam(required = false) UUID allDoctorId,
-    @RequestParam(required = false) PatientRecordTypeEnum allRecordType,
-    @RequestParam(required = false) PatientRecordAccessStatusEnum allStatus,
-    @RequestParam(required = false) LocalDate allFrom,
-    @RequestParam(required = false) LocalDate allEnd,
-    @RequestParam(required = false) UUID pendingDoctorId,
-    @RequestParam(required = false) PatientRecordTypeEnum pendingRecordType,
-    @RequestParam(required = false) LocalDate pendingFrom,
-    @RequestParam(required = false) LocalDate pendingEnd,
-    @RequestParam(required = false) UUID approvedDoctorId,
-    @RequestParam(required = false) PatientRecordTypeEnum approvedRecordType,
-    @RequestParam(required = false) LocalDate approvedFrom,
-    @RequestParam(required = false) LocalDate approvedEnd,
-    @RequestParam(required = false) UUID rejectedDoctorId,
-    @RequestParam(required = false) PatientRecordTypeEnum rejectedRecordType,
-    @RequestParam(required = false) LocalDate rejectedFrom,
-    @RequestParam(required = false) LocalDate rejectedEnd,
-    @RequestParam(required = false) UUID revokedDoctorId,
-    @RequestParam(required = false) PatientRecordTypeEnum revokedRecordType,
-    @RequestParam(required = false) LocalDate revokedFrom,
-    @RequestParam(required = false) LocalDate revokedEnd,
+    @RequestParam(required = false) UUID doctorId,
+    @RequestParam(required = false) PatientRecordTypeEnum recordType,
+    @RequestParam(required = false) PatientRecordAccessStatusEnum status,
+    @RequestParam(required = false) LocalDate from,
+    @RequestParam(required = false) LocalDate end,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
+    PatientRecordAccessStatusEnum effectiveStatus =
+        status != null ? status : PatientRecordAccessStatusEnum.PENDING;
 
     Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
-
-    List<PatientRecordAccess> allRequests = new ArrayList<>();
-    List<PatientRecordAccess> pendingRequests = new ArrayList<>();
-    List<PatientRecordAccess> approvedRequests = new ArrayList<>();
-    List<PatientRecordAccess> rejectedRequests = new ArrayList<>();
-    List<PatientRecordAccess> revokedRequests = new ArrayList<>();
-
-    String allFilterError = null;
-    String pendingFilterError = null;
-    String approvedFilterError = null;
-    String rejectedFilterError = null;
-    String revokedFilterError = null;
+    List<PatientRecordAccess> accessRequests = new ArrayList<>();
+    String filterError = null;
 
     try {
-        allRequests = listPatientAccessRequests(
+        accessRequests = listPatientAccessRequests(
             patientId,
-            allDoctorId,
-            allRecordType,
-            allStatus,
-            allFrom,
-            allEnd,
+            doctorId,
+            recordType,
+            effectiveStatus,
+            from,
+            end,
             pageable
         );
     } catch (IllegalArgumentException e) {
-        allFilterError = e.getMessage();
+        filterError = e.getMessage();
     }
 
-    try {
-        pendingRequests = listPatientAccessRequests(
-            patientId,
-            pendingDoctorId,
-            pendingRecordType,
-            PatientRecordAccessStatusEnum.PENDING,
-            pendingFrom,
-            pendingEnd,
-            pageable
-        );
-    } catch (IllegalArgumentException e) {
-        pendingFilterError = e.getMessage();
-    }
-
-    try {
-        approvedRequests = listPatientAccessRequests(
-            patientId,
-            approvedDoctorId,
-            approvedRecordType,
-            PatientRecordAccessStatusEnum.APPROVED,
-            approvedFrom,
-            approvedEnd,
-            pageable
-        );
-    } catch (IllegalArgumentException e) {
-        approvedFilterError = e.getMessage();
-    }
-
-    try {
-        rejectedRequests = listPatientAccessRequests(
-            patientId,
-            rejectedDoctorId,
-            rejectedRecordType,
-            PatientRecordAccessStatusEnum.REJECTED,
-            rejectedFrom,
-            rejectedEnd,
-            pageable
-        );
-    } catch (IllegalArgumentException e) {
-        rejectedFilterError = e.getMessage();
-    }
-
-    try {
-        revokedRequests = listPatientAccessRequests(
-            patientId,
-            revokedDoctorId,
-            revokedRecordType,
-            PatientRecordAccessStatusEnum.REVOKED,
-            revokedFrom,
-            revokedEnd,
-            pageable
-        );
-    } catch (IllegalArgumentException e) {
-        revokedFilterError = e.getMessage();
-    }
-
-    model.addAttribute("allRequests", allRequests);
-    model.addAttribute("pendingRequests", pendingRequests);
-    model.addAttribute("approvedRequests", approvedRequests);
-    model.addAttribute("rejectedRequests", rejectedRequests);
-    model.addAttribute("revokedRequests", revokedRequests);
-    model.addAttribute("allDoctorId", allDoctorId);
-    model.addAttribute("allRecordType", allRecordType);
-    model.addAttribute("allStatus", allStatus);
-    model.addAttribute("allFrom", allFrom);
-    model.addAttribute("allEnd", allEnd);
-    model.addAttribute("pendingDoctorId", pendingDoctorId);
-    model.addAttribute("pendingRecordType", pendingRecordType);
-    model.addAttribute("pendingFrom", pendingFrom);
-    model.addAttribute("pendingEnd", pendingEnd);
-    model.addAttribute("approvedDoctorId", approvedDoctorId);
-    model.addAttribute("approvedRecordType", approvedRecordType);
-    model.addAttribute("approvedFrom", approvedFrom);
-    model.addAttribute("approvedEnd", approvedEnd);
-    model.addAttribute("rejectedDoctorId", rejectedDoctorId);
-    model.addAttribute("rejectedRecordType", rejectedRecordType);
-    model.addAttribute("rejectedFrom", rejectedFrom);
-    model.addAttribute("rejectedEnd", rejectedEnd);
-    model.addAttribute("revokedDoctorId", revokedDoctorId);
-    model.addAttribute("revokedRecordType", revokedRecordType);
-    model.addAttribute("revokedFrom", revokedFrom);
-    model.addAttribute("revokedEnd", revokedEnd);
-    model.addAttribute("allFilterError", allFilterError);
-    model.addAttribute("pendingFilterError", pendingFilterError);
-    model.addAttribute("approvedFilterError", approvedFilterError);
-    model.addAttribute("rejectedFilterError", rejectedFilterError);
-    model.addAttribute("revokedFilterError", revokedFilterError);
+    model.addAttribute("accessRequests", accessRequests);
+    model.addAttribute("doctorId", doctorId);
+    model.addAttribute("recordType", recordType);
+    model.addAttribute("status", effectiveStatus);
+    model.addAttribute("from", from);
+    model.addAttribute("end", end);
+    model.addAttribute("filterError", filterError);
     model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
     model.addAttribute("recordTypes", PatientRecordTypeEnum.values());
     model.addAttribute("accessRequestStatuses", PatientRecordAccessStatusEnum.values());
@@ -844,8 +749,8 @@ public String redirectToKeycloakPassword() {
     }
 
     private String buildPharmacyRedirect(
-        LocalDate startDate,
-        LocalDate endDate,
+        LocalDate minDate,
+        LocalDate maxDate,
         Integer remainingRefills,
         PrescriptionStatusEnum status,
         UUID doctorId
@@ -853,12 +758,12 @@ public String redirectToKeycloakPassword() {
         StringBuilder redirectUrl = new StringBuilder("redirect:/patient/dashboard/pharmacy");
         List<String> queryParams = new ArrayList<>();
 
-        if (startDate != null) {
-            queryParams.add("startDate=" + startDate);
+        if (minDate != null) {
+            queryParams.add("minDate=" + minDate);
         }
 
-        if (endDate != null) {
-            queryParams.add("endDate=" + endDate);
+        if (maxDate != null) {
+            queryParams.add("maxDate=" + maxDate);
         }
 
         if (remainingRefills != null) {
@@ -880,72 +785,6 @@ public String redirectToKeycloakPassword() {
         return redirectUrl.toString();
     }
 
-    private <T extends BaseBill> List<T> filterBillsByCreatedAtRange(
-        List<T> bills,
-        LocalDate from,
-        LocalDate end
-    ) {
-        if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException("from must be on or before end");
-        }
-
-        if (from == null && end == null) {
-            return bills;
-        }
-
-        return bills.stream()
-            .filter(bill -> {
-                LocalDate createdAtDate = bill.getCreatedAt().toLocalDate();
-                return (from == null || !createdAtDate.isBefore(from))
-                    && (end == null || !createdAtDate.isAfter(end));
-            })
-            .toList();
-    }
-
-    private List<Precheck> filterPrechecksByCreatedAtRange(
-        List<Precheck> prechecks,
-        LocalDate from,
-        LocalDate end
-    ) {
-        if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException("precheckFrom must be on or before precheckEnd");
-        }
-
-        if (from == null && end == null) {
-            return prechecks;
-        }
-
-        return prechecks.stream()
-            .filter(precheck -> {
-                LocalDate createdAtDate = precheck.getCreatedAt().toLocalDate();
-                return (from == null || !createdAtDate.isBefore(from))
-                    && (end == null || !createdAtDate.isAfter(end));
-            })
-            .toList();
-    }
-
-    private List<PatientLabRequestResponseDto> filterLabRequestsByCreatedAtRange(
-        List<PatientLabRequestResponseDto> labRequests,
-        LocalDate from,
-        LocalDate end
-    ) {
-        if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException("labFrom must be on or before labEnd");
-        }
-
-        if (from == null && end == null) {
-            return labRequests;
-        }
-
-        return labRequests.stream()
-            .filter(labRequest -> {
-                LocalDate createdAtDate = labRequest.getCreatedAt().toLocalDate();
-                return (from == null || !createdAtDate.isBefore(from))
-                    && (end == null || !createdAtDate.isAfter(end));
-            })
-            .toList();
-    }
-
     private List<PatientRecordAccess> listPatientAccessRequests(
         UUID patientId,
         UUID doctorId,
@@ -959,60 +798,24 @@ public String redirectToKeycloakPassword() {
         request.setDoctorId(doctorId);
         request.setType(recordType);
         request.setStatus(status);
+        request.setMinDate(from);
+        request.setMaxDate(end);
 
         Page<PatientRecordAccess> accessPage =
             patientRecordAccessService.listPatientRecordAccess(patientId, request, pageable);
 
-        return filterAccessRequestsByCreatedAtRange(accessPage.getContent(), from, end);
-    }
-
-    private List<PatientRecordAccess> filterAccessRequestsByCreatedAtRange(
-        List<PatientRecordAccess> accessRequests,
-        LocalDate from,
-        LocalDate end
-    ) {
-        if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException("min date must be on or before max date");
-        }
-
-        if (from == null && end == null) {
-            return accessRequests;
-        }
-
-        return accessRequests.stream()
-            .filter(accessRequest -> {
-                LocalDate createdAtDate = accessRequest.getCreatedAt().toLocalDate();
-                return (from == null || !createdAtDate.isBefore(from))
-                    && (end == null || !createdAtDate.isAfter(end));
-            })
-            .toList();
+        return accessPage.getContent();
     }
 
     private String buildAccessRequestsRedirect(Map<String, String> redirectParams) {
         StringBuilder redirectUrl = new StringBuilder("redirect:/patient/dashboard/accessRequests");
         List<String> queryParams = new ArrayList<>();
 
-        appendQueryParam(queryParams, "allDoctorId", redirectParams.get("allDoctorId"));
-        appendQueryParam(queryParams, "allRecordType", redirectParams.get("allRecordType"));
-        appendQueryParam(queryParams, "allStatus", redirectParams.get("allStatus"));
-        appendQueryParam(queryParams, "allFrom", redirectParams.get("allFrom"));
-        appendQueryParam(queryParams, "allEnd", redirectParams.get("allEnd"));
-        appendQueryParam(queryParams, "pendingDoctorId", redirectParams.get("pendingDoctorId"));
-        appendQueryParam(queryParams, "pendingRecordType", redirectParams.get("pendingRecordType"));
-        appendQueryParam(queryParams, "pendingFrom", redirectParams.get("pendingFrom"));
-        appendQueryParam(queryParams, "pendingEnd", redirectParams.get("pendingEnd"));
-        appendQueryParam(queryParams, "approvedDoctorId", redirectParams.get("approvedDoctorId"));
-        appendQueryParam(queryParams, "approvedRecordType", redirectParams.get("approvedRecordType"));
-        appendQueryParam(queryParams, "approvedFrom", redirectParams.get("approvedFrom"));
-        appendQueryParam(queryParams, "approvedEnd", redirectParams.get("approvedEnd"));
-        appendQueryParam(queryParams, "rejectedDoctorId", redirectParams.get("rejectedDoctorId"));
-        appendQueryParam(queryParams, "rejectedRecordType", redirectParams.get("rejectedRecordType"));
-        appendQueryParam(queryParams, "rejectedFrom", redirectParams.get("rejectedFrom"));
-        appendQueryParam(queryParams, "rejectedEnd", redirectParams.get("rejectedEnd"));
-        appendQueryParam(queryParams, "revokedDoctorId", redirectParams.get("revokedDoctorId"));
-        appendQueryParam(queryParams, "revokedRecordType", redirectParams.get("revokedRecordType"));
-        appendQueryParam(queryParams, "revokedFrom", redirectParams.get("revokedFrom"));
-        appendQueryParam(queryParams, "revokedEnd", redirectParams.get("revokedEnd"));
+        appendQueryParam(queryParams, "doctorId", redirectParams.get("doctorId"));
+        appendQueryParam(queryParams, "recordType", redirectParams.get("recordType"));
+        appendQueryParam(queryParams, "status", redirectParams.get("status"));
+        appendQueryParam(queryParams, "from", redirectParams.get("from"));
+        appendQueryParam(queryParams, "end", redirectParams.get("end"));
 
         if (!queryParams.isEmpty()) {
             redirectUrl.append("?").append(String.join("&", queryParams));

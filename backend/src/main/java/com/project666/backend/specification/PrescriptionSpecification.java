@@ -44,6 +44,18 @@ public final class PrescriptionSpecification {
             cb.equal(root.get("status"), status);
     }
 
+    public static Specification<Prescription> overlappingMinDate(LocalDate minDate) {
+        return (root, query, cb) ->
+            minDate == null ? null :
+            cb.greaterThanOrEqualTo(root.get("endDate"), minDate);
+    }
+
+    public static Specification<Prescription> overlappingMaxDate(LocalDate maxDate) {
+        return (root, query, cb) ->
+            maxDate == null ? null :
+            cb.lessThanOrEqualTo(root.get("startDate"), maxDate);
+    }
+
     public static Specification<Prescription> byStartDate(LocalDate startDate) {
         return (root, query, cb) ->
             startDate == null ? null :

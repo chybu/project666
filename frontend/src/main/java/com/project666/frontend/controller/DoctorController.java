@@ -196,6 +196,7 @@ public String appointments(
 
     try {
         LocalDate effectiveUpcomingFrom = upcomingFrom != null ? upcomingFrom : LocalDate.now();
+        validateAppointmentDateRange(effectiveUpcomingFrom, upcomingEnd, "upcoming");
 
         ListAppointmentRequest upcomingRequest = new ListAppointmentRequest();
         upcomingRequest.setPatientId(upcomingPatientId);
@@ -204,18 +205,16 @@ public String appointments(
         upcomingRequest.setFrom(effectiveUpcomingFrom);
         upcomingRequest.setEnd(upcomingEnd);
 
-        upcomingAppointments = filterAppointmentsByDateRange(
-                appointmentService.listAppointmentForDoctor(doctorId, upcomingRequest, upcomingPageable).getContent(),
-                effectiveUpcomingFrom,
-                upcomingEnd,
-                "upcoming"
-        );
+        upcomingAppointments =
+                appointmentService.listAppointmentForDoctor(doctorId, upcomingRequest, upcomingPageable).getContent();
         upcomingFrom = effectiveUpcomingFrom;
     } catch (IllegalArgumentException e) {
         upcomingFilterError = e.getMessage();
     }
 
     try {
+        validateAppointmentDateRange(completedFrom, completedEnd, "completed");
+
         ListAppointmentRequest completedRequest = new ListAppointmentRequest();
         completedRequest.setPatientId(completedPatientId);
         completedRequest.setType(completedType);
@@ -223,12 +222,8 @@ public String appointments(
         completedRequest.setFrom(completedFrom);
         completedRequest.setEnd(completedEnd);
 
-        completedAppointments = filterAppointmentsByDateRange(
-                appointmentService.listAppointmentForDoctor(doctorId, completedRequest, completedPageable).getContent(),
-                completedFrom,
-                completedEnd,
-                "completed"
-        );
+        completedAppointments =
+                appointmentService.listAppointmentForDoctor(doctorId, completedRequest, completedPageable).getContent();
     } catch (IllegalArgumentException e) {
         completedFilterError = e.getMessage();
     }
@@ -257,6 +252,8 @@ public String prechecks(
         @AuthenticationPrincipal OidcUser oidcUser,
         @RequestParam(required = false) LocalDate from,
         @RequestParam(required = false) LocalDate end,
+        @RequestParam(required = false) LocalDate minDate,
+        @RequestParam(required = false) LocalDate maxDate,
         @RequestParam(required = false) AppointmentTypeEnum type,
         @RequestParam(required = false) UUID patientId,
         @RequestParam(required = false) PrecheckStatusEnum status,
@@ -264,12 +261,17 @@ public String prechecks(
 ) {
     User user = requireActiveUser(oidcUser);
     UUID doctorId = user.getId();
+    LocalDate effectiveMinDate = minDate != null ? minDate : from;
+    LocalDate effectiveMaxDate = maxDate != null ? maxDate : end;
 
     PrecheckStatusEnum effectiveStatus = status != null ? status : PrecheckStatusEnum.VALID;
 
     ListPrecheckRequest request = new ListPrecheckRequest();
     request.setPatientId(patientId);
     request.setStatus(effectiveStatus);
+    request.setType(type);
+    request.setMinDate(effectiveMinDate);
+    request.setMaxDate(effectiveMaxDate);
 
     Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
 
@@ -279,14 +281,14 @@ public String prechecks(
     try {
         Page<Precheck> page =
                 precheckService.listPrecheckForDoctor(doctorId, request, pageable);
-        prechecks = filterPrechecksForDoctor(page.getContent(), from, end, type);
+        prechecks = page.getContent();
     } catch (IllegalArgumentException e) {
         filterError = e.getMessage();
     }
 
     model.addAttribute("prechecks", prechecks);
-    model.addAttribute("from", from);
-    model.addAttribute("end", end);
+    model.addAttribute("from", effectiveMinDate);
+    model.addAttribute("end", effectiveMaxDate);
     model.addAttribute("type", type);
     model.addAttribute("patientId", patientId);
     model.addAttribute("status", effectiveStatus);
@@ -303,35 +305,60 @@ public String prescriptions(
         @AuthenticationPrincipal OidcUser oidcUser,
         @RequestParam(required = false) UUID patientId,
         @RequestParam(required = false) PrescriptionStatusEnum status,
+        @RequestParam(required = false) LocalDate minDate,
+        @RequestParam(required = false) LocalDate maxDate,
         @RequestParam(required = false) LocalDate startDate,
         @RequestParam(required = false) LocalDate endDate,
         @RequestParam(required = false) Integer remainingRefills,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    LocalDate effectiveMinDate = minDate != null ? minDate : startDate;
+    LocalDate effectiveMaxDate = maxDate != null ? maxDate : endDate;
 
     ListPrescriptionRequest request = new ListPrescriptionRequest();
     request.setPatientId(patientId);
     request.setStatus(status);
-    request.setStartDate(startDate);
-    request.setEndDate(endDate);
+    request.setMinDate(effectiveMinDate);
+    request.setMaxDate(effectiveMaxDate);
     request.setRemainingRefills(remainingRefills);
 
     Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
 
-    Page<Prescription> page =
-            prescriptionService.listPrescriptionForDoctor(doctorId, request, pageable);
+    Page<Prescription> page = Page.empty(pageable);
+    String error = null;
+    try {
+        page = prescriptionService.listPrescriptionForDoctor(doctorId, request, pageable);
+    } catch (IllegalArgumentException e) {
+        error = e.getMessage();
+    }
 
     model.addAttribute("prescriptions", page.getContent());
     model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
     model.addAttribute("prescriptionStatuses", PrescriptionStatusEnum.values());
     model.addAttribute("patientId", patientId);
     model.addAttribute("status", status);
-    model.addAttribute("startDate", startDate);
-    model.addAttribute("endDate", endDate);
+    model.addAttribute("minDate", effectiveMinDate);
+    model.addAttribute("maxDate", effectiveMaxDate);
     model.addAttribute("remainingRefills", remainingRefills);
+    model.addAttribute("error", error);
 
     return "doctor/dashboard/prescriptions";
+}
+
+@GetMapping("/dashboard/prescriptions/view")
+public String prescriptionDetail(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID prescriptionId,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    Prescription prescription = prescriptionService.getPrescriptionForDoctor(doctorId, prescriptionId);
+
+    model.addAttribute("prescription", prescription);
+    model.addAttribute("now", java.time.LocalDateTime.now());
+
+    return "doctor/dashboard/prescription-detail";
 }
 
 @PostMapping("/prescriptions/create")
@@ -385,20 +412,66 @@ public String showCreatePrescriptionForm(
 @GetMapping("/dashboard/labs")
 public String labs(
         @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam(required = false) UUID patientId,
+        @RequestParam(required = false) com.project666.backend.domain.entity.LabRequestStatusEnum status,
+        @RequestParam(required = false) LocalDate minDate,
+        @RequestParam(required = false) LocalDate maxDate,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
 
     ListLabRequestRequest request = new ListLabRequestRequest();
+    request.setPatientId(patientId);
+    request.setStatus(status);
+    request.setMinDate(minDate);
+    request.setMaxDate(maxDate);
 
     Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
 
-    Page<LabRequest> page =
-            labService.listLabRequestForDoctor(doctorId, request, pageable);
+    Page<LabRequest> page = Page.empty(pageable);
+    String error = null;
+    try {
+        page = labService.listLabRequestForDoctor(doctorId, request, pageable);
+    } catch (IllegalArgumentException e) {
+        error = e.getMessage();
+    }
 
     model.addAttribute("labs", page.getContent());
+    model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
+    model.addAttribute("labRequestStatuses", com.project666.backend.domain.entity.LabRequestStatusEnum.values());
+    model.addAttribute("patientId", patientId);
+    model.addAttribute("status", status);
+    model.addAttribute("minDate", minDate);
+    model.addAttribute("maxDate", maxDate);
+    model.addAttribute("error", error);
 
     return "doctor/dashboard/labs";
+}
+
+@GetMapping("/dashboard/labs/view")
+public String labDetail(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID labId,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    LabRequest labRequest = labService.getLabRequestForDoctor(doctorId, labId);
+
+    model.addAttribute("lab", labRequest);
+    return "doctor/dashboard/lab-detail";
+}
+
+@GetMapping("/dashboard/shared-records/labs/view")
+public String sharedLabDetail(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID labId,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    LabRequest labRequest = labService.getSharedLabRequestForDoctor(doctorId, labId);
+
+    model.addAttribute("lab", labRequest);
+    return "doctor/dashboard/lab-detail";
 }
 
 @GetMapping("/labs/create-form")
@@ -451,35 +524,99 @@ public String cancelLab(
 @GetMapping("/dashboard/shared-records")
 public String sharedRecords(
         @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam(required = false) String tab,
+        @RequestParam(required = false) UUID precheckPatientId,
+        @RequestParam(required = false) PrecheckStatusEnum precheckStatus,
+        @RequestParam(required = false) AppointmentTypeEnum precheckType,
+        @RequestParam(required = false) LocalDate precheckMinDate,
+        @RequestParam(required = false) LocalDate precheckMaxDate,
+        @RequestParam(required = false) UUID labPatientId,
+        @RequestParam(required = false) com.project666.backend.domain.entity.LabRequestStatusEnum labStatus,
+        @RequestParam(required = false) LocalDate labMinDate,
+        @RequestParam(required = false) LocalDate labMaxDate,
+        @RequestParam(required = false) UUID prescriptionPatientId,
+        @RequestParam(required = false) PrescriptionStatusEnum prescriptionStatus,
+        @RequestParam(required = false) LocalDate prescriptionMinDate,
+        @RequestParam(required = false) LocalDate prescriptionMaxDate,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    String activeTab = normalizeSharedRecordsTab(tab);
 
-    Pageable pageable = PageRequest.of(0, 50);
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+    model.addAttribute("tab", activeTab);
+    model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
+    model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
+    model.addAttribute("precheckStatuses", PrecheckStatusEnum.values());
+    model.addAttribute("labRequestStatuses", com.project666.backend.domain.entity.LabRequestStatusEnum.values());
+    model.addAttribute("prescriptionStatuses", PrescriptionStatusEnum.values());
 
-    ListPatientRecordAccessRequest accessRequest = new ListPatientRecordAccessRequest();
-    Page<PatientRecordAccess> accessPage =
-            patientRecordAccessService.listSharedPatientRecordAccess(doctorId, accessRequest, pageable);
+    if ("labs".equals(activeTab)) {
+        ListLabRequestRequest labRequest = new ListLabRequestRequest();
+        labRequest.setPatientId(labPatientId);
+        labRequest.setStatus(labStatus);
+        labRequest.setMinDate(labMinDate);
+        labRequest.setMaxDate(labMaxDate);
 
-    model.addAttribute("sharedAccess", accessPage.getContent());
+        Page<LabRequest> labPage = Page.empty(pageable);
+        String labFilterError = null;
+        try {
+            labPage = labService.listLabRequestForNewDoctor(doctorId, labRequest, pageable);
+        } catch (IllegalArgumentException e) {
+            labFilterError = e.getMessage();
+        }
 
-    ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
-    Page<Precheck> precheckPage =
-            precheckService.listSharedPrecheckForDoctor(doctorId, precheckRequest, pageable);
+        model.addAttribute("labs", labPage.getContent());
+        model.addAttribute("labPatientId", labPatientId);
+        model.addAttribute("labStatus", labStatus);
+        model.addAttribute("labMinDate", labMinDate);
+        model.addAttribute("labMaxDate", labMaxDate);
+        model.addAttribute("labFilterError", labFilterError);
+    } else if ("prescriptions".equals(activeTab)) {
+        ListPrescriptionRequest prescriptionRequest = new ListPrescriptionRequest();
+        prescriptionRequest.setPatientId(prescriptionPatientId);
+        prescriptionRequest.setStatus(prescriptionStatus);
+        prescriptionRequest.setMinDate(prescriptionMinDate);
+        prescriptionRequest.setMaxDate(prescriptionMaxDate);
 
-    model.addAttribute("prechecks", precheckPage.getContent());
+        Page<Prescription> prescriptionPage = Page.empty(pageable);
+        String prescriptionFilterError = null;
+        try {
+            prescriptionPage = prescriptionService.listPrescriptionForNewDoctor(doctorId, prescriptionRequest, pageable);
+        } catch (IllegalArgumentException e) {
+            prescriptionFilterError = e.getMessage();
+        }
 
-    ListLabRequestRequest labRequest = new ListLabRequestRequest();
-    Page<LabRequest> labPage =
-            labService.listLabRequestForNewDoctor(doctorId, labRequest, pageable);
+        model.addAttribute("prescriptions", prescriptionPage.getContent());
+        model.addAttribute("prescriptionPatientId", prescriptionPatientId);
+        model.addAttribute("prescriptionStatus", prescriptionStatus);
+        model.addAttribute("prescriptionMinDate", prescriptionMinDate);
+        model.addAttribute("prescriptionMaxDate", prescriptionMaxDate);
+        model.addAttribute("prescriptionFilterError", prescriptionFilterError);
+    } else {
+        ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
+        precheckRequest.setPatientId(precheckPatientId);
+        precheckRequest.setStatus(precheckStatus);
+        precheckRequest.setType(precheckType);
+        precheckRequest.setMinDate(precheckMinDate);
+        precheckRequest.setMaxDate(precheckMaxDate);
 
-    model.addAttribute("labs", labPage.getContent());
+        Page<Precheck> precheckPage = Page.empty(pageable);
+        String precheckFilterError = null;
+        try {
+            precheckPage = precheckService.listSharedPrecheckForDoctor(doctorId, precheckRequest, pageable);
+        } catch (IllegalArgumentException e) {
+            precheckFilterError = e.getMessage();
+        }
 
-    ListPrescriptionRequest prescriptionRequest = new ListPrescriptionRequest();
-    Page<Prescription> prescriptionPage =
-            prescriptionService.listPrescriptionForNewDoctor(doctorId, prescriptionRequest, pageable);
-
-    model.addAttribute("prescriptions", prescriptionPage.getContent());
+        model.addAttribute("prechecks", precheckPage.getContent());
+        model.addAttribute("precheckPatientId", precheckPatientId);
+        model.addAttribute("precheckStatus", precheckStatus);
+        model.addAttribute("precheckType", precheckType);
+        model.addAttribute("precheckMinDate", precheckMinDate);
+        model.addAttribute("precheckMaxDate", precheckMaxDate);
+        model.addAttribute("precheckFilterError", precheckFilterError);
+    }
 
     return "doctor/dashboard/shared-records";
 }
@@ -631,53 +768,14 @@ public String deleteAccount(
         return keycloakService.getPasswordRedirect();
     }
 
-    private List<Appointment> filterAppointmentsByDateRange(
-        List<Appointment> appointments,
+    private void validateAppointmentDateRange(
         LocalDate from,
         LocalDate end,
         String sectionName
     ) {
         if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException(sectionName + " start date must be on or before end date");
+            throw new IllegalArgumentException(sectionName + " min date must be on or before max date");
         }
-
-        if (from == null && end == null) {
-            return appointments;
-        }
-
-        return appointments.stream()
-            .filter(appointment -> {
-                LocalDate appointmentDate = appointment.getStartTime().toLocalDate();
-                return (from == null || !appointmentDate.isBefore(from))
-                    && (end == null || !appointmentDate.isAfter(end));
-            })
-            .toList();
-    }
-
-    private List<Precheck> filterPrechecksForDoctor(
-        List<Precheck> prechecks,
-        LocalDate from,
-        LocalDate end,
-        AppointmentTypeEnum type
-    ) {
-        if (from != null && end != null && from.isAfter(end)) {
-            throw new IllegalArgumentException("start date must be on or before end date");
-        }
-
-        return prechecks.stream()
-            .filter(precheck -> {
-                LocalDate createdAtDate = precheck.getCreatedAt().toLocalDate();
-                boolean withinDateRange =
-                    (from == null || !createdAtDate.isBefore(from))
-                    && (end == null || !createdAtDate.isAfter(end));
-
-                boolean matchesType =
-                    type == null
-                    || (precheck.getAppointment() != null && precheck.getAppointment().getType() == type);
-
-                return withinDateRange && matchesType;
-            })
-            .toList();
     }
 
     private void ensurePrescriptionHasMedicineRow(CreatePrescriptionRequest request) {
@@ -698,6 +796,13 @@ public String deleteAccount(
         if (request.getLabTests().isEmpty()) {
             request.getLabTests().add(new CreateLabRequestRequest.LabTestRequest());
         }
+    }
+
+    private String normalizeSharedRecordsTab(String tab) {
+        if ("labs".equals(tab) || "prescriptions".equals(tab)) {
+            return tab;
+        }
+        return "prechecks";
     }
 
     private User requireActiveUser(OidcUser oidcUser) {

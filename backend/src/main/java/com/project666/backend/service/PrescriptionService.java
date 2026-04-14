@@ -17,6 +17,8 @@ public interface PrescriptionService {
 
     Prescription consumeRefill(UUID patientId, UUID prescriptionId);
 
+    Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId);
+
     Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable);
 
     Page<Prescription> listPrescriptionForPatient(UUID patientId, ListPrescriptionRequest request, Pageable pageable);

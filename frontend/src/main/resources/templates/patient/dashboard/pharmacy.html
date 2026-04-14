@@ -15,28 +15,30 @@
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Prescriptions</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Prescription Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prescriptions)} + ' prescription(s)'"></span>
                     </div>
                     <div class="card-body">
-                        <form method="get" th:action="@{/patient/dashboard/pharmacy}">
+                        <form method="get" th:action="@{/patient/dashboard/pharmacy}" class="mb-4">
                             <div class="form-row">
                                 <div class="form-group col-md-2">
-                                    <label for="startDate">Start Date</label>
+                                    <label for="minDate">Min Date</label>
                                     <input type="date"
                                            class="form-control"
-                                           id="startDate"
-                                           name="startDate"
-                                           th:value="${startDate}">
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
                                 </div>
 
                                 <div class="form-group col-md-2">
-                                    <label for="endDate">End Date</label>
+                                    <label for="maxDate">Max Date</label>
                                     <input type="date"
                                            class="form-control"
-                                           id="endDate"
-                                           name="endDate"
-                                           th:value="${endDate}">
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
                                 </div>
 
                                 <div class="form-group col-md-2">
@@ -79,20 +81,14 @@
                                 <a th:href="@{/patient/dashboard/pharmacy}" class="btn btn-secondary btn-sm">Reset</a>
                             </div>
                         </form>
-                    </div>
-                </div>
 
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Prescription Results</h6>
-                        <span class="text-muted small"
-                              th:text="'Showing ' + ${#lists.size(prescriptions)} + ' prescription(s)'"></span>
-                    </div>
-                    <div class="card-body">
+                        <hr class="my-4">
+
                         <div th:if="${#lists.isEmpty(prescriptions)}" class="text-muted">
                             No prescriptions found.
                         </div>
-                        <div th:each="p : ${prescriptions}" th:if="${!#lists.isEmpty(prescriptions)}" class="mb-4">
+                        <div th:each="p, stat : ${prescriptions}" th:if="${!#lists.isEmpty(prescriptions)}" class="mb-4">
+                            <hr th:if="${!stat.first}" class="my-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div>
                                     <strong>Status:</strong> <span th:text="${p.status}"></span>
@@ -122,8 +118,8 @@
                                 </div>
                                 <form th:action="@{/patient/dashboard/pharmacy/consume-refill}" method="post">
                                     <input type="hidden" name="prescriptionId" th:value="${p.id}"/>
-                                    <input type="hidden" name="startDate" th:value="${startDate}"/>
-                                    <input type="hidden" name="endDate" th:value="${endDate}"/>
+                                    <input type="hidden" name="minDate" th:value="${minDate}"/>
+                                    <input type="hidden" name="maxDate" th:value="${maxDate}"/>
                                     <input type="hidden" name="remainingRefills" th:value="${remainingRefills}"/>
                                     <input type="hidden" name="status" th:value="${status}"/>
                                     <input type="hidden" name="doctorId" th:value="${doctorId}"/>

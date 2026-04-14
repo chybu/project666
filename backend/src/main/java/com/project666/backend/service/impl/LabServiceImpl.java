@@ -130,6 +130,45 @@ public class LabServiceImpl implements LabService{
     }
 
     @Override
+    public LabRequest getLabRequestForDoctor(UUID doctorId, UUID requestId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        LabRequest labRequest = labRequestRepository.findDetailByIdAndDoctorId(requestId, doctorId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getPatient().getId(), RoleEnum.PATIENT);
+        return labRequest;
+    }
+
+    @Override
+    public LabRequest getSharedLabRequestForDoctor(UUID doctorId, UUID requestId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        LabRequest labRequest = labRequestRepository.findDetailById(requestId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getPatient().getId(), RoleEnum.PATIENT);
+
+        boolean hasApprovedAccess = patientRecordAccessRepository
+            .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+                doctorId,
+                PatientRecordTypeEnum.LAB_REQUEST,
+                PatientRecordAccessStatusEnum.APPROVED
+            )
+            .contains(labRequest.getPatient().getId());
+
+        if (!hasApprovedAccess || doctorId.equals(labRequest.getDoctor().getId())) {
+            throw new NoSuchElementException(String.format("Lab request with ID %s not found", requestId));
+        }
+
+        return labRequest;
+    }
+
+    @Override
     @Transactional
     public Page<LabTest> listLabTestForLabTechnician(UUID labTechnicianId, ListLabTestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
@@ -174,10 +213,15 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         if (request.getStatus() != null) spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
@@ -205,10 +249,15 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         if (request.getStatus() != null) spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
@@ -221,6 +270,16 @@ public class LabServiceImpl implements LabService{
         if (appointmentId!=null) spec = spec.and(LabRequestSpecification.byAppointment(appointmentId));
 
         return labRequestRepository.findAll(spec, pageable);
+    }
+
+    private void validateListLabRequest(ListLabRequestRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
     }
 
     @Override
