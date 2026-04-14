@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2Aut
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +21,15 @@ import com.project666.frontend.util.OidcUserUtil;
 import com.project666.backend.domain.entity.User;
 import com.project666.backend.repository.UserRepository;
 import com.project666.backend.domain.CancelAppointmentRequest;
+import com.project666.backend.domain.CreateLabRequestRequest;
+import com.project666.backend.domain.CreatePrescriptionRequest;
 import com.project666.backend.domain.entity.CancellationInitiatorEnum;
+import com.project666.backend.domain.entity.LabRequest;
+import com.project666.backend.domain.entity.PatientRecordAccess;
+import com.project666.backend.domain.entity.PatientRecordTypeEnum;
+import com.project666.backend.domain.entity.Precheck;
+import com.project666.backend.domain.entity.PrecheckStatusEnum;
+import com.project666.backend.domain.entity.Prescription;
 import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 
@@ -33,8 +42,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import com.project666.backend.domain.ListAppointmentRequest;
+import com.project666.backend.domain.ListLabRequestRequest;
+import com.project666.backend.domain.ListPatientRecordAccessRequest;
+import com.project666.backend.domain.ListPrecheckRequest;
+import com.project666.backend.domain.ListPrescriptionRequest;
+import com.project666.backend.domain.PatientRecordAccessRequest;
 import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.service.AppointmentService;
+import com.project666.backend.service.LabService;
+import com.project666.backend.service.PatientRecordAccessService;
+import com.project666.backend.service.PrecheckService;
+import com.project666.backend.service.PrescriptionService;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -56,6 +75,10 @@ public class DoctorController {
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
     private final AppointmentService appointmentService;
+    private final PrecheckService precheckService;
+    private final PrescriptionService prescriptionService;
+    private final LabService labService;
+    private final PatientRecordAccessService patientRecordAccessService;
 
 
     @GetMapping("/dashboard/home")
@@ -143,29 +166,297 @@ public class DoctorController {
         return "doctor/dashboard/home";
     }
 
-    @GetMapping("/dashboard/appointments")
-    public String appointments(
-            @AuthenticationPrincipal OidcUser oidcUser,
-            Model model
-    ) {
-        UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+@GetMapping("/dashboard/appointments")
+public String appointments(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
 
-        ListAppointmentRequest request = new ListAppointmentRequest();
-        request.setFrom(java.time.LocalDate.now());
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("startTime").ascending());
 
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(
-                0,
-                50,
-                org.springframework.data.domain.Sort.by("startTime").ascending()
+    ListAppointmentRequest upcomingRequest = new ListAppointmentRequest();
+    upcomingRequest.setStatus(AppointmentStatusEnum.CONFIRMED);
+    upcomingRequest.setFrom(LocalDate.now());
+
+    Page<Appointment> upcomingPage =
+            appointmentService.listAppointmentForDoctor(doctorId, upcomingRequest, pageable);
+
+    ListAppointmentRequest completedRequest = new ListAppointmentRequest();
+    completedRequest.setStatus(AppointmentStatusEnum.COMPLETED);
+
+    Page<Appointment> completedPage =
+            appointmentService.listAppointmentForDoctor(doctorId, completedRequest, pageable);
+
+    model.addAttribute("upcomingAppointments", upcomingPage.getContent());
+    model.addAttribute("completedAppointments", completedPage.getContent());
+
+    return "doctor/dashboard/appointments";
+}
+
+@GetMapping("/dashboard/prechecks")
+public String prechecks(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    ListPrecheckRequest request = new ListPrecheckRequest();
+    request.setStatus(PrecheckStatusEnum.VALID);
+
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+
+    Page<Precheck> page =
+            precheckService.listPrecheckForDoctor(doctorId, request, pageable);
+
+    model.addAttribute("prechecks", page.getContent());
+
+    return "doctor/dashboard/prechecks";
+}
+
+@GetMapping("/dashboard/prescriptions")
+public String prescriptions(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    ListPrescriptionRequest request = new ListPrescriptionRequest();
+
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+
+    Page<Prescription> page =
+            prescriptionService.listPrescriptionForDoctor(doctorId, request, pageable);
+
+    model.addAttribute("prescriptions", page.getContent());
+
+    return "doctor/dashboard/prescriptions";
+}
+
+@PostMapping("/prescriptions/create")
+public String createPrescription(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @ModelAttribute CreatePrescriptionRequest request,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    try {
+        prescriptionService.createPrescription(doctorId, request);
+    } catch (Exception e) {
+        model.addAttribute("error", e.getMessage());
+        return "doctor/dashboard/prescriptions";
+    }
+
+    return "redirect:/doctor/dashboard/prescriptions";
+}
+
+@PostMapping("/prescriptions/cancel")
+public String cancelPrescription(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID prescriptionId
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    prescriptionService.cancelPrescription(doctorId, prescriptionId);
+
+    return "redirect:/doctor/dashboard/prescriptions";
+}
+
+@GetMapping("/prescriptions/create-form")
+public String showCreatePrescriptionForm(
+        @RequestParam UUID appointmentId,
+        Model model
+) {
+    CreatePrescriptionRequest request = new CreatePrescriptionRequest();
+    request.setAppointmentId(appointmentId);
+
+    model.addAttribute("request", request);
+
+    return "doctor/dashboard/create-prescription";
+}
+
+@GetMapping("/dashboard/labs")
+public String labs(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    ListLabRequestRequest request = new ListLabRequestRequest();
+
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+
+    Page<LabRequest> page =
+            labService.listLabRequestForDoctor(doctorId, request, pageable);
+
+    model.addAttribute("labs", page.getContent());
+
+    return "doctor/dashboard/labs";
+}
+
+@GetMapping("/labs/create-form")
+public String showCreateLabForm(
+        @RequestParam UUID appointmentId,
+        Model model
+) {
+    CreateLabRequestRequest request = new CreateLabRequestRequest();
+    request.setAppointmentId(appointmentId);
+
+    model.addAttribute("request", request);
+
+    return "doctor/dashboard/create-lab";
+}
+
+@PostMapping("/labs/create")
+public String createLab(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @ModelAttribute CreateLabRequestRequest request,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    try {
+        labService.createLabRequest(doctorId, request);
+    } catch (Exception e) {
+        model.addAttribute("error", e.getMessage());
+        return "doctor/dashboard/labs";
+    }
+
+    return "redirect:/doctor/dashboard/labs";
+}
+
+@PostMapping("/labs/cancel")
+public String cancelLab(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID labId
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    labService.cancelLabRequest(doctorId, labId);
+
+    return "redirect:/doctor/dashboard/labs";
+}
+
+
+@GetMapping("/dashboard/shared-records")
+public String sharedRecords(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    Pageable pageable = PageRequest.of(0, 50);
+
+    ListPatientRecordAccessRequest accessRequest = new ListPatientRecordAccessRequest();
+    Page<PatientRecordAccess> accessPage =
+            patientRecordAccessService.listSharedPatientRecordAccess(doctorId, accessRequest, pageable);
+
+    model.addAttribute("sharedAccess", accessPage.getContent());
+
+    ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
+    Page<Precheck> precheckPage =
+            precheckService.listSharedPrecheckForDoctor(doctorId, precheckRequest, pageable);
+
+    model.addAttribute("prechecks", precheckPage.getContent());
+
+    ListLabRequestRequest labRequest = new ListLabRequestRequest();
+    Page<LabRequest> labPage =
+            labService.listLabRequestForNewDoctor(doctorId, labRequest, pageable);
+
+    model.addAttribute("labs", labPage.getContent());
+
+    ListPrescriptionRequest prescriptionRequest = new ListPrescriptionRequest();
+    Page<Prescription> prescriptionPage =
+            prescriptionService.listPrescriptionForNewDoctor(doctorId, prescriptionRequest, pageable);
+
+    model.addAttribute("prescriptions", prescriptionPage.getContent());
+
+    return "doctor/dashboard/shared-records";
+}
+
+
+@GetMapping("/dashboard/access-requests")
+public String accessRequests(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    ListPatientRecordAccessRequest request = new ListPatientRecordAccessRequest();
+    request.setDoctorId(doctorId);
+
+    Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+
+    Page<PatientRecordAccess> page =
+            patientRecordAccessService.listPatientRecordAccess(null, request, pageable);
+
+    model.addAttribute("accessRequests", page.getContent());
+
+    model.addAttribute("patients",
+            userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == RoleEnum.PATIENT)
+                    .toList()
+    );
+
+    return "doctor/dashboard/access-requests";
+}
+
+@PostMapping("/access-requests/create")
+public String createAccessRequest(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID patientId,
+        @RequestParam PatientRecordTypeEnum type,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    try {
+        PatientRecordAccessRequest request = new PatientRecordAccessRequest();
+        request.setPatientId(patientId);
+        request.setType(type);
+
+        patientRecordAccessService.requestPatientRecordAccess(doctorId, request);
+
+    } catch (Exception e) {
+
+        model.addAttribute("error", e.getMessage());
+
+        ListPatientRecordAccessRequest listRequest = new ListPatientRecordAccessRequest();
+        listRequest.setDoctorId(doctorId);
+
+        Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
+
+        Page<PatientRecordAccess> page =
+                patientRecordAccessService.listPatientRecordAccess(null, listRequest, pageable);
+
+        model.addAttribute("accessRequests", page.getContent());
+
+        model.addAttribute("patients",
+                userRepository.findAll().stream()
+                        .filter(u -> u.getRole() == RoleEnum.PATIENT)
+                        .toList()
         );
 
-        Page<Appointment> appointmentPage =
-                appointmentService.listAppointmentForDoctor(doctorId, request, pageable);
-
-        model.addAttribute("appointments", appointmentPage.getContent());
-
-        return "doctor/dashboard/appointments";
+        return "doctor/dashboard/access-requests";
     }
+
+    return "redirect:/doctor/dashboard/access-requests";
+}
+
+@PostMapping("/access-requests/cancel")
+public String cancelAccessRequest(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID accessId
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+
+    patientRecordAccessService.cancel(doctorId, accessId);
+
+    return "redirect:/doctor/dashboard/access-requests";
+}
+
+
 
     @GetMapping("/dashboard/notifications")
     public String notifications() {

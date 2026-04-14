@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Shared Records</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Shared Records</h1>
+
+                <!-- PRECHECKS -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Prechecks</div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(prechecks)}">No shared prechecks.</div>
+
+                        <table th:unless="${#lists.isEmpty(prechecks)}" class="table table-bordered">
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>Status</th>
+                            </tr>
+
+                            <tr th:each="p : ${prechecks}">
+                                <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy')}"></td>
+                                <td th:text="${p.patient.firstName + ' ' + p.patient.lastName}"></td>
+                                <td th:text="${p.status}"></td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </div>
+
+                <!-- LABS -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Lab Requests</div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(labs)}">No shared labs.</div>
+
+                        <table th:unless="${#lists.isEmpty(labs)}" class="table table-bordered">
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>Status</th>
+                            </tr>
+
+                            <tr th:each="l : ${labs}">
+                                <td th:text="${#temporals.format(l.createdAt, 'MMM dd, yyyy')}"></td>
+                                <td th:text="${l.patient.firstName + ' ' + l.patient.lastName}"></td>
+                                <td th:text="${l.status}"></td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </div>
+
+                <!-- PRESCRIPTIONS -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Prescriptions</div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(prescriptions)}">No shared prescriptions.</div>
+
+                        <table th:unless="${#lists.isEmpty(prescriptions)}" class="table table-bordered">
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>Status</th>
+                            </tr>
+
+                            <tr th:each="pr : ${prescriptions}">
+                                <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>
+                                <td th:text="${pr.patient.firstName + ' ' + pr.patient.lastName}"></td>
+                                <td th:text="${pr.status}"></td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+</body>
+</html>

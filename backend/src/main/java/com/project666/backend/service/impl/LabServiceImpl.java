@@ -130,6 +130,7 @@ public class LabServiceImpl implements LabService{
     }
 
     @Override
+    @Transactional
     public Page<LabTest> listLabTestForLabTechnician(UUID labTechnicianId, ListLabTestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));
@@ -167,6 +168,7 @@ public class LabServiceImpl implements LabService{
     }
 
     @Override
+    @Transactional
     public Page<PatientLabRequestResponseDto> listLabRequestForPatient(UUID patientId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
@@ -188,7 +190,13 @@ public class LabServiceImpl implements LabService{
         if (appointmentId!=null) spec = spec.and(LabRequestSpecification.byAppointment(appointmentId));
 
         // use the dto to hide the lab technician note and doctor note from the patient
-        return labRequestRepository.findAll(spec, pageable).map(labMapper::toPatientLabRequestResponseDto);
+       return labRequestRepository.findAll(spec, pageable).map(labRequest -> {
+    PatientLabRequestResponseDto dto = labMapper.toPatientLabRequestResponseDto(labRequest);
+    if (dto.getLabTests() == null) {
+        dto.setLabTests(new java.util.ArrayList<>());
+    }
+    return dto;
+});
     }
 
     @Override
@@ -268,6 +276,7 @@ public class LabServiceImpl implements LabService{
 
 
     @Override
+    @Transactional
     public Page<LabRequest> listLabRequestForLabTechnician(UUID labTechnicianId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));

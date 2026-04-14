@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Doctor Prescriptions</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Prescriptions</h1>
+
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+                <!-- ✅ CREATE PRESCRIPTION BUTTON -->
+                <div class="mb-3">
+                    <a th:href="@{/doctor/dashboard/appointments}" class="btn btn-primary">
+                        Create Prescription from Appointment
+                    </a>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        Prescriptions
+                    </div>
+
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(prescriptions)}">
+                            No prescriptions found.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(prescriptions)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Status</th>
+                                    <th>Refills</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                <tr th:each="p : ${prescriptions}">
+                                    <td th:text="${#temporals.format(p.createdAt, 'MMM dd, yyyy')}"></td>
+                                    <td th:text="${p.patient != null ? p.patient.firstName + ' ' + p.patient.lastName : 'N/A'}"></td>
+
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${p.status.name() == 'ACTIVE'} ? 'badge-success' :
+                                                (${p.status.name() == 'COMPLETED'} ? 'badge-primary' :
+                                                'badge-secondary')"
+                                              th:text="${p.status}">
+                                        </span>
+                                    </td>
+
+                                    <td th:text="${p.remainingRefills + ' / ' + p.totalRefills}"></td>
+
+                                    <td>
+                                        <form th:action="@{/doctor/prescriptions/cancel}" method="post">
+                                            <input type="hidden" name="prescriptionId" th:value="${p.id}" />
+                                            <button class="btn btn-sm btn-danger"
+                                                    th:disabled="${p.status.name() == 'COMPLETED' or p.status.name() == 'CANCELLED'}">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

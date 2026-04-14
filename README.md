@@ -136,18 +136,32 @@ You can create any local users you want, but these accounts are handy for local 
 Patient
 username: testPatient
 password: 123TestPatient!
+email: testPatient501@gmail.com
 
 Doctor
 username: testDoctor
 password: 123TestDoctor!
+email: TestDoctor502@gmail.com
 
 Nurse
 username: testNurse
 password: 123TestNurse!
+email: TestNurse501@gmail.com
 
 Receptionist
 username: testRecep
 password: 123TestRecep!
+email: testRecep501@gmail.com
+
+Accountant
+Username: testAcc
+password: 123TestAcc!
+Email: testAccWork501@gmail.com
+
+Lab Technician
+Username: testLab
+password: 123TestLab!
+Email: testLabTech501@gmail.com
 ```
 
 Assign each user the matching realm role.

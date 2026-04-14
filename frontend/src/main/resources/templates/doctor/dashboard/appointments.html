@@ -2,7 +2,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Doctor Appointments</title>
-
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
 </head>
 
@@ -10,39 +9,32 @@
 
 <div id="wrapper">
 
-    <!-- Sidebar -->
     <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
 
-    <div id="content-wrapper" class="d-flex flex-column">
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
 
         <div id="content">
 
-            <!-- Topbar -->
             <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
 
             <div class="container-fluid">
 
                 <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
-                <!-- Appointments Table -->
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            Upcoming Appointments
-                        </h6>
+                    <div class="card-header">
+                        Upcoming Appointments
                     </div>
 
                     <div class="card-body">
 
-                        <!-- Empty state -->
-                        <div th:if="${#lists.isEmpty(appointments)}">
-                            <p class="mb-0 text-muted">
-                                No appointments found.
-                            </p>
+                        <div th:if="${upcomingAppointments == null or #lists.isEmpty(upcomingAppointments)}">
+                            No upcoming appointments.
                         </div>
 
-                        <!-- Table -->
-                        <div th:unless="${#lists.isEmpty(appointments)}" class="table-responsive">
+                        <div th:if="${upcomingAppointments != null and !#lists.isEmpty(upcomingAppointments)}"
+                             class="table-responsive">
+
                             <table class="table table-bordered">
                                 <thead>
                                 <tr>
@@ -52,35 +44,114 @@
                                     <th>Patient</th>
                                     <th>Type</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                                 </thead>
 
                                 <tbody>
-                                <tr th:each="appointment : ${appointments}">
+                                <tr th:each="appointment : ${upcomingAppointments}">
                                     <td th:text="${#temporals.format(appointment.startTime, 'MMM dd, yyyy')}"></td>
-
                                     <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
-
                                     <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
-
-                                    <!-- ⚠️ might fail if LAZY loading isn't initialized -->
                                     <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
-
                                     <td th:text="${appointment.type}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${appointment.status.name() == 'CONFIRMED'} ? 'badge-warning' :
+                                                (${appointment.status.name() == 'COMPLETED'} ? 'badge-success' :
+                                                'badge-secondary')"
+                                              th:text="${appointment.status}">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a th:if="${appointment.status.name() == 'COMPLETED' and !appointment.hasPrescription}"
+                                           th:href="@{/doctor/prescriptions/create-form(appointmentId=${appointment.id})}"
+                                           class="btn btn-sm btn-primary">
+                                            Prescription
+                                        </a>
 
-                                    <td th:text="${appointment.status}"></td>
+                                       <a th:if="${appointment.status.name() == 'COMPLETED' and !appointment.hasLabRequest}"
+                                            th:href="@{/doctor/labs/create-form(appointmentId=${appointment.id})}"
+                                            class="btn btn-sm btn-info">
+                                            Lab
+                                        </a>
+                                    </td>
                                 </tr>
                                 </tbody>
                             </table>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        Completed Appointments
+                    </div>
+
+                    <div class="card-body">
+
+                        <div th:if="${completedAppointments == null or #lists.isEmpty(completedAppointments)}">
+                            No completed appointments.
                         </div>
 
+                        <div th:if="${completedAppointments != null and !#lists.isEmpty(completedAppointments)}"
+                             class="table-responsive">
+
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                <tr th:each="appointment : ${completedAppointments}">
+                                    <td th:text="${#temporals.format(appointment.startTime, 'MMM dd, yyyy')}"></td>
+                                    <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
+                                    <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
+                                    <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
+                                    <td th:text="${appointment.type}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${appointment.status.name() == 'CONFIRMED'} ? 'badge-warning' :
+                                                (${appointment.status.name() == 'COMPLETED'} ? 'badge-success' :
+                                                'badge-secondary')"
+                                              th:text="${appointment.status}">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a th:if="${appointment.status.name() == 'COMPLETED' and !appointment.hasPrescription}"
+                                           th:href="@{/doctor/prescriptions/create-form(appointmentId=${appointment.id})}"
+                                           class="btn btn-sm btn-primary">
+                                            Prescription
+                                        </a>
+
+                                        <a th:if="${appointment.status.name() == 'COMPLETED'}"
+                                           th:href="@{/doctor/labs/create-form(appointmentId=${appointment.id})}"
+                                           class="btn btn-sm btn-info">
+                                            Lab
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Footer -->
         <div th:replace="pageFragments/doctorFooter :: footer"></div>
 
     </div>

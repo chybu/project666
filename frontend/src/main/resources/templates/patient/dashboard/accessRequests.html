@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Access Requests</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+<body id="page-top">
+<div id="wrapper">
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
+            <div class="container-fluid">
+                <h1 class="h3 mb-4 text-gray-800">Patient Access Requests</h1>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <!-- All Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">All Requests</div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(allRequests)}">No requests found.</div>
+                        <table class="table table-bordered" th:if="${!#lists.isEmpty(allRequests)}">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Record Type</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ar : ${allRequests}">
+                                    <td th:text="${ar.doctor.fullName}"></td>
+                                    <td th:text="${ar.recordType}"></td>
+                                    <td th:text="${ar.status}"></td>
+                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pending Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Pending</div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(pendingRequests)}">No pending requests.</div>
+                        <table class="table table-bordered" th:if="${!#lists.isEmpty(pendingRequests)}">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Record Type</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ar : ${pendingRequests}">
+                                    <td th:text="${ar.doctor.fullName}"></td>
+                                    <td th:text="${ar.recordType}"></td>
+                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
+                                    <td>
+                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
+                                              method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                        </form>
+                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/deny(id=${ar.id})}"
+                                              method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-danger">Deny</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Approved Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Approved</div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(approvedRequests)}">No approved requests.</div>
+                        <table class="table table-bordered" th:if="${!#lists.isEmpty(approvedRequests)}">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Record Type</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ar : ${approvedRequests}">
+                                    <td th:text="${ar.doctor.fullName}"></td>
+                                    <td th:text="${ar.recordType}"></td>
+                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
+                                    <td>
+                                        <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
+                                              method="post" style="display:inline">
+                                            <button type="submit" class="btn btn-sm btn-warning">Revoke</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Rejected Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Rejected</div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(rejectedRequests)}">No rejected requests.</div>
+                        <table class="table table-bordered" th:if="${!#lists.isEmpty(rejectedRequests)}">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Record Type</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ar : ${rejectedRequests}">
+                                    <td th:text="${ar.doctor.fullName}"></td>
+                                    <td th:text="${ar.recordType}"></td>
+                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Revoked Requests -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">Revoked</div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(revokedRequests)}">No revoked requests.</div>
+                        <table class="table table-bordered" th:if="${!#lists.isEmpty(revokedRequests)}">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Record Type</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ar : ${revokedRequests}">
+                                    <td th:text="${ar.doctor.fullName}"></td>
+                                    <td th:text="${ar.recordType}"></td>
+                                    <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
+    </div>
+</div>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+</body>
+</html>
