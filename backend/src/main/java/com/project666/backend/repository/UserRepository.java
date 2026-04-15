@@ -18,4 +18,5 @@ public interface UserRepository extends JpaRepository<User, UUID>{
     Optional<User> findByIdAndRoleAndDeletedFalse(UUID userId, RoleEnum role);
     List<User> findAllByRoleAndDeletedFalse(RoleEnum role);
     boolean existsByIdAndDeletedFalse(UUID userId);
+    List<User> findByRoleAndDeletedFalse(RoleEnum role);
 }

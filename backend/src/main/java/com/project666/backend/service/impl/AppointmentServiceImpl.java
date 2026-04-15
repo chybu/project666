@@ -3,6 +3,7 @@ package com.project666.backend.service.impl;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -164,8 +165,12 @@ public class AppointmentServiceImpl implements AppointmentService{
         }
 
         LocalDateTime now = LocalDateTime.now();
-        spec = spec.and(AppointmentSpecification.byStatus(AppointmentStatusEnum.COMPLETED));
+        spec = spec.and(AppointmentSpecification.byStatuses(List.of(
+            AppointmentStatusEnum.CONFIRMED,
+            AppointmentStatusEnum.COMPLETED
+        )));
         spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("endTime"), now));
+        spec = spec.and(AppointmentSpecification.withoutValidPrecheckByOtherNurse(nurseId));
 
         LocalDateTime from = request.getFrom() != null
             ? request.getFrom().atStartOfDay()

@@ -35,6 +35,7 @@ services:
       - db
     volumes:
       - ./providers:/opt/keycloak/providers
+      - ./keycloak-theme/duplex:/opt/keycloak/themes/duplex
 
   rabbitmq:
     image: rabbitmq:4.2.5-management
