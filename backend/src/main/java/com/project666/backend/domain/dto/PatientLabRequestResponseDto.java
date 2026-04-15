@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
 
-import com.project666.backend.domain.dto.PatientLabRequestResponseDto.PatientLabTestResponseDto;
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
 

@@ -161,6 +161,19 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     @Override
+    public Prescription getPrescriptionForPatient(UUID patientId, UUID prescriptionId) {
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+
+        Prescription prescription = prescriptionRepository.findDetailByIdAndPatientId(prescriptionId, patientId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        requireActiveUserByRole(prescription.getDoctor().getId(), RoleEnum.DOCTOR);
+        return prescription;
+    }
+
+    @Override
     public Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId) {
         requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
 

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Prescription PDF</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+            line-height: 1.5;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .brand-header {
+            margin-bottom: 18px;
+        }
+
+        .brand-logo {
+            width: 140px;
+            height: auto;
+            margin-bottom: 12px;
+        }
+
+        h2 {
+            margin: 24px 0 10px;
+            font-size: 16px;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .header-table,
+        .medicine-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            width: 50%;
+            padding: 6px 10px 6px 0;
+            vertical-align: top;
+        }
+
+        .medicine-table th,
+        .medicine-table td {
+            border: 1px solid #bdbdbd;
+            padding: 8px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .medicine-table th {
+            background: #f3f4f6;
+        }
+
+        .section {
+            margin-top: 18px;
+        }
+
+        .notes-box {
+            border: 1px solid #bdbdbd;
+            padding: 10px;
+            min-height: 48px;
+        }
+
+        .last-page {
+            page-break-before: always;
+            text-align: center;
+        }
+
+        .last-page-image {
+            max-width: 100%;
+            max-height: 240mm;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-header">
+        <img src="images/logo.png" alt="Duplex Logo" class="brand-logo" />
+    </div>
+    <h1>Prescription</h1>
+    <div class="muted">Prescription ID: <span th:text="${prescription.id}"></span></div>
+
+    <div class="section">
+        <table class="header-table">
+            <tr>
+                <td>
+                    <strong>Patient:</strong>
+                    <span th:text="${prescription.patient != null ? prescription.patient.fullName : 'N/A'}"></span>
+                </td>
+                <td>
+                    <strong>Doctor:</strong>
+                    <span th:text="${prescription.doctor != null ? prescription.doctor.fullName : 'N/A'}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Status:</strong>
+                    <span th:text="${prescription.status}"></span>
+                </td>
+                <td>
+                    <strong>Appointment Type:</strong>
+                    <span th:text="${prescription.appointment != null ? prescription.appointment.type : 'N/A'}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Start Date:</strong>
+                    <span th:text="${prescription.startDate}"></span>
+                </td>
+                <td>
+                    <strong>End Date:</strong>
+                    <span th:text="${prescription.endDate}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Total Refills:</strong>
+                    <span th:text="${prescription.totalRefills}"></span>
+                </td>
+                <td>
+                    <strong>Remaining Refills:</strong>
+                    <span th:text="${prescription.remainingRefills}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Refill Interval (Days):</strong>
+                    <span th:text="${prescription.refillIntervalDays}"></span>
+                </td>
+                <td>
+                    <strong>Next Eligible Refill:</strong>
+                    <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills <= 0}">
+                        No future refills remaining
+                    </span>
+                    <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills > 0 and prescription.nextEligibleRefillAt != null}"
+                          th:text="${#temporals.format(prescription.nextEligibleRefillAt, 'yyyy-MM-dd h:mm a')}">
+                    </span>
+                    <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills > 0 and prescription.nextEligibleRefillAt == null}">
+                        Not available
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Created At:</strong>
+                    <span th:text="${prescription.createdAt != null ? #temporals.format(prescription.createdAt, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                </td>
+                <td>
+                    <strong>Last Consumed At:</strong>
+                    <span th:text="${prescription.lastConsumedAt != null ? #temporals.format(prescription.lastConsumedAt, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Printed By:</strong>
+                    <span th:text="${printedBy}"></span>
+                </td>
+                <td>
+                    <strong>Role:</strong>
+                    <span th:text="${printedByRole}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>User ID:</strong>
+                    <span th:text="${printedByUserId}"></span>
+                </td>
+                <td>
+                    <strong>Printed At:</strong>
+                    <span th:text="${#temporals.format(printedAt, 'yyyy-MM-dd h:mm a')}"></span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>General Note</h2>
+        <div class="notes-box" th:text="${prescription.generalNote != null and !#strings.isEmpty(prescription.generalNote) ? prescription.generalNote : 'N/A'}"></div>
+    </div>
+
+    <div class="section">
+        <h2>Medicines</h2>
+        <table class="medicine-table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Route</th>
+                    <th>Quantity</th>
+                    <th>Instructions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${#lists.isEmpty(prescription.medicines)}">
+                    <td colspan="6">No medicines found.</td>
+                </tr>
+                <tr th:each="medicine : ${prescription.medicines}">
+                    <td th:text="${medicine.medicineName}"></td>
+                    <td th:text="${medicine.dosage != null ? medicine.dosage : 'N/A'}"></td>
+                    <td th:text="${medicine.frequency != null ? medicine.frequency : 'N/A'}"></td>
+                    <td th:text="${medicine.route != null ? medicine.route : 'N/A'}"></td>
+                    <td th:text="${medicine.quantity != null ? medicine.quantity : 'N/A'}"></td>
+                    <td th:text="${medicine.instructions != null ? medicine.instructions : 'N/A'}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="last-page">
+        <img src="images/Rickroll.jpg" alt="Rickroll" class="last-page-image" />
+    </div>
+</body>
+</html>

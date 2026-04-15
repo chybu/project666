@@ -247,9 +247,13 @@
                                     </td>
                                     <td th:text="${l.status}"></td>
                                     <td>
-                                        <a class="btn btn-sm btn-info"
+                                        <a class="btn btn-sm btn-info mr-2"
                                            th:href="@{/doctor/dashboard/shared-records/labs/view(labId=${l.id})}">
                                             View
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           th:href="@{/pdf/lab/doctor/shared(labId=${l.id})}">
+                                            PDF
                                         </a>
                                     </td>
                                 </tr>
@@ -349,9 +353,13 @@
                                     </td>
                                     <td th:text="${pr.remainingRefills + ' / ' + pr.totalRefills}"></td>
                                     <td>
-                                        <a class="btn btn-sm btn-info"
+                                        <a class="btn btn-sm btn-info mr-2"
                                            th:href="@{/doctor/dashboard/shared-records/prescriptions/view(prescriptionId=${pr.id})}">
                                             View
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary"
+                                           th:href="@{/pdf/prescription/doctor/shared(prescriptionId=${pr.id})}">
+                                            PDF
                                         </a>
                                     </td>
                                     <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>

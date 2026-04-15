@@ -18,6 +18,9 @@ public interface LabRequestRepository extends
         Optional<LabRequest> findByIdAndDoctorId(UUID id, UUID doctorId);
 
         @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})
+        Optional<LabRequest> findDetailByIdAndPatientId(UUID id, UUID patientId);
+
+        @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})
         Optional<LabRequest> findDetailByIdAndDoctorId(UUID id, UUID doctorId);
 
         @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})

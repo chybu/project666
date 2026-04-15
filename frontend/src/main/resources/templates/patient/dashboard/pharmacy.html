@@ -114,19 +114,25 @@
                                         Not available
                                     </span>
                                 </div>
-                                <form th:action="@{/patient/dashboard/pharmacy/consume-refill}" method="post">
-                                    <input type="hidden" name="prescriptionId" th:value="${p.id}"/>
-                                    <input type="hidden" name="minDate" th:value="${minDate}"/>
-                                    <input type="hidden" name="maxDate" th:value="${maxDate}"/>
-                                    <input type="hidden" name="remainingRefills" th:value="${remainingRefills}"/>
-                                    <input type="hidden" name="status" th:value="${status}"/>
-                                    <input type="hidden" name="doctorId" th:value="${doctorId}"/>
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                    <button type="submit" class="btn btn-sm btn-primary"
-                                            th:disabled="${p.remainingRefills <= 0}">
-                                        Consume Refill
-                                    </button>
-                                </form>
+                                <div class="d-flex align-items-center">
+                                    <a th:href="@{/pdf/prescription/patient(prescriptionId=${p.id})}"
+                                       class="btn btn-sm btn-outline-secondary mr-2">
+                                        PDF
+                                    </a>
+                                    <form th:action="@{/patient/dashboard/pharmacy/consume-refill}" method="post" class="mb-0">
+                                        <input type="hidden" name="prescriptionId" th:value="${p.id}"/>
+                                        <input type="hidden" name="minDate" th:value="${minDate}"/>
+                                        <input type="hidden" name="maxDate" th:value="${maxDate}"/>
+                                        <input type="hidden" name="remainingRefills" th:value="${remainingRefills}"/>
+                                        <input type="hidden" name="status" th:value="${status}"/>
+                                        <input type="hidden" name="doctorId" th:value="${doctorId}"/>
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <button type="submit" class="btn btn-sm btn-primary"
+                                                th:disabled="${p.remainingRefills <= 0}">
+                                            Consume Refill
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             <table class="table table-bordered">
                                 <thead>
