@@ -115,56 +115,15 @@ Create the `patient-portal` realm and import these clients:
 
 The project also includes a custom Keycloak provider in `providers/`, so keep that folder mounted when running Keycloak through Docker.
 
-### 4. Create realm roles
+### 4. Import roles and users to Keycloak
 
-Create these realm roles:
-
-```text
-ROLE_PATIENT
-ROLE_DOCTOR
-ROLE_RECEPTIONIST
-ROLE_NURSE
-ROLE_LAB_TECHNICIAN
-ROLE_ACCOUNTANT
-```
-
-### 5. Create test users
-
-You can create any local users you want, but these accounts are handy for local testing:
-
-```text
-Patient
-username: testPatient
-password: 123TestPatient!
-email: testPatient501@gmail.com
-
-Doctor
-username: testDoctor
-password: 123TestDoctor!
-email: TestDoctor502@gmail.com
-
-Nurse
-username: testNurse
-password: 123TestNurse!
-email: TestNurse501@gmail.com
-
-Receptionist
-username: testRecep
-password: 123TestRecep!
-email: testRecep501@gmail.com
-
-Accountant
-Username: testAcc
-password: 123TestAcc!
-Email: testAccWork501@gmail.com
-
-Lab Technician
-Username: testLab
-password: 123TestLab!
-Email: testLabTech501@gmail.com
-```
-
-Assign each user the matching realm role.
+In the `patient-portal` realm, click on `Realm settings` in the sidebar. 
+Click the drop down on the top right of the screen labeled `Action`.
+From the drop down menu, select `Partial import`.
+Select the file found at `./Duplex-Patient-Portal/export/patient-portal-realm.json`.
+Under `Choose the resources you want to import:` select `Users`, `Clients`, `Realm roles`, and `Client roles`.
+Under `If a resource already exists, specify what should be done:` select `Skip`.
+click `Import`.
 
 ### 6. Run the insurance service
 
