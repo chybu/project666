@@ -176,6 +176,7 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabTest(request);
 
         // build specification
         Specification<LabTest> spec = LabTestSpecification.alwaysTrue();
@@ -200,8 +201,9 @@ public class LabServiceImpl implements LabService{
         String unit = request.getUnit();
         if (unit!=null && !unit.isBlank()) spec = spec.and(LabTestSpecification.byUnit(request.getUnit().trim()));
 
-        LocalDate createdAtDate = request.getCreatedAtDate();
-        if (createdAtDate!=null) spec = spec.and(LabTestSpecification.byCreatedAtDate(createdAtDate));
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabTestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         return labTestRepository.findAll(spec, pageable);
     }
@@ -282,6 +284,16 @@ public class LabServiceImpl implements LabService{
         }
     }
 
+    private void validateListLabTest(ListLabTestRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
+    }
+
     @Override
     public Page<LabRequest> listLabRequestForNewDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
@@ -347,10 +359,15 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
         
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         spec = spec.and(LabRequestSpecification.unfinishedOnly());
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 

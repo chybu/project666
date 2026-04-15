@@ -18,6 +18,7 @@ public class ListLabTestRequestDto {
     private LabTestStatusEnum status;
     private String code;
     private String name;
-    private String unit;  
-    private LocalDate createdAtDate;
+    private String unit;
+    private LocalDate minDate;
+    private LocalDate maxDate;
 }

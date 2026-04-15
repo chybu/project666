@@ -73,4 +73,26 @@ public final class LabTestSpecification {
             );
         };
     }
+
+    public static Specification<LabTest> byCreatedAtRange(LocalDate minDate, LocalDate maxDate) {
+        return (root, query, cb) -> {
+            if (minDate == null && maxDate == null) return null;
+
+            LocalDateTime start = minDate != null ? minDate.atStartOfDay() : null;
+            LocalDateTime endExclusive = maxDate != null ? maxDate.plusDays(1).atStartOfDay() : null;
+
+            if (start != null && endExclusive != null) {
+                return cb.and(
+                    cb.greaterThanOrEqualTo(root.get("createdAt"), start),
+                    cb.lessThan(root.get("createdAt"), endExclusive)
+                );
+            }
+
+            if (start != null) {
+                return cb.greaterThanOrEqualTo(root.get("createdAt"), start);
+            }
+
+            return cb.lessThan(root.get("createdAt"), endExclusive);
+        };
+    }
 }

@@ -3,6 +3,28 @@
 <head>
     <title>My Lab Tests</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <style>
+        .lab-test-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            align-items: center;
+        }
+
+        .lab-test-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .lab-test-edit-panel {
+            background: #f8f9fc;
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+            padding: 1rem;
+        }
+    </style>
 </head>
 <body id="page-top">
 <div id="wrapper">
@@ -19,16 +41,19 @@
 
                 <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+                <div th:if="${filterError}" class="alert alert-danger" th:text="${filterError}"></div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Assigned Tests</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${labTestsPage != null ? #lists.size(labTestsPage.content) : 0} + ' lab test(s)'"></span>
                     </div>
                     <div class="card-body">
-                        <form method="get" th:action="@{/labtechnician/dashboard/lab-tests}">
+                        <form method="get" th:action="@{/labtechnician/dashboard/lab-tests}" class="mb-0">
                             <div class="form-row">
-                                <div class="form-group col-md-3">
-                                    <label>Patient ID</label>
+                                <div class="form-group col-md-2 mb-2">
+                                    <label class="mb-1">Patient</label>
                                     <select name="patientId" class="form-control">
                                         <option value="">All Patients</option>
                                         <option th:each="p : ${patients}"
@@ -38,8 +63,8 @@
                                         </option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label>Doctor ID</label>
+                                <div class="form-group col-md-2 mb-2">
+                                    <label class="mb-1">Doctor</label>
                                     <select name="doctorId" class="form-control">
                                         <option value="">All Doctors</option>
                                         <option th:each="d : ${doctors}"
@@ -49,8 +74,8 @@
                                         </option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-2">
-                                    <label>Status</label>
+                                <div class="form-group col-md-1 mb-2">
+                                    <label class="mb-1">Status</label>
                                     <select name="status" class="form-control">
                                         <option value="">All</option>
                                         <option value="IN_PROGRESS" th:selected="${status == 'IN_PROGRESS'}">IN_PROGRESS</option>
@@ -58,113 +83,76 @@
                                         <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">CANCELLED</option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-2">
-                                    <label>Created Date</label>
-                                    <input type="date" name="createdAtDate" class="form-control" th:value="${createdAtDate}">
+                                <div class="form-group col-md-2 mb-2">
+                                    <label class="mb-1">Min Date</label>
+                                    <input type="date" name="minDate" class="form-control" th:value="${minDate}">
                                 </div>
-                                <div class="form-group col-md-2">
-                                    <label>Code</label>
+                                <div class="form-group col-md-2 mb-2">
+                                    <label class="mb-1">Max Date</label>
+                                    <input type="date" name="maxDate" class="form-control" th:value="${maxDate}">
+                                </div>
+                                <div class="form-group col-md-1 mb-2">
+                                    <label class="mb-1">Code</label>
                                     <input type="text" name="code" class="form-control" th:value="${code}">
                                 </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label>Name</label>
+                                <div class="form-group col-md-1 mb-2">
+                                    <label class="mb-1">Name</label>
                                     <input type="text" name="name" class="form-control" th:value="${name}">
                                 </div>
-                                <div class="form-group col-md-4">
-                                    <label>Unit</label>
+                                <div class="form-group col-md-1 mb-2">
+                                    <label class="mb-1">Unit</label>
                                     <input type="text" name="unit" class="form-control" th:value="${unit}">
                                 </div>
                             </div>
-
-                            <button type="submit" class="btn btn-primary">Search</button>
-                            <a th:href="@{/labtechnician/dashboard/lab-tests}" class="btn btn-secondary">Reset</a>
+                            <div class="form-row align-items-end">
+                                <div class="form-group col-auto mb-2">
+                                    <button type="submit" class="btn btn-primary">Search</button>
+                                </div>
+                                <div class="form-group col-auto mb-2">
+                                    <a th:href="@{/labtechnician/dashboard/lab-tests}" class="btn btn-secondary">Reset</a>
+                                </div>
+                            </div>
                         </form>
-                    </div>
-                </div>
-
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Assigned Tests</h6>
-                    </div>
-                    <div class="card-body">
+                        <div class="mb-4"></div>
                         <div th:if="${labTestsPage == null or #lists.isEmpty(labTestsPage.content)}" class="text-muted">
                             No lab tests found.
                         </div>
 
                         <div th:each="labTest : ${labTestsPage.content}" class="card shadow-sm mb-4">
                             <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-2">
-                                        <strong>Name:</strong>
-                                        <div th:text="${labTest.name}"></div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Code:</strong>
-                                        <div th:text="${labTest.code} ?: '-'"></div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Unit:</strong>
-                                        <div th:text="${labTest.unit} ?: '-'"></div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Status:</strong>
-                                        <div th:text="${labTest.status}"></div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Result:</strong>
-                                        <div th:text="${labTest.result} ?: '-'"></div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <strong>Created:</strong>
-                                        <div th:text="${#temporals.format(labTest.createdAt, 'yyyy-MM-dd HH:mm')}"></div>
-                                    </div>
-                                </div>
-
-                                <div th:if="${labTest.status.name() == 'IN_PROGRESS'}">
-                                    <form method="post" th:action="@{/labtechnician/dashboard/lab-tests/update}">
-                                        <input type="hidden" name="labTestId" th:value="${labTest.id}"/>
-
-                                        <input type="hidden" name="patientId" th:value="${patientId}">
-                                        <input type="hidden" name="doctorId" th:value="${doctorId}">
-                                        <input type="hidden" name="status" th:value="${status}">
-                                        <input type="hidden" name="filterCode" th:value="${code}">
-                                        <input type="hidden" name="filterName" th:value="${name}">
-                                        <input type="hidden" name="filterUnit" th:value="${unit}">
-                                        <input type="hidden" name="createdAtDate" th:value="${createdAtDate}">
-                                        <input type="hidden" name="page" th:value="${page}">
-                                        <input type="hidden" name="size" th:value="${size}">
-
-                                        <div class="form-row">
-                                            <div class="form-group col-md-2">
-                                                <label>Code</label>
-                                                <input type="text" name="code" class="form-control" th:value="${labTest.code}">
-                                            </div>
-                                            <div class="form-group col-md-2">
-                                                <label>Name</label>
-                                                <input type="text" name="name" class="form-control" th:value="${labTest.name}">
-                                            </div>
-                                            <div class="form-group col-md-2">
-                                                <label>Unit</label>
-                                                <input type="text" name="unit" class="form-control" th:value="${labTest.unit}">
-                                            </div>
-                                            <div class="form-group col-md-3">
-                                                <label>Result</label>
-                                                <input type="text" name="result" class="form-control" th:value="${labTest.result}">
-                                            </div>
-                                            <div class="form-group col-md-3">
-                                                <label>Lab Technician Note</label>
-                                                <input type="text" name="labTechnicianNote" class="form-control" th:value="${labTest.labTechnicianNote}">
-                                            </div>
+                                <div class="lab-test-summary-row mb-3">
+                                    <div class="lab-test-summary">
+                                        <div>
+                                            <strong>Name:</strong>
+                                            <span th:text="${labTest.name}"></span>
                                         </div>
-
-                                        <button type="submit" class="btn btn-primary btn-sm">Save Update</button>
-                                    </form>
-
+                                        <div>
+                                            <strong>Code:</strong>
+                                            <span th:text="${labTest.code} ?: '-'"></span>
+                                        </div>
+                                        <div>
+                                            <strong>Unit:</strong>
+                                            <span th:text="${labTest.unit} ?: '-'"></span>
+                                        </div>
+                                        <div>
+                                            <strong>Status:</strong>
+                                            <span class="badge badge-warning" th:if="${labTest.status.name() == 'REQUESTED'}">REQUESTED</span>
+                                            <span class="badge badge-info" th:if="${labTest.status.name() == 'IN_PROGRESS'}">IN_PROGRESS</span>
+                                            <span class="badge badge-success" th:if="${labTest.status.name() == 'COMPLETED'}">COMPLETED</span>
+                                            <span class="badge badge-danger" th:if="${labTest.status.name() == 'CANCELLED'}">CANCELLED</span>
+                                        </div>
+                                        <div>
+                                            <strong>Result:</strong>
+                                            <span th:text="${labTest.result} ?: '-'"></span>
+                                        </div>
+                                        <div>
+                                            <strong>Created:</strong>
+                                            <span th:text="${#temporals.format(labTest.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                                        </div>
+                                    </div>
                                     <form method="post"
-                                          class="mt-2"
+                                          class="mb-0"
+                                          th:if="${labTest.status.name() == 'IN_PROGRESS'}"
                                           th:action="@{'/labtechnician/dashboard/lab-tests/' + ${labTest.id} + '/submit'}">
                                         <input type="hidden" name="patientId" th:value="${patientId}">
                                         <input type="hidden" name="doctorId" th:value="${doctorId}">
@@ -172,11 +160,56 @@
                                         <input type="hidden" name="code" th:value="${code}">
                                         <input type="hidden" name="name" th:value="${name}">
                                         <input type="hidden" name="unit" th:value="${unit}">
-                                        <input type="hidden" name="createdAtDate" th:value="${createdAtDate}">
+                                        <input type="hidden" name="minDate" th:value="${minDate}">
+                                        <input type="hidden" name="maxDate" th:value="${maxDate}">
                                         <input type="hidden" name="page" th:value="${page}">
                                         <input type="hidden" name="size" th:value="${size}">
                                         <button type="submit" class="btn btn-success btn-sm">Submit Test</button>
                                     </form>
+                                </div>
+
+                                <div th:if="${labTest.status.name() == 'IN_PROGRESS'}">
+                                    <div class="lab-test-edit-panel">
+                                        <form method="post" th:action="@{/labtechnician/dashboard/lab-tests/update}" class="mb-0">
+                                            <input type="hidden" name="labTestId" th:value="${labTest.id}"/>
+
+                                            <input type="hidden" name="patientId" th:value="${patientId}">
+                                            <input type="hidden" name="doctorId" th:value="${doctorId}">
+                                            <input type="hidden" name="status" th:value="${status}">
+                                            <input type="hidden" name="filterCode" th:value="${code}">
+                                            <input type="hidden" name="filterName" th:value="${name}">
+                                            <input type="hidden" name="filterUnit" th:value="${unit}">
+                                            <input type="hidden" name="minDate" th:value="${minDate}">
+                                            <input type="hidden" name="maxDate" th:value="${maxDate}">
+                                            <input type="hidden" name="page" th:value="${page}">
+                                            <input type="hidden" name="size" th:value="${size}">
+
+                                            <div class="form-row align-items-end">
+                                                <div class="form-group col-md-2 mb-2">
+                                                    <label class="mb-1">Code</label>
+                                                    <input type="text" name="code" class="form-control" th:value="${labTest.code}">
+                                                </div>
+                                                <div class="form-group col-md-2 mb-2">
+                                                    <label class="mb-1">Name</label>
+                                                    <input type="text" name="name" class="form-control" th:value="${labTest.name}">
+                                                </div>
+                                                <div class="form-group col-md-2 mb-2">
+                                                    <label class="mb-1">Unit</label>
+                                                    <input type="text" name="unit" class="form-control" th:value="${labTest.unit}">
+                                                </div>
+                                                <div class="form-group col-md-3 mb-2">
+                                                    <label class="mb-1">Result</label>
+                                                    <input type="text" name="result" class="form-control" th:value="${labTest.result}">
+                                                </div>
+                                                <div class="form-group col-md-3 mb-2">
+                                                    <label class="mb-1">Lab Technician Note</label>
+                                                    <input type="text" name="labTechnicianNote" class="form-control" th:value="${labTest.labTechnicianNote}">
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary btn-sm">Save Update</button>
+                                        </form>
+                                    </div>
                                 </div>
 
                                 <div th:if="${labTest.status.name() != 'IN_PROGRESS'}" class="text-muted">
@@ -195,7 +228,8 @@
                                    code=${code},
                                    name=${name},
                                    unit=${unit},
-                                   createdAtDate=${createdAtDate},
+                                   minDate=${minDate},
+                                   maxDate=${maxDate},
                                    page=${page - 1},
                                    size=${size}
                                )}">
@@ -211,7 +245,8 @@
                                    code=${code},
                                    name=${name},
                                    unit=${unit},
-                                   createdAtDate=${createdAtDate},
+                                   minDate=${minDate},
+                                   maxDate=${maxDate},
                                    page=${page + 1},
                                    size=${size}
                                )}">

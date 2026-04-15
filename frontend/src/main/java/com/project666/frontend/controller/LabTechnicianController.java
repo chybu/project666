@@ -70,7 +70,8 @@ public class LabTechnicianController {
             @AuthenticationPrincipal OidcUser oidcUser,
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) UUID doctorId,
-            @RequestParam(required = false) LocalDate createdAtDate,
+            @RequestParam(required = false) LocalDate minDate,
+            @RequestParam(required = false) LocalDate maxDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model
@@ -78,19 +79,27 @@ public class LabTechnicianController {
         User user = requireActiveUser(oidcUser);
 
         Pageable pageable = PageRequest.of(page, size);
+        Page<?> labRequestsPage = Page.empty(pageable);
+        String filterError = null;
 
         ListLabRequestRequest request = new ListLabRequestRequest();
         request.setPatientId(patientId);
         request.setDoctorId(doctorId);
-        request.setCreatedAtDate(createdAtDate);
+        request.setMinDate(minDate);
+        request.setMaxDate(maxDate);
 
-        Page<?> labRequestsPage =
-                labService.listLabRequestForLabTechnician(user.getId(), request, pageable);
+        try {
+            labRequestsPage = labService.listLabRequestForLabTechnician(user.getId(), request, pageable);
+        } catch (IllegalArgumentException e) {
+            filterError = e.getMessage();
+        }
 
         model.addAttribute("labRequestsPage", labRequestsPage);
         model.addAttribute("patientId", patientId);
         model.addAttribute("doctorId", doctorId);
-        model.addAttribute("createdAtDate", createdAtDate);
+        model.addAttribute("minDate", minDate);
+        model.addAttribute("maxDate", maxDate);
+        model.addAttribute("filterError", filterError);
         model.addAttribute("page", page);
         model.addAttribute("size", size);
         model.addAttribute("patients",
@@ -107,7 +116,8 @@ public class LabTechnicianController {
             @AuthenticationPrincipal OidcUser oidcUser,
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) UUID doctorId,
-            @RequestParam(required = false) LocalDate createdAtDate,
+            @RequestParam(required = false) LocalDate minDate,
+            @RequestParam(required = false) LocalDate maxDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @org.springframework.web.bind.annotation.PathVariable UUID labTestId,
@@ -122,7 +132,7 @@ public class LabTechnicianController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/labtechnician/dashboard/lab-requests"
-                + buildLabRequestQueryString(patientId, doctorId, createdAtDate, page, size);
+                + buildLabRequestQueryString(patientId, doctorId, minDate, maxDate, page, size);
     }
 
     @GetMapping("/dashboard/lab-tests")
@@ -134,14 +144,18 @@ public class LabTechnicianController {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String unit,
-            @RequestParam(required = false) LocalDate createdAtDate,
+            @RequestParam(required = false) LocalDate minDate,
+            @RequestParam(required = false) LocalDate maxDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model
     ) {
         User user = requireActiveUser(oidcUser);
+        String effectiveStatus = (status != null && !status.isBlank()) ? status : LabTestStatusEnum.IN_PROGRESS.name();
 
         Pageable pageable = PageRequest.of(page, size);
+        Page<?> labTestsPage = Page.empty(pageable);
+        String filterError = null;
 
         ListLabTestRequest request = new ListLabTestRequest();
         request.setPatientId(patientId);
@@ -149,23 +163,27 @@ public class LabTechnicianController {
         request.setCode(code);
         request.setName(name);
         request.setUnit(unit);
-        request.setCreatedAtDate(createdAtDate);
+        request.setMinDate(minDate);
+        request.setMaxDate(maxDate);
 
-        if (status != null && !status.isBlank()) {
-            request.setStatus(LabTestStatusEnum.valueOf(status));
+        request.setStatus(LabTestStatusEnum.valueOf(effectiveStatus));
+
+        try {
+            labTestsPage = labService.listLabTestForLabTechnician(user.getId(), request, pageable);
+        } catch (IllegalArgumentException e) {
+            filterError = e.getMessage();
         }
-
-        Page<?> labTestsPage =
-                labService.listLabTestForLabTechnician(user.getId(), request, pageable);
 
         model.addAttribute("labTestsPage", labTestsPage);
         model.addAttribute("patientId", patientId);
         model.addAttribute("doctorId", doctorId);
-        model.addAttribute("status", status);
+        model.addAttribute("status", effectiveStatus);
         model.addAttribute("code", code);
         model.addAttribute("name", name);
         model.addAttribute("unit", unit);
-        model.addAttribute("createdAtDate", createdAtDate);
+        model.addAttribute("minDate", minDate);
+        model.addAttribute("maxDate", maxDate);
+        model.addAttribute("filterError", filterError);
         model.addAttribute("page", page);
         model.addAttribute("size", size);
         model.addAttribute("patients",
@@ -192,7 +210,8 @@ public class LabTechnicianController {
             @RequestParam(required = false) String filterCode,
             @RequestParam(required = false) String filterName,
             @RequestParam(required = false) String filterUnit,
-            @RequestParam(required = false) LocalDate createdAtDate,
+            @RequestParam(required = false) LocalDate minDate,
+            @RequestParam(required = false) LocalDate maxDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             RedirectAttributes redirectAttributes
@@ -215,7 +234,7 @@ public class LabTechnicianController {
         }
 
         return "redirect:/labtechnician/dashboard/lab-tests"
-                + buildLabTestQueryString(patientId, doctorId, status, filterCode, filterName, filterUnit, createdAtDate, page, size);
+                + buildLabTestQueryString(patientId, doctorId, status, filterCode, filterName, filterUnit, minDate, maxDate, page, size);
     }
 
     @PostMapping("/dashboard/lab-tests/{labTestId}/submit")
@@ -228,7 +247,8 @@ public class LabTechnicianController {
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String unit,
-            @RequestParam(required = false) LocalDate createdAtDate,
+            @RequestParam(required = false) LocalDate minDate,
+            @RequestParam(required = false) LocalDate maxDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             RedirectAttributes redirectAttributes
@@ -243,7 +263,7 @@ public class LabTechnicianController {
         }
 
         return "redirect:/labtechnician/dashboard/lab-tests"
-                + buildLabTestQueryString(patientId, doctorId, status, code, name, unit, createdAtDate, page, size);
+                + buildLabTestQueryString(patientId, doctorId, status, code, name, unit, minDate, maxDate, page, size);
     }
 
     @GetMapping("/dashboard/profile")
@@ -290,14 +310,16 @@ public class LabTechnicianController {
     private String buildLabRequestQueryString(
             UUID patientId,
             UUID doctorId,
-            LocalDate createdAtDate,
+            LocalDate minDate,
+            LocalDate maxDate,
             int page,
             int size
     ) {
         StringBuilder sb = new StringBuilder("?");
         if (patientId != null) sb.append("patientId=").append(patientId).append("&");
         if (doctorId != null) sb.append("doctorId=").append(doctorId).append("&");
-        if (createdAtDate != null) sb.append("createdAtDate=").append(createdAtDate).append("&");
+        if (minDate != null) sb.append("minDate=").append(minDate).append("&");
+        if (maxDate != null) sb.append("maxDate=").append(maxDate).append("&");
         sb.append("page=").append(page).append("&size=").append(size);
         return sb.toString();
     }
@@ -309,7 +331,8 @@ public class LabTechnicianController {
             String code,
             String name,
             String unit,
-            LocalDate createdAtDate,
+            LocalDate minDate,
+            LocalDate maxDate,
             int page,
             int size
     ) {
@@ -320,7 +343,8 @@ public class LabTechnicianController {
         if (code != null && !code.isBlank()) sb.append("code=").append(code).append("&");
         if (name != null && !name.isBlank()) sb.append("name=").append(name).append("&");
         if (unit != null && !unit.isBlank()) sb.append("unit=").append(unit).append("&");
-        if (createdAtDate != null) sb.append("createdAtDate=").append(createdAtDate).append("&");
+        if (minDate != null) sb.append("minDate=").append(minDate).append("&");
+        if (maxDate != null) sb.append("maxDate=").append(maxDate).append("&");
         sb.append("page=").append(page).append("&size=").append(size);
         return sb.toString();
     }
