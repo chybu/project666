@@ -131,6 +131,10 @@
                                            th:href="@{/doctor/dashboard/labs/view(labId=${lab.id})}">
                                             View
                                         </a>
+                                        <a class="btn btn-sm btn-outline-secondary mr-2"
+                                           th:href="@{/pdf/lab/doctor(labId=${lab.id})}">
+                                            PDF
+                                        </a>
                                         <form th:action="@{/doctor/labs/cancel}" method="post" class="d-inline">
                                             <input type="hidden" name="labId" th:value="${lab.id}" />
                                             <button class="btn btn-sm btn-danger"

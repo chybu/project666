@@ -143,6 +143,19 @@ public class LabServiceImpl implements LabService{
     }
 
     @Override
+    public LabRequest getLabRequestForPatient(UUID patientId, UUID requestId) {
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+
+        LabRequest labRequest = labRequestRepository.findDetailByIdAndPatientId(requestId, patientId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getDoctor().getId(), RoleEnum.DOCTOR);
+        return labRequest;
+    }
+
+    @Override
     public LabRequest getSharedLabRequestForDoctor(UUID doctorId, UUID requestId) {
         requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
 

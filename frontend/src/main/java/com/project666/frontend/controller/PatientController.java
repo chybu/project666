@@ -41,7 +41,6 @@ import com.project666.backend.domain.entity.Appointment;
 import com.project666.backend.domain.entity.AppointmentBill;
 import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.domain.entity.AppointmentTypeEnum;
-import com.project666.backend.domain.entity.BaseBill;
 import com.project666.backend.domain.entity.BillStatusEnum;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.BillService;
@@ -70,10 +69,7 @@ import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.service.PatientRecordAccessService;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
 import lombok.RequiredArgsConstructor;
-
-
 
 @Controller
 @RequiredArgsConstructor

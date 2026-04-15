@@ -205,14 +205,20 @@
                         <div th:if="${labRequests != null and !#lists.isEmpty(labRequests)}">
                             <div th:each="lr, stat : ${labRequests}" class="mb-4">
                                 <hr th:if="${!stat.first}" class="my-4">
-                                <div class="mb-2">
-                                    <strong>Date:</strong> <span th:text="${lr.createdAt}"></span>
-                                    &nbsp;|&nbsp;
-                                    <strong>Status:</strong> <span th:text="${lr.status}"></span>
-                                    &nbsp;|&nbsp;
-                                    <strong>Doctor:</strong> <span th:text="${lr.doctorFullName}"></span>
-                                    &nbsp;|&nbsp;
-                                    <strong>Appointment:</strong> <span th:text="${lr.appointmentStartTime}"></span>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>Date:</strong> <span th:text="${lr.createdAt}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Status:</strong> <span th:text="${lr.status}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Doctor:</strong> <span th:text="${lr.doctorFullName}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Appointment:</strong> <span th:text="${lr.appointmentStartTime}"></span>
+                                    </div>
+                                    <a th:href="@{/pdf/lab/patient(labId=${lr.id})}"
+                                       class="btn btn-sm btn-outline-secondary ml-3">
+                                        PDF
+                                    </a>
                                 </div>
                                 <table class="table table-bordered">
                                     <thead>

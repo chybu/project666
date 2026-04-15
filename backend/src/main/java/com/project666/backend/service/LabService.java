@@ -30,6 +30,11 @@ public interface LabService {
     /**
      * Loads a doctor's lab request with its detail data.
      */
+    LabRequest getLabRequestForPatient(UUID patientId, UUID requestId);
+
+    /**
+     * Loads a doctor's lab request with its detail data.
+     */
     LabRequest getLabRequestForDoctor(UUID doctorId, UUID requestId);
 
     /**

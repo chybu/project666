@@ -17,6 +17,8 @@ public interface PrescriptionService {
 
     Prescription consumeRefill(UUID patientId, UUID prescriptionId);
 
+    Prescription getPrescriptionForPatient(UUID patientId, UUID prescriptionId);
+
     Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId);
 
     Prescription getSharedPrescriptionForDoctor(UUID doctorId, UUID prescriptionId);
