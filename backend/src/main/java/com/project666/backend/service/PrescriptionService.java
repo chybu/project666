@@ -19,6 +19,8 @@ public interface PrescriptionService {
 
     Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId);
 
+    Prescription getSharedPrescriptionForDoctor(UUID doctorId, UUID prescriptionId);
+
     Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable);
 
     Page<Prescription> listPrescriptionForPatient(UUID patientId, ListPrescriptionRequest request, Pageable pageable);

@@ -270,7 +270,7 @@ public class AppointmentServiceImpl implements AppointmentService{
                 )
             );
         
-        if (noShowAt.isBefore(noShowAppointment.getEndTime())) throw new IllegalArgumentException(
+        if (noShowAt.isBefore(noShowAppointment.getStartTime().plusMinutes(CONFIRMATION_LATE_WINDOW_MINUTES))) throw new IllegalArgumentException(
             String.format("Appointment ID %s can only marked as no show after %s", noShowAppointment.getId(), noShowAppointment.getEndTime())
         );
 

@@ -123,7 +123,7 @@
                         </form>
 
                         <div th:if="${precheckFilterError}" class="alert alert-danger mt-3" th:text="${precheckFilterError}"></div>
-                        <hr class="my-4">
+                        <div class="mb-4"></div>
 
                         <div th:if="${#lists.isEmpty(prechecks)}" class="text-muted">No shared prechecks.</div>
 
@@ -217,7 +217,7 @@
                         </form>
 
                         <div th:if="${labFilterError}" class="alert alert-danger mt-3" th:text="${labFilterError}"></div>
-                        <hr class="my-4">
+                        <div class="mb-4"></div>
 
                         <div th:if="${#lists.isEmpty(labs)}" class="text-muted">No shared labs.</div>
 
@@ -227,6 +227,7 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Patient</th>
+                                    <th>Test</th>
                                     <th>Status</th>
                                     <th>Action</th>
                                 </tr>
@@ -235,6 +236,15 @@
                                 <tr th:each="l : ${labs}">
                                     <td th:text="${#temporals.format(l.createdAt, 'MMM dd, yyyy')}"></td>
                                     <td th:text="${l.patient.firstName + ' ' + l.patient.lastName}"></td>
+                                    <td>
+                                        <span th:if="${l.labTests != null and !#lists.isEmpty(l.labTests)}"
+                                              th:each="test : ${l.labTests}">
+                                            <span th:text="${test.name}"></span><br/>
+                                        </span>
+                                        <span th:if="${l.labTests == null or #lists.isEmpty(l.labTests)}">
+                                            N/A
+                                        </span>
+                                    </td>
                                     <td th:text="${l.status}"></td>
                                     <td>
                                         <a class="btn btn-sm btn-info"
@@ -259,7 +269,7 @@
                         <form method="get" th:action="@{/doctor/dashboard/shared-records}" class="mb-4">
                             <input type="hidden" name="tab" value="prescriptions" />
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label for="prescriptionPatientId">Patient</label>
                                     <select class="form-control" id="prescriptionPatientId" name="prescriptionPatientId">
                                         <option value="">All patients</option>
@@ -281,7 +291,16 @@
                                         </option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-2">
+                                    <label for="prescriptionRemainingRefills">Remaining Refills</label>
+                                    <input type="number"
+                                           min="0"
+                                           class="form-control"
+                                           id="prescriptionRemainingRefills"
+                                           name="prescriptionRemainingRefills"
+                                           th:value="${prescriptionRemainingRefills}">
+                                </div>
+                                <div class="form-group col-md-2">
                                     <label for="prescriptionMinDate">Min Date</label>
                                     <input type="date" class="form-control" id="prescriptionMinDate" name="prescriptionMinDate" th:value="${prescriptionMinDate}">
                                 </div>
@@ -297,7 +316,7 @@
                         </form>
 
                         <div th:if="${prescriptionFilterError}" class="alert alert-danger mt-3" th:text="${prescriptionFilterError}"></div>
-                        <hr class="my-4">
+                        <div class="mb-4"></div>
 
                         <div th:if="${#lists.isEmpty(prescriptions)}" class="text-muted">No shared prescriptions.</div>
 
@@ -305,16 +324,37 @@
                             <table class="table table-bordered table-hover">
                                 <thead>
                                 <tr>
-                                    <th>Date</th>
                                     <th>Patient</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
                                     <th>Status</th>
+                                    <th>Refills</th>
+                                    <th>Actions</th>
+                                    <th>Created Date</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <tr th:each="pr : ${prescriptions}">
-                                    <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>
                                     <td th:text="${pr.patient.firstName + ' ' + pr.patient.lastName}"></td>
-                                    <td th:text="${pr.status}"></td>
+                                    <td th:text="${pr.startDate != null ? #temporals.format(pr.startDate, 'MMM dd, yyyy') : 'N/A'}"></td>
+                                    <td th:text="${pr.endDate != null ? #temporals.format(pr.endDate, 'MMM dd, yyyy') : 'N/A'}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${pr.status.name() == 'ACTIVE'} ? 'badge-success' :
+                                                (${pr.status.name() == 'COMPLETED'} ? 'badge-primary' :
+                                                'badge-secondary')"
+                                              th:text="${pr.status}">
+                                        </span>
+                                    </td>
+                                    <td th:text="${pr.remainingRefills + ' / ' + pr.totalRefills}"></td>
+                                    <td>
+                                        <a class="btn btn-sm btn-info"
+                                           th:href="@{/doctor/dashboard/shared-records/prescriptions/view(prescriptionId=${pr.id})}">
+                                            View
+                                        </a>
+                                    </td>
+                                    <td th:text="${#temporals.format(pr.createdAt, 'MMM dd, yyyy')}"></td>
                                 </tr>
                                 </tbody>
                             </table>

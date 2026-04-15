@@ -318,8 +318,6 @@ public String pharmacy(
     @AuthenticationPrincipal OidcUser oidcUser,
     @RequestParam(required = false) LocalDate minDate,
     @RequestParam(required = false) LocalDate maxDate,
-    @RequestParam(required = false) LocalDate startDate,
-    @RequestParam(required = false) LocalDate endDate,
     @RequestParam(required = false) Integer remainingRefills,
     @RequestParam(required = false) PrescriptionStatusEnum status,
     @RequestParam(required = false) UUID doctorId,
@@ -327,14 +325,12 @@ public String pharmacy(
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
-    LocalDate effectiveMinDate = minDate != null ? minDate : startDate;
-    LocalDate effectiveMaxDate = maxDate != null ? maxDate : endDate;
 
     Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
 
     ListPrescriptionRequest request = new ListPrescriptionRequest();
-    request.setMinDate(effectiveMinDate);
-    request.setMaxDate(effectiveMaxDate);
+    request.setMinDate(minDate);
+    request.setMaxDate(maxDate);
     request.setRemainingRefills(remainingRefills);
     request.setStatus(status);
     request.setDoctorId(doctorId);
@@ -351,8 +347,8 @@ public String pharmacy(
 
     model.addAttribute("prescriptions", prescriptions);
     model.addAttribute("now", java.time.LocalDateTime.now());
-    model.addAttribute("minDate", effectiveMinDate);
-    model.addAttribute("maxDate", effectiveMaxDate);
+    model.addAttribute("minDate", minDate);
+    model.addAttribute("maxDate", maxDate);
     model.addAttribute("remainingRefills", remainingRefills);
     model.addAttribute("status", status);
     model.addAttribute("doctorId", doctorId);

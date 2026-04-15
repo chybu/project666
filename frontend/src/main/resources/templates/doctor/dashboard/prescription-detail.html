@@ -13,7 +13,7 @@
             <div class="container-fluid">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h3 text-gray-800 mb-0">Prescription Details</h1>
-                    <a th:href="@{/doctor/dashboard/prescriptions}" class="btn btn-secondary btn-sm">Back to Prescriptions</a>
+                    <a th:href="${backUrl}" class="btn btn-secondary btn-sm" th:text="${backLabel}">Back to Prescriptions</a>
                 </div>
 
                 <div class="card shadow mb-4">

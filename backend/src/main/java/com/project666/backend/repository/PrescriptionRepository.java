@@ -21,4 +21,7 @@ public interface PrescriptionRepository extends
 
     @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "medicines"})
     Optional<Prescription> findDetailByIdAndDoctorId(UUID id, UUID doctorId);
+
+    @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "medicines"})
+    Optional<Prescription> findDetailById(UUID id);
 }

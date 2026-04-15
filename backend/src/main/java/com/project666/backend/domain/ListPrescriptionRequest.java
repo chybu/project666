@@ -19,8 +19,6 @@ public class ListPrescriptionRequest {
     private PrescriptionStatusEnum status;
     private LocalDate minDate;
     private LocalDate maxDate;
-    private LocalDate startDate;
-    private LocalDate endDate;
     private Integer remainingRefills;
     private String medicineName;
     private LocalDate createdAtDate;

@@ -27,6 +27,7 @@ import com.project666.backend.domain.CreatePrescriptionRequest;
 import com.project666.backend.domain.entity.CancellationInitiatorEnum;
 import com.project666.backend.domain.entity.LabRequest;
 import com.project666.backend.domain.entity.PatientRecordAccess;
+import com.project666.backend.domain.entity.PatientRecordAccessStatusEnum;
 import com.project666.backend.domain.entity.PatientRecordTypeEnum;
 import com.project666.backend.domain.entity.Precheck;
 import com.project666.backend.domain.entity.PrecheckStatusEnum;
@@ -39,7 +40,6 @@ import com.project666.backend.domain.entity.AppointmentTypeEnum;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -58,17 +58,12 @@ import com.project666.backend.service.PatientRecordAccessService;
 import com.project666.backend.service.PrecheckService;
 import com.project666.backend.service.PrescriptionService;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.RequestParam;
-
-
-
 
 @Controller
 @RequiredArgsConstructor
@@ -307,20 +302,16 @@ public String prescriptions(
         @RequestParam(required = false) PrescriptionStatusEnum status,
         @RequestParam(required = false) LocalDate minDate,
         @RequestParam(required = false) LocalDate maxDate,
-        @RequestParam(required = false) LocalDate startDate,
-        @RequestParam(required = false) LocalDate endDate,
         @RequestParam(required = false) Integer remainingRefills,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
-    LocalDate effectiveMinDate = minDate != null ? minDate : startDate;
-    LocalDate effectiveMaxDate = maxDate != null ? maxDate : endDate;
 
     ListPrescriptionRequest request = new ListPrescriptionRequest();
     request.setPatientId(patientId);
     request.setStatus(status);
-    request.setMinDate(effectiveMinDate);
-    request.setMaxDate(effectiveMaxDate);
+    request.setMinDate(minDate);
+    request.setMaxDate(maxDate);
     request.setRemainingRefills(remainingRefills);
 
     Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
@@ -338,8 +329,8 @@ public String prescriptions(
     model.addAttribute("prescriptionStatuses", PrescriptionStatusEnum.values());
     model.addAttribute("patientId", patientId);
     model.addAttribute("status", status);
-    model.addAttribute("minDate", effectiveMinDate);
-    model.addAttribute("maxDate", effectiveMaxDate);
+    model.addAttribute("minDate", minDate);
+    model.addAttribute("maxDate", maxDate);
     model.addAttribute("remainingRefills", remainingRefills);
     model.addAttribute("error", error);
 
@@ -357,6 +348,25 @@ public String prescriptionDetail(
 
     model.addAttribute("prescription", prescription);
     model.addAttribute("now", java.time.LocalDateTime.now());
+    model.addAttribute("backUrl", "/doctor/dashboard/prescriptions");
+    model.addAttribute("backLabel", "Back to Prescriptions");
+
+    return "doctor/dashboard/prescription-detail";
+}
+
+@GetMapping("/dashboard/shared-records/prescriptions/view")
+public String sharedPrescriptionDetail(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam UUID prescriptionId,
+        Model model
+) {
+    UUID doctorId = OidcUserUtil.getUserId(oidcUser);
+    Prescription prescription = prescriptionService.getSharedPrescriptionForDoctor(doctorId, prescriptionId);
+
+    model.addAttribute("prescription", prescription);
+    model.addAttribute("now", java.time.LocalDateTime.now());
+    model.addAttribute("backUrl", "/doctor/dashboard/shared-records?tab=prescriptions");
+    model.addAttribute("backLabel", "Back to Shared Prescriptions");
 
     return "doctor/dashboard/prescription-detail";
 }
@@ -458,6 +468,8 @@ public String labDetail(
     LabRequest labRequest = labService.getLabRequestForDoctor(doctorId, labId);
 
     model.addAttribute("lab", labRequest);
+    model.addAttribute("backUrl", "/doctor/dashboard/labs");
+    model.addAttribute("backLabel", "Back to Lab Requests");
     return "doctor/dashboard/lab-detail";
 }
 
@@ -471,6 +483,8 @@ public String sharedLabDetail(
     LabRequest labRequest = labService.getSharedLabRequestForDoctor(doctorId, labId);
 
     model.addAttribute("lab", labRequest);
+    model.addAttribute("backUrl", "/doctor/dashboard/shared-records?tab=labs");
+    model.addAttribute("backLabel", "Back to Shared Lab Requests");
     return "doctor/dashboard/lab-detail";
 }
 
@@ -538,6 +552,7 @@ public String sharedRecords(
         @RequestParam(required = false) PrescriptionStatusEnum prescriptionStatus,
         @RequestParam(required = false) LocalDate prescriptionMinDate,
         @RequestParam(required = false) LocalDate prescriptionMaxDate,
+        @RequestParam(required = false) Integer prescriptionRemainingRefills,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
@@ -578,6 +593,7 @@ public String sharedRecords(
         prescriptionRequest.setStatus(prescriptionStatus);
         prescriptionRequest.setMinDate(prescriptionMinDate);
         prescriptionRequest.setMaxDate(prescriptionMaxDate);
+        prescriptionRequest.setRemainingRefills(prescriptionRemainingRefills);
 
         Page<Prescription> prescriptionPage = Page.empty(pageable);
         String prescriptionFilterError = null;
@@ -592,6 +608,7 @@ public String sharedRecords(
         model.addAttribute("prescriptionStatus", prescriptionStatus);
         model.addAttribute("prescriptionMinDate", prescriptionMinDate);
         model.addAttribute("prescriptionMaxDate", prescriptionMaxDate);
+        model.addAttribute("prescriptionRemainingRefills", prescriptionRemainingRefills);
         model.addAttribute("prescriptionFilterError", prescriptionFilterError);
     } else {
         ListPrecheckRequest precheckRequest = new ListPrecheckRequest();
@@ -625,19 +642,36 @@ public String sharedRecords(
 @GetMapping("/dashboard/access-requests")
 public String accessRequests(
         @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam(required = false) UUID patientId,
+        @RequestParam(required = false) PatientRecordTypeEnum type,
+        @RequestParam(required = false) PatientRecordAccessStatusEnum status,
+        @RequestParam(required = false) LocalDate minDate,
+        @RequestParam(required = false) LocalDate maxDate,
         Model model
 ) {
     UUID doctorId = OidcUserUtil.getUserId(oidcUser);
 
     ListPatientRecordAccessRequest request = new ListPatientRecordAccessRequest();
     request.setDoctorId(doctorId);
+    request.setPatientId(patientId);
+    request.setType(type);
+    request.setStatus(status);
+    request.setMinDate(minDate);
+    request.setMaxDate(maxDate);
 
     Pageable pageable = PageRequest.of(0, 50, Sort.by("createdAt").descending());
 
     Page<PatientRecordAccess> page =
-            patientRecordAccessService.listPatientRecordAccess(null, request, pageable);
+            patientRecordAccessService.listSharedPatientRecordAccess(doctorId, request, pageable);
 
     model.addAttribute("accessRequests", page.getContent());
+    model.addAttribute("patientId", patientId);
+    model.addAttribute("type", type);
+    model.addAttribute("status", status);
+    model.addAttribute("minDate", minDate);
+    model.addAttribute("maxDate", maxDate);
+    model.addAttribute("recordTypes", PatientRecordTypeEnum.values());
+    model.addAttribute("accessRequestStatuses", PatientRecordAccessStatusEnum.values());
 
     model.addAttribute("patients",
             userRepository.findAll().stream()

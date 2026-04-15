@@ -22,8 +22,10 @@
                 <h1 class="h3 mb-4 text-gray-800">Prechecks</h1>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Prechecks</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Precheck Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prechecks)} + ' precheck(s)'"></span>
                     </div>
 
                     <div class="card-body">
@@ -91,13 +93,7 @@
 
                         <div th:if="${filterError}" class="alert alert-danger mt-3" th:text="${filterError}"></div>
 
-                        <hr class="my-4">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Precheck Results</h6>
-                            <span class="text-muted small"
-                                  th:text="'Showing ' + ${#lists.size(prechecks)} + ' precheck(s)'"></span>
-                        </div>
+                        <div class="mb-4"></div>
 
                         <div th:if="${prechecks == null or #lists.isEmpty(prechecks)}" class="text-muted">
                             No prechecks found.

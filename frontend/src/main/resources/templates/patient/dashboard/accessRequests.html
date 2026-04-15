@@ -16,8 +16,10 @@
                 <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Access Requests</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Access Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(accessRequests)} + ' request(s)'"></span>
                     </div>
                     <div class="card-body">
                         <form method="get" th:action="@{/patient/dashboard/accessRequests}" class="mb-4">
@@ -72,12 +74,6 @@
                         <div th:if="${filterError}" class="alert alert-danger mt-3" th:text="${filterError}"></div>
 
                         <hr class="my-4">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Access Request Results</h6>
-                            <span class="text-muted small"
-                                  th:text="'Showing ' + ${#lists.size(accessRequests)} + ' request(s)'"></span>
-                        </div>
 
                         <div th:if="${#lists.isEmpty(accessRequests)}" class="text-muted">No requests found.</div>
 

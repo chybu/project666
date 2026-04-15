@@ -174,13 +174,74 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     @Override
+    public Prescription getSharedPrescriptionForDoctor(UUID doctorId, UUID prescriptionId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        List<UUID> approvedPatientIds = patientRecordAccessRepository
+            .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+                doctorId,
+                PatientRecordTypeEnum.PRESCRIPTION,
+                PatientRecordAccessStatusEnum.APPROVED
+            );
+
+        if (approvedPatientIds.isEmpty()) {
+            throw new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            );
+        }
+
+        Prescription prescription = prescriptionRepository.findDetailById(prescriptionId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        UUID patientId = prescription.getPatient() != null ? prescription.getPatient().getId() : null;
+        UUID ownerDoctorId = prescription.getDoctor() != null ? prescription.getDoctor().getId() : null;
+
+        if (patientId == null || !approvedPatientIds.contains(patientId) || doctorId.equals(ownerDoctorId)) {
+            throw new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            );
+        }
+
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+        return prescription;
+    }
+
+    @Override
     public Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListRequest(request);
 
-        Specification<Prescription> spec = baseSpecification(request);
+        Specification<Prescription> spec = PrescriptionSpecification.alwaysTrue();
+
+        if (request.getStatus() != null) {
+            spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
+
+        if (request.getRemainingRefills() != null) {
+            spec = spec.and(PrescriptionSpecification.byRemainingRefills(request.getRemainingRefills()));
+        }
+
+        if (request.getCreatedAtDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtDate(request.getCreatedAtDate()));
+        }
+
+        if (request.getAppointmentId() != null) {
+            spec = spec.and(PrescriptionSpecification.byAppointment(request.getAppointmentId()));
+        }
+
+        if (request.getMedicineName() != null && !request.getMedicineName().isBlank()) {
+            spec = spec.and(PrescriptionSpecification.byMedicineName(request.getMedicineName()));
+        }
+
         spec = spec.and(PrescriptionSpecification.byDoctor(doctorId));
         UUID patientId = request.getPatientId();
         if (patientId!=null) spec = spec.and(PrescriptionSpecification.byPatient(patientId));
@@ -242,20 +303,8 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
         }
 
-        if (request.getMinDate() != null) {
-            spec = spec.and(PrescriptionSpecification.overlappingMinDate(request.getMinDate()));
-        }
-
-        if (request.getMaxDate() != null) {
-            spec = spec.and(PrescriptionSpecification.overlappingMaxDate(request.getMaxDate()));
-        }
-
-        if (request.getStartDate() != null) {
-            spec = spec.and(PrescriptionSpecification.byStartDate(request.getStartDate()));
-        }
-
-        if (request.getEndDate() != null) {
-            spec = spec.and(PrescriptionSpecification.byEndDate(request.getEndDate()));
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
         }
 
         if (request.getRemainingRefills() != null) {

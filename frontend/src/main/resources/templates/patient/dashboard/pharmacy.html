@@ -99,8 +99,6 @@
                                     <strong>Start:</strong> <span th:text="${p.startDate}"></span>
                                     &nbsp;|&nbsp;
                                     <strong>End:</strong> <span th:text="${p.endDate}"></span>
-                                    &nbsp;|&nbsp;
-                                    <strong>Remaining Refills:</strong> <span th:text="${p.remainingRefills}"></span>
                                     <br>
                                     <strong>Next Eligible Refill:</strong>
                                     <span th:if="${p.remainingRefills != null and p.remainingRefills <= 0}">
@@ -138,6 +136,8 @@
                                         <th>Frequency</th>
                                         <th>Route</th>
                                         <th>Instructions</th>
+                                        <th>Remaining Refills</th>
+                                        <th>Created Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -147,6 +147,8 @@
                                         <td th:text="${med.frequency}"></td>
                                         <td th:text="${med.route}"></td>
                                         <td th:text="${med.instructions}"></td>
+                                        <td th:text="${p.remainingRefills}"></td>
+                                        <td th:text="${p.createdAt != null ? #temporals.format(p.createdAt, 'yyyy-MM-dd') : 'N/A'}"></td>
                                     </tr>
                                 </tbody>
                             </table>

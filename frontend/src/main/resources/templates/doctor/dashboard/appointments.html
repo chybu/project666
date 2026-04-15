@@ -22,8 +22,10 @@
                 <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Upcoming Appointments</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Upcoming Appointment Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(upcomingAppointments)} + ' appointment(s)'"></span>
                     </div>
 
                     <div class="card-body">
@@ -92,13 +94,7 @@
 
                         <div th:if="${upcomingFilterError}" class="alert alert-danger mt-3" th:text="${upcomingFilterError}"></div>
 
-                        <hr class="my-4">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Upcoming Appointment Results</h6>
-                            <span class="text-muted small"
-                                  th:text="'Showing ' + ${#lists.size(upcomingAppointments)} + ' appointment(s)'"></span>
-                        </div>
+                        <div class="mb-4"></div>
 
                         <div th:if="${upcomingAppointments == null or #lists.isEmpty(upcomingAppointments)}" class="text-muted">
                             No upcoming appointments.
@@ -115,7 +111,6 @@
                                     <th>Patient</th>
                                     <th>Type</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
                                 </tr>
                                 </thead>
 
@@ -135,9 +130,6 @@
                                               th:text="${appointment.status}">
                                         </span>
                                     </td>
-                                    <td>
-                                        <span class="text-muted small">No action</span>
-                                    </td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -146,8 +138,10 @@
                 </div>
 
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Search Completed Appointments</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Completed Appointment Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(completedAppointments)} + ' appointment(s)'"></span>
                     </div>
 
                     <div class="card-body">
@@ -216,13 +210,7 @@
 
                         <div th:if="${completedFilterError}" class="alert alert-danger mt-3" th:text="${completedFilterError}"></div>
 
-                        <hr class="my-4">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Completed Appointment Results</h6>
-                            <span class="text-muted small"
-                                  th:text="'Showing ' + ${#lists.size(completedAppointments)} + ' appointment(s)'"></span>
-                        </div>
+                        <div class="mb-4"></div>
 
                         <div th:if="${completedAppointments == null or #lists.isEmpty(completedAppointments)}" class="text-muted">
                             No completed appointments.

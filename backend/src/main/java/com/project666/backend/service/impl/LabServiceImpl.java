@@ -288,6 +288,7 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         List<UUID> approvedPatientIds = patientRecordAccessRepository
             .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
@@ -314,6 +315,10 @@ public class LabServiceImpl implements LabService{
 
         if (request.getStatus() != null) {
             spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
         }
 
         if (request.getCreatedAtDate() != null) {
