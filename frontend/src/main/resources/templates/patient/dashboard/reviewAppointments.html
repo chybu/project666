@@ -1,108 +1,211 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
     <title>Review Appointments</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+    <style>
+        .appointment-filter-tabs {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
 
-    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
-    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+        .appointment-filter-tab {
+            min-width: 120px;
+            border-radius: 999px;
+            border: 1px solid #d1d9e6;
+            background: #ffffff;
+            color: #5a5c69;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+            box-shadow: 0 0.15rem 0.45rem rgba(58, 59, 69, 0.08);
+        }
+
+        .appointment-filter-tab:hover,
+        .appointment-filter-tab:focus {
+            color: #2f3640;
+            transform: translateY(-1px);
+            box-shadow: 0 0.35rem 0.9rem rgba(58, 59, 69, 0.14);
+        }
+
+        .appointment-filter-tab.is-active-upcoming {
+            border-color: #4e73df;
+            background: linear-gradient(135deg, #4e73df 0%, #6f8ff0 100%);
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18), 0 0.5rem 1rem rgba(78, 115, 223, 0.24);
+        }
+
+        .appointment-filter-tab.is-active-past {
+            border-color: #858796;
+            background: linear-gradient(135deg, #858796 0%, #a0a3b8 100%);
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(133, 135, 150, 0.18), 0 0.5rem 1rem rgba(133, 135, 150, 0.22);
+        }
+    </style>
 </head>
 
 <body id="page-top">
-
 <div id="wrapper">
 
-    <!-- Sidebar -->
-    <div th:replace="~{pageFragments/patientSidebar :: sidebar}"></div>
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
 
-    <!-- Content Wrapper -->
-    <div id="content-wrapper" class="d-flex flex-column">
-
-        <!-- Main Content -->
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
         <div id="content">
 
-            <!-- Topbar -->
-            <div th:replace="~{pageFragments/patientTopbar :: topbar}"></div>
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
 
-            <!-- Begin Page Content -->
             <div class="container-fluid">
 
-                <!-- Page Heading -->
-                <h1 class="h3 mb-4 text-gray-800">Review Appointments</h1>
+                <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
-                <!-- Upcoming Appointments Card -->
+                <div class="mb-3 appointment-filter-tabs">
+                    <a th:href="@{/patient/dashboard/reviewAppointments(filter='upcoming')}"
+                       class="btn btn-sm appointment-filter-tab"
+                       th:classappend="${filter == 'upcoming'} ? ' is-active-upcoming'">
+                        Upcoming
+                    </a>
+
+                    <a th:href="@{/patient/dashboard/reviewAppointments(filter='past')}"
+                       class="btn btn-sm appointment-filter-tab"
+                       th:classappend="${filter == 'past'} ? ' is-active-past'">
+                       Past
+                    </a>
+                </div>
+
+                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Upcoming Confirmed Appointments</h6>
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Appointment Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointments)} + ' appointment(s)'"></span>
                     </div>
-
                     <div class="card-body">
+                        <form method="get" th:action="@{/patient/dashboard/reviewAppointments}" class="mb-4">
+                            <input type="hidden" name="filter" th:value="${filter}" />
 
-                        <!-- No appointments -->
-                        <div th:if="${#lists.isEmpty(appointments)}" class="text-center text-gray-500">
-                            No upcoming confirmed appointments.
-                        </div>
-
-                        <!-- Appointment list -->
-                        <div th:each="appt : ${appointments}" class="card mb-3 border-left-primary shadow-sm">
-
-                            <div class="card-body">
-
-                                <div class="row align-items-center">
-
-                                    <div class="col-md-4">
-                                        <strong>Date:</strong><br>
-                                        <span th:text="${#temporals.format(appt.startTime, 'dd MMM yyyy HH:mm')}"></span>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <strong>Type:</strong><br>
-                                        <span th:text="${appt.type}"></span>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <strong>Doctor:</strong><br>
-                                        <span th:text="'Dr. ' + ${appt.doctor.firstName}"></span>
-                                    </div>
-
-                                    <div class="col-md-2 text-right">
-
-                                        <button class="btn btn-primary btn-sm mb-2">
-                                            Renew
-                                        </button>
-
-                                        <button class="btn btn-outline-secondary btn-sm">
-                                            Details
-                                        </button>
-
-                                    </div>
-
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="doctorId">Doctor</label>
+                                    <select class="form-control" id="doctorId" name="doctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${doctorId != null and doctorId == doctor.id}">
+                                        </option>
+                                    </select>
                                 </div>
 
+                                <div class="form-group col-md-3">
+                                    <label for="type">Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option value="">All types</option>
+                                        <option th:each="appointmentType : ${appointmentTypes}"
+                                                th:value="${appointmentType}"
+                                                th:text="${appointmentType}"
+                                                th:selected="${type != null and type == appointmentType}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="from">Start Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="from"
+                                           name="from"
+                                           th:value="${from}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="end">End Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="end"
+                                           name="end"
+                                           th:value="${end}">
+                                </div>
+
+                                <div class="form-group col-md-2" th:if="${filter == 'past'}">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All statuses</option>
+                                        <option th:each="appointmentStatus : ${appointmentStatuses}"
+                                                th:value="${appointmentStatus}"
+                                                th:text="${appointmentStatus}"
+                                                th:selected="${status != null and status == appointmentStatus}">
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
 
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/reviewAppointments(filter=${filter})}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${#lists.isEmpty(appointments)}" class="text-muted">
+                            No appointments found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(appointments)}">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Doctor</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th th:if="${filter == 'upcoming'}">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="appointment : ${appointments}">
+                                        <td th:text="${#temporals.format(appointment.startTime, 'yyyy-MM-dd')}"></td>
+                                        <td th:text="${#temporals.format(appointment.startTime, 'HH:mm')}"></td>
+                                        <td th:text="${#temporals.format(appointment.endTime, 'HH:mm')}"></td>
+                                        <td th:text="${appointment.doctor != null ? appointment.doctor.firstName + ' ' + appointment.doctor.lastName : 'N/A'}"></td>
+                                        <td th:text="${appointment.type}"></td>
+                                        <td th:text="${appointment.status}"></td>
+
+                                        <td th:if="${filter == 'upcoming'}">
+                                            <form th:action="@{/patient/dashboard/cancel-appointment}" method="post">
+                                                <input type="hidden" name="appointmentId" th:value="${appointment.id}" />
+                                                <input type="hidden" name="filter" th:value="${filter}" />
+                                                <input type="hidden" name="doctorId" th:value="${doctorId}" />
+                                                <input type="hidden" name="type" th:value="${type}" />
+                                                <input type="hidden" name="from" th:value="${from}" />
+                                                <input type="hidden" name="end" th:value="${end}" />
+                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                     </div>
                 </div>
 
             </div>
-            <!-- /.container-fluid -->
-
         </div>
 
-        <!-- Footer -->
-        <div th:replace="~{pageFragments/patientFooter :: footer}"></div>
-
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
     </div>
-
 </div>
 
-<!-- Scripts -->
-<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
-<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/js/sb-admin-2.min.js}"></script>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
 
 </body>
 </html>

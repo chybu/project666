@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Prescription Details</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+<body id="page-top">
+<div id="wrapper">
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3 text-gray-800 mb-0">Prescription Details</h1>
+                    <a th:href="${backUrl}" class="btn btn-secondary btn-sm" th:text="${backLabel}">Back to Prescriptions</a>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <strong>Patient:</strong>
+                                <span th:text="${prescription.patient != null ? prescription.patient.firstName + ' ' + prescription.patient.lastName : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Status:</strong>
+                                <span th:text="${prescription.status}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Start Date:</strong>
+                                <span th:text="${prescription.startDate != null ? #temporals.format(prescription.startDate, 'MMM dd, yyyy') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>End Date:</strong>
+                                <span th:text="${prescription.endDate != null ? #temporals.format(prescription.endDate, 'MMM dd, yyyy') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Total Refills:</strong>
+                                <span th:text="${prescription.totalRefills}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Remaining Refills:</strong>
+                                <span th:text="${prescription.remainingRefills}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Refill Interval:</strong>
+                                <span th:text="${prescription.refillIntervalDays != null ? prescription.refillIntervalDays + ' day(s)' : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Created Date:</strong>
+                                <span th:text="${prescription.createdAt != null ? #temporals.format(prescription.createdAt, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Next Eligible Refill:</strong>
+                                <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills <= 0}">
+                                    No future refills remaining
+                                </span>
+                                <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills > 0 and prescription.nextEligibleRefillAt != null and !now.isBefore(prescription.nextEligibleRefillAt)}">
+                                    Eligible now
+                                </span>
+                                <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills > 0 and prescription.nextEligibleRefillAt != null and now.isBefore(prescription.nextEligibleRefillAt)}"
+                                      th:text="${#temporals.format(prescription.nextEligibleRefillAt, 'MMM dd, yyyy h:mm a')}">
+                                </span>
+                                <span th:if="${prescription.remainingRefills != null and prescription.remainingRefills > 0 and prescription.nextEligibleRefillAt == null}">
+                                    Not available
+                                </span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Last Consumed At:</strong>
+                                <span th:text="${prescription.lastConsumedAt != null ? #temporals.format(prescription.lastConsumedAt, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-12">
+                                <strong>General Note:</strong>
+                                <div class="mt-2 text-gray-800"
+                                     th:text="${prescription.generalNote != null and !#strings.isEmpty(prescription.generalNote) ? prescription.generalNote : 'No general note provided.'}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Medicines</h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(prescription.medicines)}" class="text-muted">
+                            No medicines found.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(prescription.medicines)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Route</th>
+                                    <th>Quantity</th>
+                                    <th>Instructions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="medicine : ${prescription.medicines}">
+                                    <td th:text="${medicine.medicineName}"></td>
+                                    <td th:text="${medicine.dosage != null ? medicine.dosage : 'N/A'}"></td>
+                                    <td th:text="${medicine.frequency != null ? medicine.frequency : 'N/A'}"></td>
+                                    <td th:text="${medicine.route != null ? medicine.route : 'N/A'}"></td>
+                                    <td th:text="${medicine.quantity != null ? medicine.quantity : 'N/A'}"></td>
+                                    <td th:text="${medicine.instructions != null ? medicine.instructions : 'N/A'}"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+    </div>
+</div>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Finances</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+<div id="wrapper">
+
+    <div th:replace="pageFragments/accountantSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+
+            <div th:replace="pageFragments/accountantTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Finances</h1>
+
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <!-- Appointment Bills -->
+                <div class="card shadow mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="font-weight-bold">Appointment Bills</span>
+                        <div>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab='all', labTab=${labTab})}"
+                               class="btn btn-sm btn-primary"
+                               th:classappend="${apptTab == 'all'} ? ' active'">
+                                All
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab='viewing', labTab=${labTab})}"
+                               class="btn btn-sm btn-secondary"
+                               th:classappend="${apptTab == 'viewing'} ? ' active'">
+                                Processing
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab='unpaid', labTab=${labTab})}"
+                               class="btn btn-sm btn-warning"
+                               th:classappend="${apptTab == 'unpaid'} ? ' active'">
+                                Unpaid
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab='paid', labTab=${labTab})}"
+                               class="btn btn-sm btn-success"
+                               th:classappend="${apptTab == 'paid'} ? ' active'">
+                                Paid
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(appointmentBills)}">
+                            No appointment bills found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(appointmentBills)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Insurance Cover</th>
+                                        <th>Patient Payment</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="bill : ${appointmentBills}">
+                                        <td th:text="${bill.patient != null ? bill.patient.firstName + ' ' + bill.patient.lastName : 'N/A'}"></td>
+                                        <td th:text="${bill.type}"></td>
+                                        <td th:text="${bill.amount}"></td>
+                                        <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
+                                        <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
+                                        <td th:text="${bill.status}"></td>
+                                        <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                        <td>
+                                            <form th:if="${bill.status.name() == 'UNPAID'}"
+                                                  th:action="@{/accountant/dashboard/confirm-payment}" method="post">
+                                                <input type="hidden" name="billId" th:value="${bill.id}" />
+                                                <input type="hidden" name="apptTab" th:value="${apptTab}" />
+                                                <input type="hidden" name="labTab" th:value="${labTab}" />
+                                                <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lab Bills -->
+                <div class="card shadow mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="font-weight-bold">Lab Bills</span>
+                        <div>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab=${apptTab}, labTab='all')}"
+                               class="btn btn-sm btn-primary"
+                               th:classappend="${labTab == 'all'} ? ' active'">
+                                All
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab=${apptTab}, labTab='viewing')}"
+                               class="btn btn-sm btn-secondary"
+                               th:classappend="${labTab == 'viewing'} ? ' active'">
+                                Processing
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab=${apptTab}, labTab='unpaid')}"
+                               class="btn btn-sm btn-warning"
+                               th:classappend="${labTab == 'unpaid'} ? ' active'">
+                                Unpaid
+                            </a>
+                            <a th:href="@{/accountant/dashboard/finances(apptTab=${apptTab}, labTab='paid')}"
+                               class="btn btn-sm btn-success"
+                               th:classappend="${labTab == 'paid'} ? ' active'">
+                                Paid
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+
+                        <div th:if="${#lists.isEmpty(labBills)}">
+                            No lab bills found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(labBills)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Lab Test</th>
+                                        <th>Amount</th>
+                                        <th>Insurance Cover</th>
+                                        <th>Patient Payment</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="bill : ${labBills}">
+                                        <td th:text="${bill.patient != null ? bill.patient.firstName + ' ' + bill.patient.lastName : 'N/A'}"></td>
+                                        <td th:text="${bill.labTest != null ? bill.labTest.name : 'N/A'}"></td>
+                                        <td th:text="${bill.amount}"></td>
+                                        <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
+                                        <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
+                                        <td th:text="${bill.status}"></td>
+                                        <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                        <td>
+                                            <form th:if="${bill.status.name() == 'UNPAID'}"
+                                                  th:action="@{/accountant/dashboard/confirm-payment}" method="post">
+                                                <input type="hidden" name="billId" th:value="${bill.id}" />
+                                                <input type="hidden" name="apptTab" th:value="${apptTab}" />
+                                                <input type="hidden" name="labTab" th:value="${labTab}" />
+                                                <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/accountantFooter :: footer"></div>
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

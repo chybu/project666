@@ -22,26 +22,28 @@ public interface AppointmentRepository extends
         select (count(a)>0)
         from Appointment a
         where a.doctor.id = :doctorId
+            and a.status = com.project666.backend.domain.entity.AppointmentStatusEnum.CONFIRMED
             and a.endTime > :startTime
             and a.startTime < :endTime
     """)
     boolean existsDoctorOverlap(
-        @Param("doctorId") UUID doctorId,
-        @Param("startTime") LocalDateTime startTime,
-        @Param("endTime") LocalDateTime endTime
+            @Param("doctorId") UUID doctorId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
     );
 
     @Query("""
         select (count(a)>0)
         from Appointment a
         where a.patient.id = :patientId
+            and a.status = com.project666.backend.domain.entity.AppointmentStatusEnum.CONFIRMED
             and a.endTime > :startTime
             and a.startTime < :endTime
     """)
     boolean existsPatientOverlap(
-        @Param("patientId") UUID patientId,
-        @Param("startTime") LocalDateTime startTime,
-        @Param("endTime") LocalDateTime endTime
+            @Param("patientId") UUID patientId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
     );
 
     Optional<Appointment> findByIdAndDoctorId(UUID id, UUID doctorId);

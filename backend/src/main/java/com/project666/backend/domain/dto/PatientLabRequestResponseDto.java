@@ -3,6 +3,7 @@ package com.project666.backend.domain.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
 
 import com.project666.backend.domain.entity.LabRequestStatusEnum;
 import com.project666.backend.domain.entity.LabTestStatusEnum;
@@ -21,7 +22,7 @@ public class PatientLabRequestResponseDto {
     private LocalDateTime appointmentStartTime;
     private String patientFullName;
     private String doctorFullName;
-    private List<PatientLabTestResponseDto> labTests;
+    private List<PatientLabTestResponseDto> labTests = new ArrayList<>();
 
     @Data
     @NoArgsConstructor

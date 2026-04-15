@@ -181,6 +181,7 @@ public class PrecheckServiceImpl implements PrecheckService {
         Pageable pageable
     ) {
         validateUserLookups(userLookupMap.values());
+        validateListRequest(request);
 
         Specification<Precheck> spec = baseSpecification(request);
 
@@ -213,11 +214,29 @@ public class PrecheckServiceImpl implements PrecheckService {
             spec = spec.and(PrecheckSpecification.byStatus(request.getStatus()));
         }
 
+        if (request.getType() != null) {
+            spec = spec.and(PrecheckSpecification.byAppointmentType(request.getType()));
+        }
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(PrecheckSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
+
         if (request.getCreatedAtDate() != null) {
             spec = spec.and(PrecheckSpecification.byCreatedAtDate(request.getCreatedAtDate()));
         }
 
         return spec;
+    }
+
+    private void validateListRequest(ListPrecheckRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
     }
 
     private void validateCreateRequest(CreatePrecheckRequest request) {

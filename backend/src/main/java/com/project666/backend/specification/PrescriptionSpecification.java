@@ -44,6 +44,12 @@ public final class PrescriptionSpecification {
             cb.equal(root.get("status"), status);
     }
 
+    public static Specification<Prescription> byRemainingRefills(Integer remainingRefills) {
+        return (root, query, cb) ->
+            remainingRefills == null ? null :
+            cb.equal(root.get("remainingRefills"), remainingRefills);
+    }
+
     public static Specification<Prescription> byCreatedAtDate(LocalDate createdAtDate) {
         return (root, query, cb) -> {
             if (createdAtDate == null) return null;
@@ -55,6 +61,30 @@ public final class PrescriptionSpecification {
                 cb.greaterThanOrEqualTo(root.get("createdAt"), start),
                 cb.lessThan(root.get("createdAt"), end)
             );
+        };
+    }
+
+    public static Specification<Prescription> byCreatedAtRange(LocalDate minDate, LocalDate maxDate) {
+        return (root, query, cb) -> {
+            if (minDate == null && maxDate == null) {
+                return null;
+            }
+
+            LocalDateTime start = minDate != null ? minDate.atStartOfDay() : null;
+            LocalDateTime endExclusive = maxDate != null ? maxDate.plusDays(1).atStartOfDay() : null;
+
+            if (start != null && endExclusive != null) {
+                return cb.and(
+                    cb.greaterThanOrEqualTo(root.get("createdAt"), start),
+                    cb.lessThan(root.get("createdAt"), endExclusive)
+                );
+            }
+
+            if (start != null) {
+                return cb.greaterThanOrEqualTo(root.get("createdAt"), start);
+            }
+
+            return cb.lessThan(root.get("createdAt"), endExclusive);
         };
     }
 

@@ -19,5 +19,6 @@ public class ListLabTestRequest {
     private String code;
     private String name;
     private String unit;
-    private LocalDate createdAtDate;
+    private LocalDate minDate;
+    private LocalDate maxDate;
 }

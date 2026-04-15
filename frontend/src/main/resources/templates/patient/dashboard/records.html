@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Medical Records</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+<body id="page-top">
+<div id="wrapper">
+    <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+        <div id="content">
+            <div th:replace="pageFragments/patientTopbar :: topbar"></div>
+            <div class="container-fluid">
+                <h1 class="h3 mb-4 text-gray-800">Medical Records</h1>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Precheck Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(prechecks)} + ' precheck(s)'"></span>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" th:action="@{/patient/dashboard/records}" class="mb-4">
+                            <input type="hidden" name="labFrom" th:value="${labFrom}" />
+                            <input type="hidden" name="labEnd" th:value="${labEnd}" />
+                            <input type="hidden" name="labDoctorId" th:value="${labDoctorId}" />
+                            <input type="hidden" name="labStatus" th:value="${labStatus}" />
+
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="precheckFrom">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="precheckFrom"
+                                           name="precheckFrom"
+                                           th:value="${precheckFrom}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="precheckEnd">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="precheckEnd"
+                                           name="precheckEnd"
+                                           th:value="${precheckEnd}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="precheckStatus">Status</label>
+                                    <select class="form-control" id="precheckStatus" name="precheckStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${precheckStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${precheckStatus != null and precheckStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="precheckNurseId">Nurse</label>
+                                    <select class="form-control" id="precheckNurseId" name="precheckNurseId">
+                                        <option value="">All nurses</option>
+                                        <option th:each="nurse : ${nurses}"
+                                                th:value="${nurse.id}"
+                                                th:text="${nurse.firstName + ' ' + nurse.lastName}"
+                                                th:selected="${precheckNurseId != null and precheckNurseId == nurse.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/records(
+                                        labFrom=${labFrom},
+                                        labEnd=${labEnd},
+                                        labDoctorId=${labDoctorId},
+                                        labStatus=${labStatus})}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${precheckFilterError}" class="alert alert-danger mt-3" th:text="${precheckFilterError}"></div>
+                        <hr class="my-4">
+
+                        <div th:if="${prechecks == null or #lists.isEmpty(prechecks)}" class="text-muted">
+                            No precheck records found.
+                        </div>
+                        <div th:if="${prechecks != null and !#lists.isEmpty(prechecks)}">
+                            <div th:each="pc, stat : ${prechecks}" class="mb-4">
+                                <hr th:if="${!stat.first}" class="my-4">
+                                <div class="mb-2">
+                                    <strong>Date:</strong> <span th:text="${pc.createdAt}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Status:</strong> <span th:text="${pc.status}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Nurse:</strong> <span th:text="${pc.nurse != null ? pc.nurse.fullName : 'N/A'}"></span>
+                                </div>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Pulse</th>
+                                            <th>Sugar</th>
+                                            <th>Temperature</th>
+                                            <th>Height</th>
+                                            <th>Weight</th>
+                                            <th>Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td th:text="${pc.pulse}"></td>
+                                            <td th:text="${pc.sugar}"></td>
+                                            <td th:text="${pc.temperature}"></td>
+                                            <td th:text="${pc.height}"></td>
+                                            <td th:text="${pc.weight}"></td>
+                                            <td th:text="${pc.note}"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Lab Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(labRequests)} + ' lab request(s)'"></span>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" th:action="@{/patient/dashboard/records}" class="mb-4">
+                            <input type="hidden" name="precheckFrom" th:value="${precheckFrom}" />
+                            <input type="hidden" name="precheckEnd" th:value="${precheckEnd}" />
+                            <input type="hidden" name="precheckNurseId" th:value="${precheckNurseId}" />
+                            <input type="hidden" name="precheckStatus" th:value="${precheckStatus}" />
+
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="labFrom">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="labFrom"
+                                           name="labFrom"
+                                           th:value="${labFrom}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="labEnd">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="labEnd"
+                                           name="labEnd"
+                                           th:value="${labEnd}">
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="labStatus">Status</label>
+                                    <select class="form-control" id="labStatus" name="labStatus">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${labRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${labStatus != null and labStatus == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-3">
+                                    <label for="labDoctorId">Doctor</label>
+                                    <select class="form-control" id="labDoctorId" name="labDoctorId">
+                                        <option value="">All doctors</option>
+                                        <option th:each="doctor : ${doctors}"
+                                                th:value="${doctor.id}"
+                                                th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                                th:selected="${labDoctorId != null and labDoctorId == doctor.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/patient/dashboard/records(
+                                        precheckFrom=${precheckFrom},
+                                        precheckEnd=${precheckEnd},
+                                        precheckNurseId=${precheckNurseId},
+                                        precheckStatus=${precheckStatus})}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${labRequestFilterError}" class="alert alert-danger mt-3" th:text="${labRequestFilterError}"></div>
+                        <hr class="my-4">
+
+                        <div th:if="${labRequests == null or #lists.isEmpty(labRequests)}" class="text-muted">
+                            No lab records found.
+                        </div>
+                        <div th:if="${labRequests != null and !#lists.isEmpty(labRequests)}">
+                            <div th:each="lr, stat : ${labRequests}" class="mb-4">
+                                <hr th:if="${!stat.first}" class="my-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>Date:</strong> <span th:text="${lr.createdAt}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Status:</strong> <span th:text="${lr.status}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Doctor:</strong> <span th:text="${lr.doctorFullName}"></span>
+                                        &nbsp;|&nbsp;
+                                        <strong>Appointment:</strong> <span th:text="${lr.appointmentStartTime}"></span>
+                                    </div>
+                                    <a th:href="@{/pdf/lab/patient(labId=${lr.id})}"
+                                       class="btn btn-sm btn-outline-secondary ml-3">
+                                        PDF
+                                    </a>
+                                </div>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Test Name</th>
+                                            <th>Code</th>
+                                            <th>Unit</th>
+                                            <th>Status</th>
+                                            <th>Result</th>
+                                            <th>Lab Technician</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="labTest : ${lr.labTests}">
+                                            <td th:text="${labTest.name}"></td>
+                                            <td th:text="${labTest.code}"></td>
+                                            <td th:text="${labTest.unit}"></td>
+                                            <td th:text="${labTest.status}"></td>
+                                            <td th:text="${labTest.result}"></td>
+                                            <td th:text="${labTest.labTechnicianFullName}"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div th:replace="pageFragments/patientFooter :: footer"></div>
+    </div>
+</div>
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+</body>
+</html>

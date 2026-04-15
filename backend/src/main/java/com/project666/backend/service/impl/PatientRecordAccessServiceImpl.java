@@ -156,6 +156,12 @@ public class PatientRecordAccessServiceImpl implements PatientRecordAccessServic
         PatientRecordAccessStatusEnum status = request.getStatus();
         if (status != null) spec = spec.and(PatientRecordAccessSpecification.byStatus(status));
 
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(
+                PatientRecordAccessSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate())
+            );
+        }
+
         LocalDate createdAtDate = request.getCreatedAtDate();
         if (createdAtDate!=null) spec = spec.and(PatientRecordAccessSpecification.byCreatedAtDate(createdAtDate));
 

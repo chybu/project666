@@ -1,5 +1,5 @@
-<div th:fragment="sidebar">
-    <div class="d-flex flex-column vh-100 bg-gradient-primary sidebar sidebar-dark accordion">
+<div th:fragment="sidebar" class="bg-gradient-primary sidebar sidebar-dark accordion" style="position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; width: 225px; z-index: 1000;">
+    <div class="d-flex flex-column h-100">
 
         <!-- Logo -->
         <div class="sidebar-logo text-center py-4">
@@ -26,12 +26,6 @@
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/labtechnician/dashboard/lab-tests}">
                         Lab Tests
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/labtechnician/dashboard/notifications}">
-                        Notifications
                     </a>
                 </li>
 

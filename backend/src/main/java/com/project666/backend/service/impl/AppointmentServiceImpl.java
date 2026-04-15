@@ -270,7 +270,7 @@ public class AppointmentServiceImpl implements AppointmentService{
                 )
             );
         
-        if (noShowAt.isBefore(noShowAppointment.getEndTime())) throw new IllegalArgumentException(
+        if (noShowAt.isBefore(noShowAppointment.getStartTime().plusMinutes(CONFIRMATION_LATE_WINDOW_MINUTES))) throw new IllegalArgumentException(
             String.format("Appointment ID %s can only marked as no show after %s", noShowAppointment.getId(), noShowAppointment.getEndTime())
         );
 
@@ -345,15 +345,15 @@ public class AppointmentServiceImpl implements AppointmentService{
 
         return appointmentRepository.findAll(spec, pageable);
     }
-    
+
     private void checkOverlapAppointment(LocalDateTime startTime, LocalDateTime endTime, UUID doctorId, UUID patientId){
         LocalDateTime startBufferedTime = startTime.minus(OVERLAP_BUFFER);
         LocalDateTime endBufferedTime = endTime.plus(OVERLAP_BUFFER);
 
-        if (
-            appointmentRepository.existsDoctorOverlap(doctorId, startBufferedTime, endBufferedTime)
-            || appointmentRepository.existsPatientOverlap(patientId, startBufferedTime, endBufferedTime)
-        ){
+        boolean doctorOverlap = appointmentRepository.existsDoctorOverlap(doctorId, startBufferedTime, endBufferedTime);
+        boolean patientOverlap = appointmentRepository.existsPatientOverlap(patientId, startBufferedTime, endBufferedTime);
+
+        if (doctorOverlap || patientOverlap){
             throw new OverlapAppointmentException();
         }
     }

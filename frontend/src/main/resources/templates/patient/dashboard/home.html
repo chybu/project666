@@ -12,7 +12,7 @@
 
     <div th:replace="pageFragments/patientSidebar :: sidebar"></div>
 
-    <div id="content-wrapper" class="d-flex flex-column">
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
 
         <div id="content">
 
@@ -21,6 +21,8 @@
             <div class="container-fluid">
 
                 <h1 class="h3 mb-4 text-gray-800">Patient Dashboard</h1>
+
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -187,7 +189,12 @@
                                             <td>
                                                 <form th:action="@{/patient/dashboard/cancel-appointment}" method="post">
                                                     <input type="hidden" name="appointmentId" th:value="${appointment.id}" />
-                                                    <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-danger"
+                                                            th:disabled="${appointment.status.name() != 'CONFIRMED' 
+                                                                or appointment.startTime.isBefore(T(java.time.LocalDateTime).now())}">
+                                                        Cancel
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>

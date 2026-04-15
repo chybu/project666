@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Access Requests</title>
+    <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
+</head>
+
+<body id="page-top">
+
+<div id="wrapper">
+
+    <div th:replace="pageFragments/doctorSidebar :: sidebar"></div>
+
+    <div id="content-wrapper" class="d-flex flex-column" style="margin-left: 225px;">
+
+        <div id="content">
+
+            <div th:replace="pageFragments/doctorTopbar :: topbar"></div>
+
+            <div class="container-fluid">
+
+                <h1 class="h3 mb-4 text-gray-800">Access Requests</h1>
+                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+                <!-- CREATE REQUEST -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Request Access</h6>
+                    </div>
+
+                    <div class="card-body">
+
+                        <form th:action="@{/doctor/access-requests/create}" method="post">
+
+                            <div class="form-group">
+                                <label>Patient</label>
+                                <select name="patientId" class="form-control" required>
+                                    <option value="">Select Patient</option>
+                                    <option th:each="p : ${patients}"
+                                            th:value="${p.id}"
+                                            th:text="${p.firstName + ' ' + p.lastName}">
+                                    </option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Select a patient to request access
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Record Type</label>
+                                <select name="type" class="form-control" required>
+                                    <option value="">Select Type</option>
+                                    <option value="PRECHECK">Precheck</option>
+                                    <option value="LAB_REQUEST">Lab Request</option>
+                                    <option value="PRESCRIPTION">Prescription</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Select the type of record you want access to
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                Request Access
+                            </button>
+
+                        </form>
+
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Access Request Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(accessRequests)} + ' request(s)'"></span>
+                    </div>
+
+                    <div class="card-body">
+                        <form method="get" th:action="@{/doctor/dashboard/access-requests}" class="mb-4">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="patientId">Patient</label>
+                                    <select class="form-control" id="patientId" name="patientId">
+                                        <option value="">All patients</option>
+                                        <option th:each="p : ${patients}"
+                                                th:value="${p.id}"
+                                                th:text="${p.firstName + ' ' + p.lastName}"
+                                                th:selected="${patientId != null and patientId == p.id}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="type">Type</label>
+                                    <select class="form-control" id="type" name="type">
+                                        <option value="">All</option>
+                                        <option th:each="recordType : ${recordTypes}"
+                                                th:value="${recordType}"
+                                                th:text="${recordType}"
+                                                th:selected="${type != null and type == recordType}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="status">Status</label>
+                                    <select class="form-control" id="status" name="status">
+                                        <option value="">All</option>
+                                        <option th:each="statusOption : ${accessRequestStatuses}"
+                                                th:value="${statusOption}"
+                                                th:text="${statusOption}"
+                                                th:selected="${status != null and status == statusOption}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="minDate">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="minDate"
+                                           name="minDate"
+                                           th:value="${minDate}">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="maxDate">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="maxDate"
+                                           name="maxDate"
+                                           th:value="${maxDate}">
+                                </div>
+                            </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/doctor/dashboard/access-requests}" class="btn btn-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <div class="mb-4"></div>
+
+                        <div th:if="${#lists.isEmpty(accessRequests)}">
+                            No access requests found.
+                        </div>
+
+                        <div th:unless="${#lists.isEmpty(accessRequests)}" class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                <tr th:each="req : ${accessRequests}">
+
+                                    <td th:text="${#temporals.format(req.createdAt, 'MMM dd, yyyy')}"></td>
+
+                                    <td th:text="${req.patient != null ? req.patient.firstName + ' ' + req.patient.lastName : 'N/A'}"></td>
+
+                                    <td th:text="${req.recordType}"></td>
+
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${req.status.name() == 'PENDING'} ? 'badge-warning' :
+                                                (${req.status.name() == 'APPROVED'} ? 'badge-success' :
+                                                (${req.status.name() == 'REJECTED'} ? 'badge-danger' :
+                                                (${req.status.name() == 'CANCELLED'} ? 'badge-secondary' :
+                                                'badge-dark')))"
+                                              th:text="${req.status}">
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <form th:action="@{/doctor/access-requests/cancel}" method="post">
+                                            <input type="hidden" name="accessId" th:value="${req.id}" />
+                                            <button class="btn btn-sm btn-danger"
+                                                    th:disabled="${req.status.name() != 'PENDING'}">
+                                                Cancel
+                                            </button>
+                                        </form>
+                                    </td>
+
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div th:replace="pageFragments/doctorFooter :: footer"></div>
+
+    </div>
+</div>
+
+<script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

@@ -3,6 +3,7 @@ package com.project666.backend.repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,13 @@ public interface LabRequestRepository extends
     JpaSpecificationExecutor<LabRequest>
     {
         Optional<LabRequest> findByIdAndDoctorId(UUID id, UUID doctorId);
+
+        @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})
+        Optional<LabRequest> findDetailByIdAndPatientId(UUID id, UUID patientId);
+
+        @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})
+        Optional<LabRequest> findDetailByIdAndDoctorId(UUID id, UUID doctorId);
+
+        @EntityGraph(attributePaths = {"doctor", "patient", "appointment", "labTests", "labTests.labTechnician"})
+        Optional<LabRequest> findDetailById(UUID id);
 }

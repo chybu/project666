@@ -130,12 +130,66 @@ public class LabServiceImpl implements LabService{
     }
 
     @Override
+    public LabRequest getLabRequestForDoctor(UUID doctorId, UUID requestId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        LabRequest labRequest = labRequestRepository.findDetailByIdAndDoctorId(requestId, doctorId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getPatient().getId(), RoleEnum.PATIENT);
+        return labRequest;
+    }
+
+    @Override
+    public LabRequest getLabRequestForPatient(UUID patientId, UUID requestId) {
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+
+        LabRequest labRequest = labRequestRepository.findDetailByIdAndPatientId(requestId, patientId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getDoctor().getId(), RoleEnum.DOCTOR);
+        return labRequest;
+    }
+
+    @Override
+    public LabRequest getSharedLabRequestForDoctor(UUID doctorId, UUID requestId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        LabRequest labRequest = labRequestRepository.findDetailById(requestId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Lab request with ID %s not found", requestId)
+            ));
+
+        requireActiveUserByRole(labRequest.getPatient().getId(), RoleEnum.PATIENT);
+
+        boolean hasApprovedAccess = patientRecordAccessRepository
+            .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+                doctorId,
+                PatientRecordTypeEnum.LAB_REQUEST,
+                PatientRecordAccessStatusEnum.APPROVED
+            )
+            .contains(labRequest.getPatient().getId());
+
+        if (!hasApprovedAccess || doctorId.equals(labRequest.getDoctor().getId())) {
+            throw new NoSuchElementException(String.format("Lab request with ID %s not found", requestId));
+        }
+
+        return labRequest;
+    }
+
+    @Override
+    @Transactional
     public Page<LabTest> listLabTestForLabTechnician(UUID labTechnicianId, ListLabTestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabTest(request);
 
         // build specification
         Specification<LabTest> spec = LabTestSpecification.alwaysTrue();
@@ -160,22 +214,29 @@ public class LabServiceImpl implements LabService{
         String unit = request.getUnit();
         if (unit!=null && !unit.isBlank()) spec = spec.and(LabTestSpecification.byUnit(request.getUnit().trim()));
 
-        LocalDate createdAtDate = request.getCreatedAtDate();
-        if (createdAtDate!=null) spec = spec.and(LabTestSpecification.byCreatedAtDate(createdAtDate));
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabTestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         return labTestRepository.findAll(spec, pageable);
     }
 
     @Override
+    @Transactional
     public Page<PatientLabRequestResponseDto> listLabRequestForPatient(UUID patientId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(patientId, RoleEnum.PATIENT, false));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         if (request.getStatus() != null) spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
@@ -188,7 +249,13 @@ public class LabServiceImpl implements LabService{
         if (appointmentId!=null) spec = spec.and(LabRequestSpecification.byAppointment(appointmentId));
 
         // use the dto to hide the lab technician note and doctor note from the patient
-        return labRequestRepository.findAll(spec, pageable).map(labMapper::toPatientLabRequestResponseDto);
+       return labRequestRepository.findAll(spec, pageable).map(labRequest -> {
+    PatientLabRequestResponseDto dto = labMapper.toPatientLabRequestResponseDto(labRequest);
+    if (dto.getLabTests() == null) {
+        dto.setLabTests(new java.util.ArrayList<>());
+    }
+    return dto;
+});
     }
 
     @Override
@@ -197,10 +264,15 @@ public class LabServiceImpl implements LabService{
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         if (request.getStatus() != null) spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 
@@ -215,12 +287,33 @@ public class LabServiceImpl implements LabService{
         return labRequestRepository.findAll(spec, pageable);
     }
 
+    private void validateListLabRequest(ListLabRequestRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
+    }
+
+    private void validateListLabTest(ListLabTestRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
+    }
+
     @Override
     public Page<LabRequest> listLabRequestForNewDoctor(UUID doctorId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
 
         List<UUID> approvedPatientIds = patientRecordAccessRepository
             .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
@@ -249,6 +342,10 @@ public class LabServiceImpl implements LabService{
             spec = spec.and(LabRequestSpecification.byStatus(request.getStatus()));
         }
 
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
+
         if (request.getCreatedAtDate() != null) {
             spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
         }
@@ -268,16 +365,22 @@ public class LabServiceImpl implements LabService{
 
 
     @Override
+    @Transactional
     public Page<LabRequest> listLabRequestForLabTechnician(UUID labTechnicianId, ListLabRequestRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.LAB_TECHNICIAN, new UserLookup(labTechnicianId, RoleEnum.LAB_TECHNICIAN, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(request.getDoctorId(), RoleEnum.DOCTOR, true));
         validateUserLookups(userLookupMap.values());
+        validateListLabRequest(request);
         
         Specification<LabRequest> spec = LabRequestSpecification.alwaysTrue();
 
         spec = spec.and(LabRequestSpecification.unfinishedOnly());
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(LabRequestSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
 
         if (request.getCreatedAtDate()!=null) spec = spec.and(LabRequestSpecification.byCreatedAtDate(request.getCreatedAtDate()));
 

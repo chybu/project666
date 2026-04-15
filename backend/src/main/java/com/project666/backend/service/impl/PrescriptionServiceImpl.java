@@ -1,10 +1,13 @@
 package com.project666.backend.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -158,13 +161,100 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     @Override
+    public Prescription getPrescriptionForPatient(UUID patientId, UUID prescriptionId) {
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+
+        Prescription prescription = prescriptionRepository.findDetailByIdAndPatientId(prescriptionId, patientId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        requireActiveUserByRole(prescription.getDoctor().getId(), RoleEnum.DOCTOR);
+        return prescription;
+    }
+
+    @Override
+    public Prescription getPrescriptionForDoctor(UUID doctorId, UUID prescriptionId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        Prescription prescription = prescriptionRepository.findDetailByIdAndDoctorId(prescriptionId, doctorId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        requireActiveUserByRole(prescription.getPatient().getId(), RoleEnum.PATIENT);
+        return prescription;
+    }
+
+    @Override
+    public Prescription getSharedPrescriptionForDoctor(UUID doctorId, UUID prescriptionId) {
+        requireActiveUserByRole(doctorId, RoleEnum.DOCTOR);
+
+        List<UUID> approvedPatientIds = patientRecordAccessRepository
+            .findPatientIdsByDoctorIdAndRecordTypeAndStatus(
+                doctorId,
+                PatientRecordTypeEnum.PRESCRIPTION,
+                PatientRecordAccessStatusEnum.APPROVED
+            );
+
+        if (approvedPatientIds.isEmpty()) {
+            throw new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            );
+        }
+
+        Prescription prescription = prescriptionRepository.findDetailById(prescriptionId)
+            .orElseThrow(() -> new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            ));
+
+        UUID patientId = prescription.getPatient() != null ? prescription.getPatient().getId() : null;
+        UUID ownerDoctorId = prescription.getDoctor() != null ? prescription.getDoctor().getId() : null;
+
+        if (patientId == null || !approvedPatientIds.contains(patientId) || doctorId.equals(ownerDoctorId)) {
+            throw new NoSuchElementException(
+                String.format("Prescription with ID %s not found", prescriptionId)
+            );
+        }
+
+        requireActiveUserByRole(patientId, RoleEnum.PATIENT);
+        return prescription;
+    }
+
+    @Override
     public Page<Prescription> listPrescriptionForDoctor(UUID doctorId, ListPrescriptionRequest request, Pageable pageable) {
         Map<RoleEnum, UserLookup> userLookupMap = new HashMap<>();
         userLookupMap.put(RoleEnum.DOCTOR, new UserLookup(doctorId, RoleEnum.DOCTOR, false));
         userLookupMap.put(RoleEnum.PATIENT, new UserLookup(request.getPatientId(), RoleEnum.PATIENT, true));
         validateUserLookups(userLookupMap.values());
+        validateListRequest(request);
 
-        Specification<Prescription> spec = baseSpecification(request);
+        Specification<Prescription> spec = PrescriptionSpecification.alwaysTrue();
+
+        if (request.getStatus() != null) {
+            spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
+
+        if (request.getRemainingRefills() != null) {
+            spec = spec.and(PrescriptionSpecification.byRemainingRefills(request.getRemainingRefills()));
+        }
+
+        if (request.getCreatedAtDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtDate(request.getCreatedAtDate()));
+        }
+
+        if (request.getAppointmentId() != null) {
+            spec = spec.and(PrescriptionSpecification.byAppointment(request.getAppointmentId()));
+        }
+
+        if (request.getMedicineName() != null && !request.getMedicineName().isBlank()) {
+            spec = spec.and(PrescriptionSpecification.byMedicineName(request.getMedicineName()));
+        }
+
         spec = spec.and(PrescriptionSpecification.byDoctor(doctorId));
         UUID patientId = request.getPatientId();
         if (patientId!=null) spec = spec.and(PrescriptionSpecification.byPatient(patientId));
@@ -218,10 +308,20 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     }
 
     private Specification<Prescription> baseSpecification(ListPrescriptionRequest request) {
+        validateListRequest(request);
+
         Specification<Prescription> spec = PrescriptionSpecification.alwaysTrue();
 
         if (request.getStatus() != null) {
             spec = spec.and(PrescriptionSpecification.byStatus(request.getStatus()));
+        }
+
+        if (request.getMinDate() != null || request.getMaxDate() != null) {
+            spec = spec.and(PrescriptionSpecification.byCreatedAtRange(request.getMinDate(), request.getMaxDate()));
+        }
+
+        if (request.getRemainingRefills() != null) {
+            spec = spec.and(PrescriptionSpecification.byRemainingRefills(request.getRemainingRefills()));
         }
 
         if (request.getCreatedAtDate() != null) {
@@ -243,6 +343,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
         return spec;
     }
 
+    private void validateListRequest(ListPrescriptionRequest request) {
+        if (
+            request.getMinDate() != null
+                && request.getMaxDate() != null
+                && request.getMinDate().isAfter(request.getMaxDate())
+        ) {
+            throw new IllegalArgumentException("min date must be on or before max date");
+        }
+    }
+
     private void validateCreateRequest(CreatePrescriptionRequest request) {
         if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
             throw new IllegalArgumentException("Prescription must contain at least one medicine");
@@ -250,6 +360,15 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         if (request.getStartDate() == null || request.getEndDate() == null) {
             throw new IllegalArgumentException("Prescription start date and end date are required");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (request.getStartDate().isBefore(now.toLocalDate())) {
+            throw new IllegalArgumentException("Prescription start date cannot be in the past");
+        }
+
+        if (request.getEndDate().isBefore(now.toLocalDate())) {
+            throw new IllegalArgumentException("Prescription end date cannot be in the past");
         }
 
         if (request.getEndDate().isBefore(request.getStartDate())) {
@@ -264,9 +383,19 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             throw new IllegalArgumentException("Prescription refill interval cannot be negative");
         }
 
+        Set<String> normalizedMedicineNames = new HashSet<>();
         for (CreatePrescriptionMedicineRequest medicine : request.getMedicines()) {
             if (medicine.getMedicineName() == null || medicine.getMedicineName().isBlank()) {
                 throw new IllegalArgumentException("Prescription medicine name is required");
+            }
+
+            String normalizedMedicineName = medicine.getMedicineName()
+                .trim()
+                .replaceAll("\\s+", " ")
+                .toLowerCase(Locale.ROOT);
+
+            if (!normalizedMedicineNames.add(normalizedMedicineName)) {
+                throw new IllegalArgumentException("Prescription cannot contain duplicate medicine names");
             }
         }
     }
