@@ -1115,7 +1115,6 @@ Important backend behavior:
 ### Recommended pages
 
 - `/accountant/dashboard/home`
-- `/accountant/dashboard/finances`
 - `/accountant/dashboard/appointment-bills`
 - `/accountant/dashboard/lab-bills`
 

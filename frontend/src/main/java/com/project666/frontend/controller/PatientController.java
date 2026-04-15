@@ -243,6 +243,7 @@ public String finances(
     @RequestParam(required = false) BigDecimal labMinAmount,
     @RequestParam(required = false) BigDecimal labMaxAmount,
     @RequestParam(required = false) BillStatusEnum labStatus,
+    @RequestParam(required = false, defaultValue = "appointment") String activeTab,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
@@ -299,6 +300,7 @@ public String finances(
     model.addAttribute("appointmentBillError", appointmentBillError);
     model.addAttribute("labBillError", labBillError);
     model.addAttribute("billStatuses", BillStatusEnum.values());
+    model.addAttribute("activeTab", "lab".equalsIgnoreCase(activeTab) ? "lab" : "appointment");
 
     return "patient/dashboard/finances";
 }
@@ -392,6 +394,7 @@ public String records(
     @RequestParam(required = false) LocalDate labEnd,
     @RequestParam(required = false) UUID labDoctorId,
     @RequestParam(required = false) LabRequestStatusEnum labStatus,
+    @RequestParam(required = false, defaultValue = "precheck") String activeTab,
     Model model
 ) {
     User user = requireActiveUser(oidcUser);
@@ -454,6 +457,7 @@ public String records(
     model.addAttribute("labRequestStatuses", LabRequestStatusEnum.values());
     model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
     model.addAttribute("labRequestFilterError", labRequestFilterError);
+    model.addAttribute("activeTab", "lab".equalsIgnoreCase(activeTab) ? "lab" : "precheck");
 
     return "patient/dashboard/records";
 }

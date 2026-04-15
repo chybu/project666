@@ -20,151 +20,339 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Accountant Dashboard</h1>
 
-                <!-- Calendar -->
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <ul class="nav nav-tabs mb-4" id="accountantFinanceTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${activeTab == 'appointment'} ? ' active'"
+                           id="appointment-bills-tab"
+                           data-toggle="tab"
+                           href="#appointment-bills-pane"
+                           role="tab"
+                           aria-controls="appointment-bills-pane"
+                           th:attr="aria-selected=${activeTab == 'appointment'}">
+                            Appointment Bill Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${activeTab == 'lab'} ? ' active'"
+                           id="lab-bills-tab"
+                           data-toggle="tab"
+                           href="#lab-bills-pane"
+                           role="tab"
+                           aria-controls="lab-bills-pane"
+                           th:attr="aria-selected=${activeTab == 'lab'}">
+                            Lab Bill Results
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="accountantFinanceTabsContent">
+
+                <!-- Appointment Bills -->
+                <div class="tab-pane fade"
+                     th:classappend="${activeTab == 'appointment'} ? ' show active'"
+                     id="appointment-bills-pane"
+                     role="tabpanel"
+                     aria-labelledby="appointment-bills-tab">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Monthly Calendar</h6>
-                        <div>
-                            <a class="btn btn-sm btn-outline-primary mr-2"
-                               th:href="@{/accountant/dashboard/home(year=${prevYear}, month=${prevMonth})}">
-                                Prev
-                            </a>
-                            <span class="font-weight-bold text-gray-800 mx-2"
-                                  th:text="${#strings.capitalize(#strings.toLowerCase(currentMonthName)) + ' ' + currentYear}">
-                            </span>
-                            <a class="btn btn-sm btn-outline-primary ml-2"
-                               th:href="@{/accountant/dashboard/home(year=${nextYear}, month=${nextMonth})}">
-                                Next
-                            </a>
-                        </div>
+                        <h6 class="m-0 font-weight-bold text-primary">Appointment Bill Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(appointmentBills)} + ' bill(s)'"></span>
                     </div>
-
                     <div class="card-body">
-                        <style>
-                            .calendar-grid {
-                                display: grid;
-                                grid-template-columns: repeat(7, 1fr);
-                                gap: 10px;
-                            }
-                            .calendar-weekday {
-                                font-weight: 700;
-                                text-align: center;
-                                padding: 10px 0;
-                                background: #f8f9fc;
-                                border: 1px solid #e3e6f0;
-                                border-radius: 6px;
-                            }
-                            .calendar-day {
-                                min-height: 140px;
-                                border: 1px solid #e3e6f0;
-                                border-radius: 8px;
-                                padding: 8px;
-                                background: #fff;
-                            }
-                            .calendar-day.empty { background: #f8f9fc; }
-                            .calendar-day.today { border: 2px solid #4e73df; }
-                            .selected-day { background: #eef4ff; border: 2px solid #1cc88a; }
-                            .calendar-date { font-weight: 700; margin-bottom: 8px; color: #5a5c69; }
-                            .calendar-event {
-                                font-size: 0.8rem;
-                                padding: 4px 6px;
-                                margin-bottom: 6px;
-                                border-radius: 6px;
-                                background: #e8f0fe;
-                                color: #2e59d9;
-                                line-height: 1.2;
-                            }
-                            .calendar-event-time { font-weight: 700; display: block; }
-                        </style>
+                        <form method="get" th:action="@{/accountant/dashboard/home}" class="mb-4">
+                            <input type="hidden" name="activeTab" value="appointment" />
+                            <input type="hidden" name="labFrom" th:value="${labFrom}" />
+                            <input type="hidden" name="labEnd" th:value="${labEnd}" />
+                            <input type="hidden" name="labMinAmount" th:value="${labMinAmount}" />
+                            <input type="hidden" name="labMaxAmount" th:value="${labMaxAmount}" />
+                            <input type="hidden" name="labPatient" th:value="${labPatient}" />
+                            <input type="hidden" name="labStatus" th:value="${labStatus}" />
 
-                        <div class="calendar-grid mb-2">
-                            <div class="calendar-weekday">Sun</div>
-                            <div class="calendar-weekday">Mon</div>
-                            <div class="calendar-weekday">Tue</div>
-                            <div class="calendar-weekday">Wed</div>
-                            <div class="calendar-weekday">Thu</div>
-                            <div class="calendar-weekday">Fri</div>
-                            <div class="calendar-weekday">Sat</div>
-                        </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentFrom">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="appointmentFrom"
+                                           name="appointmentFrom"
+                                           th:value="${appointmentFrom}">
+                                </div>
 
-                        <div class="calendar-grid">
-                            <div th:each="day : ${calendarDays}"
-                                 th:class="'calendar-day'
-                                    + (${day == null} ? ' empty' : '')
-                                    + (${day != null and day.equals(today)} ? ' today' : '')
-                                    + (${day != null and selectedDate != null and day.equals(selectedDate)} ? ' selected-day' : '')">
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentEnd">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="appointmentEnd"
+                                           name="appointmentEnd"
+                                           th:value="${appointmentEnd}">
+                                </div>
 
-                                <div th:if="${day != null}">
-                                    <a th:href="@{/accountant/dashboard/home(year=${currentYear}, month=${currentMonth}, selectedDate=${day})}"
-                                       style="text-decoration: none; color: inherit; display: block; height: 100%;">
-                                        <div class="calendar-date" th:text="${day.getDayOfMonth()}"></div>
-                                        <div th:if="${appointmentsByDate.containsKey(day)}">
-                                            <div th:each="appointment : ${appointmentsByDate.get(day)}"
-                                                 class="calendar-event">
-                                                <span class="calendar-event-time"
-                                                      th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></span>
-                                                <span th:text="${appointment.type}"></span>
-                                            </div>
-                                        </div>
-                                    </a>
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentMinAmount">Min Amount</label>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           id="appointmentMinAmount"
+                                           name="appointmentMinAmount"
+                                           th:value="${appointmentMinAmount}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentMaxAmount">Max Amount</label>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           id="appointmentMaxAmount"
+                                           name="appointmentMaxAmount"
+                                           th:value="${appointmentMaxAmount}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentPatient">Patient</label>
+                                    <select class="form-control" id="appointmentPatient" name="appointmentPatient">
+                                        <option value="">All</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${appointmentPatient != null and appointmentPatient == patient.id.toString()}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="appointmentStatus">Status</label>
+                                    <select class="form-control" id="appointmentStatus" name="appointmentStatus">
+                                        <option value="">All</option>
+                                        <option th:each="billStatus : ${billStatuses}"
+                                                th:value="${billStatus}"
+                                                th:text="${billStatus}"
+                                                th:selected="${appointmentStatus != null and appointmentStatus == billStatus}">
+                                        </option>
+                                    </select>
                                 </div>
                             </div>
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/accountant/dashboard/home(
+                                        labFrom=${labFrom},
+                                        labEnd=${labEnd},
+                                        labMinAmount=${labMinAmount},
+                                        labMaxAmount=${labMaxAmount},
+                                        labPatient=${labPatient},
+                                        labStatus=${labStatus},
+                                        activeTab='appointment')}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div th:if="${appointmentBillError}" class="alert alert-danger mt-3" th:text="${appointmentBillError}"></div>
+
+                        <div th:if="${#lists.isEmpty(appointmentBills)}">
+                            No appointment bills found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(appointmentBills)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Insurance Cover</th>
+                                    <th>Patient Payment</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="bill : ${appointmentBills}">
+                                    <td th:text="${bill.patient != null ? bill.patient.firstName + ' ' + bill.patient.lastName : 'N/A'}"></td>
+                                    <td th:text="${bill.type}"></td>
+                                    <td th:text="${bill.amount}"></td>
+                                    <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
+                                    <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
+                                    <td th:text="${bill.status}"></td>
+                                    <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                    <td>
+                                        <form th:if="${bill.status.name() == 'UNPAID'}"
+                                              th:action="@{/accountant/dashboard/confirm-payment}" method="post">
+                                            <input type="hidden" name="billId" th:value="${bill.id}" />
+                                            <input type="hidden" name="appointmentStatus" th:value="${appointmentStatus}" />
+                                            <input type="hidden" name="labStatus" th:value="${labStatus}" />
+                                            <input type="hidden" name="activeTab" value="appointment" />
+                                            <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Selected Day Modal -->
-                <div class="modal fade" id="dayAppointmentsModal" tabindex="-1" role="dialog"
-                     aria-labelledby="dayAppointmentsModalLabel" aria-hidden="true"
-                     th:if="${selectedDate != null}">
-                    <div class="modal-dialog modal-lg" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="dayAppointmentsModalLabel"
-                                    th:text="'Appointments for ' + ${#temporals.format(selectedDate, 'MMM dd, yyyy')}">
-                                </h5>
-                                <button type="button" class="close"
-                                        onclick="window.location.href='/accountant/dashboard/home?year=' + [[${currentYear}]] + '&month=' + [[${currentMonth}]]">
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div th:if="${#lists.isEmpty(selectedDayAppointments)}">
-                                    <p class="mb-0 text-muted">No appointments for this day.</p>
+                </div>
+
+                <!-- Lab Bills -->
+                <div class="tab-pane fade"
+                     th:classappend="${activeTab == 'lab'} ? ' show active'"
+                     id="lab-bills-pane"
+                     role="tabpanel"
+                     aria-labelledby="lab-bills-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Lab Bill Results</h6>
+                        <span class="text-muted small"
+                              th:text="'Showing ' + ${#lists.size(labBills)} + ' bill(s)'"></span>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" th:action="@{/accountant/dashboard/home}" class="mb-4">
+                            <input type="hidden" name="activeTab" value="lab" />
+                            <input type="hidden" name="appointmentFrom" th:value="${appointmentFrom}" />
+                            <input type="hidden" name="appointmentEnd" th:value="${appointmentEnd}" />
+                            <input type="hidden" name="appointmentMinAmount" th:value="${appointmentMinAmount}" />
+                            <input type="hidden" name="appointmentMaxAmount" th:value="${appointmentMaxAmount}" />
+                            <input type="hidden" name="appointmentPatient" th:value="${appointmentPatient}" />
+                            <input type="hidden" name="appointmentStatus" th:value="${appointmentStatus}" />
+
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="labFrom">Min Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="labFrom"
+                                           name="labFrom"
+                                           th:value="${labFrom}">
                                 </div>
-                                <div th:unless="${#lists.isEmpty(selectedDayAppointments)}" class="table-responsive">
-                                    <table class="table table-bordered">
-                                        <thead>
-                                        <tr>
-                                            <th>Start</th>
-                                            <th>End</th>
-                                            <th>Patient</th>
-                                            <th>Doctor</th>
-                                            <th>Type</th>
-                                            <th>Status</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        <tr th:each="appointment : ${selectedDayAppointments}">
-                                            <td th:text="${#temporals.format(appointment.startTime, 'h:mm a')}"></td>
-                                            <td th:text="${#temporals.format(appointment.endTime, 'h:mm a')}"></td>
-                                            <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}"></td>
-                                            <td th:text="${appointment.doctor.firstName + ' ' + appointment.doctor.lastName}"></td>
-                                            <td th:text="${appointment.type}"></td>
-                                            <td th:text="${appointment.status}"></td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
+
+                                <div class="form-group col-md-2">
+                                    <label for="labEnd">Max Date</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="labEnd"
+                                           name="labEnd"
+                                           th:value="${labEnd}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="labMinAmount">Min Amount</label>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           id="labMinAmount"
+                                           name="labMinAmount"
+                                           th:value="${labMinAmount}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="labMaxAmount">Max Amount</label>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           id="labMaxAmount"
+                                           name="labMaxAmount"
+                                           th:value="${labMaxAmount}">
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="labPatient">Patient</label>
+                                    <select class="form-control" id="labPatient" name="labPatient">
+                                        <option value="">All</option>
+                                        <option th:each="patient : ${patients}"
+                                                th:value="${patient.id}"
+                                                th:text="${patient.firstName + ' ' + patient.lastName}"
+                                                th:selected="${labPatient != null and labPatient == patient.id.toString()}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-2">
+                                    <label for="labStatus">Status</label>
+                                    <select class="form-control" id="labStatus" name="labStatus">
+                                        <option value="">All</option>
+                                        <option th:each="billStatus : ${billStatuses}"
+                                                th:value="${billStatus}"
+                                                th:text="${billStatus}"
+                                                th:selected="${labStatus != null and labStatus == billStatus}">
+                                        </option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <a class="btn btn-secondary"
-                                   th:href="@{/accountant/dashboard/home(year=${currentYear}, month=${currentMonth})}">
-                                    Close
+
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                <a th:href="@{/accountant/dashboard/home(
+                                        appointmentFrom=${appointmentFrom},
+                                        appointmentEnd=${appointmentEnd},
+                                        appointmentMinAmount=${appointmentMinAmount},
+                                        appointmentMaxAmount=${appointmentMaxAmount},
+                                        appointmentPatient=${appointmentPatient},
+                                        appointmentStatus=${appointmentStatus},
+                                        activeTab='lab')}"
+                                   class="btn btn-secondary btn-sm">
+                                    Reset
                                 </a>
                             </div>
+                        </form>
+
+                        <div th:if="${labBillError}" class="alert alert-danger mt-3" th:text="${labBillError}"></div>
+
+                        <div th:if="${#lists.isEmpty(labBills)}">
+                            No lab bills found.
+                        </div>
+
+                        <div class="table-responsive" th:if="${!#lists.isEmpty(labBills)}">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Lab Test</th>
+                                    <th>Amount</th>
+                                    <th>Insurance Cover</th>
+                                    <th>Patient Payment</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="bill : ${labBills}">
+                                    <td th:text="${bill.patient != null ? bill.patient.firstName + ' ' + bill.patient.lastName : 'N/A'}"></td>
+                                    <td th:text="${bill.labTest != null ? bill.labTest.name : 'N/A'}"></td>
+                                    <td th:text="${bill.amount}"></td>
+                                    <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
+                                    <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
+                                    <td th:text="${bill.status}"></td>
+                                    <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                                    <td>
+                                        <form th:if="${bill.status.name() == 'UNPAID'}"
+                                              th:action="@{/accountant/dashboard/confirm-payment}" method="post">
+                                            <input type="hidden" name="billId" th:value="${bill.id}" />
+                                            <input type="hidden" name="appointmentStatus" th:value="${appointmentStatus}" />
+                                            <input type="hidden" name="labStatus" th:value="${labStatus}" />
+                                            <input type="hidden" name="activeTab" value="lab" />
+                                            <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                </div>
+                </div>
                 </div>
 
             </div>
@@ -177,11 +365,5 @@
 <script th:src="@{/dashboard/vendor/jquery/jquery.min.js}"></script>
 <script th:src="@{/dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/dashboard/js/sb-admin-2.min.js}"></script>
-<script th:if="${selectedDate != null}">
-    $(document).ready(function () {
-        $('#dayAppointmentsModal').modal('show');
-    });
-</script>
-
 </body>
 </html>

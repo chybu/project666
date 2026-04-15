@@ -62,7 +62,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${org.mapstruct.version}</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>

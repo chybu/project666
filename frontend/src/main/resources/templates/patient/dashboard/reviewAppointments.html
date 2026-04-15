@@ -3,46 +3,6 @@
 <head>
     <title>Review Appointments</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
-    <style>
-        .appointment-filter-tabs {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .appointment-filter-tab {
-            min-width: 120px;
-            border-radius: 999px;
-            border: 1px solid #d1d9e6;
-            background: #ffffff;
-            color: #5a5c69;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-            box-shadow: 0 0.15rem 0.45rem rgba(58, 59, 69, 0.08);
-        }
-
-        .appointment-filter-tab:hover,
-        .appointment-filter-tab:focus {
-            color: #2f3640;
-            transform: translateY(-1px);
-            box-shadow: 0 0.35rem 0.9rem rgba(58, 59, 69, 0.14);
-        }
-
-        .appointment-filter-tab.is-active-upcoming {
-            border-color: #4e73df;
-            background: linear-gradient(135deg, #4e73df 0%, #6f8ff0 100%);
-            color: #ffffff;
-            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18), 0 0.5rem 1rem rgba(78, 115, 223, 0.24);
-        }
-
-        .appointment-filter-tab.is-active-past {
-            border-color: #858796;
-            background: linear-gradient(135deg, #858796 0%, #a0a3b8 100%);
-            color: #ffffff;
-            box-shadow: 0 0 0 0.2rem rgba(133, 135, 150, 0.18), 0 0.5rem 1rem rgba(133, 135, 150, 0.22);
-        }
-    </style>
 </head>
 
 <body id="page-top">
@@ -59,19 +19,26 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Appointments</h1>
 
-                <div class="mb-3 appointment-filter-tabs">
-                    <a th:href="@{/patient/dashboard/reviewAppointments(filter='upcoming')}"
-                       class="btn btn-sm appointment-filter-tab"
-                       th:classappend="${filter == 'upcoming'} ? ' is-active-upcoming'">
-                        Upcoming
-                    </a>
-
-                    <a th:href="@{/patient/dashboard/reviewAppointments(filter='past')}"
-                       class="btn btn-sm appointment-filter-tab"
-                       th:classappend="${filter == 'past'} ? ' is-active-past'">
-                       Past
-                    </a>
-                </div>
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${filter == 'upcoming'} ? ' active'"
+                           th:href="@{/patient/dashboard/reviewAppointments(filter='upcoming')}"
+                           role="tab"
+                           th:attr="aria-selected=${filter == 'upcoming'}">
+                            Upcoming
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${filter == 'past'} ? ' active'"
+                           th:href="@{/patient/dashboard/reviewAppointments(filter='past')}"
+                           role="tab"
+                           th:attr="aria-selected=${filter == 'past'}">
+                            Past
+                        </a>
+                    </li>
+                </ul>
 
                 <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
                 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>

@@ -3,39 +3,6 @@
 <head>
     <title>Shared Records</title>
     <link th:href="@{/dashboard/css/sb-admin-2.min.css}" rel="stylesheet">
-    <style>
-        .shared-record-tabs {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .shared-record-tab {
-            min-width: 120px;
-            border-radius: 999px;
-            border: 1px solid #d1d9e6;
-            background: #ffffff;
-            color: #5a5c69;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-            box-shadow: 0 0.15rem 0.45rem rgba(58, 59, 69, 0.08);
-        }
-
-        .shared-record-tab:hover,
-        .shared-record-tab:focus {
-            color: #2f3640;
-            transform: translateY(-1px);
-            box-shadow: 0 0.35rem 0.9rem rgba(58, 59, 69, 0.14);
-        }
-
-        .shared-record-tab.is-active {
-            border-color: #4e73df;
-            background: linear-gradient(135deg, #4e73df 0%, #6f8ff0 100%);
-            color: #ffffff;
-            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.18), 0 0.5rem 1rem rgba(78, 115, 223, 0.24);
-        }
-    </style>
 </head>
 <body id="page-top">
 <div id="wrapper">
@@ -46,23 +13,35 @@
             <div class="container-fluid">
                 <h1 class="h3 mb-4 text-gray-800">Shared Records</h1>
 
-                <div class="mb-3 shared-record-tabs">
-                    <a th:href="@{/doctor/dashboard/shared-records(tab='prechecks')}"
-                       class="btn btn-sm shared-record-tab"
-                       th:classappend="${tab == 'prechecks'} ? ' is-active'">
-                        Prechecks
-                    </a>
-                    <a th:href="@{/doctor/dashboard/shared-records(tab='labs')}"
-                       class="btn btn-sm shared-record-tab"
-                       th:classappend="${tab == 'labs'} ? ' is-active'">
-                        Lab Requests
-                    </a>
-                    <a th:href="@{/doctor/dashboard/shared-records(tab='prescriptions')}"
-                       class="btn btn-sm shared-record-tab"
-                       th:classappend="${tab == 'prescriptions'} ? ' is-active'">
-                        Prescriptions
-                    </a>
-                </div>
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${tab == 'prechecks'} ? ' active'"
+                           th:href="@{/doctor/dashboard/shared-records(tab='prechecks')}"
+                           role="tab"
+                           th:attr="aria-selected=${tab == 'prechecks'}">
+                            Prechecks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${tab == 'labs'} ? ' active'"
+                           th:href="@{/doctor/dashboard/shared-records(tab='labs')}"
+                           role="tab"
+                           th:attr="aria-selected=${tab == 'labs'}">
+                            Lab Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${tab == 'prescriptions'} ? ' active'"
+                           th:href="@{/doctor/dashboard/shared-records(tab='prescriptions')}"
+                           role="tab"
+                           th:attr="aria-selected=${tab == 'prescriptions'}">
+                            Prescriptions
+                        </a>
+                    </li>
+                </ul>
 
                 <div class="card shadow mb-4" th:if="${tab == 'prechecks'}">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">

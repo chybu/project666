@@ -19,6 +19,39 @@
 
                 <h1 class="h3 mb-4 text-gray-800">Finances</h1>
 
+                <ul class="nav nav-tabs mb-4" id="patientFinanceTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${activeTab == 'appointment'} ? ' active'"
+                           id="appointment-bills-tab"
+                           data-toggle="tab"
+                           href="#appointment-bills-pane"
+                           role="tab"
+                           aria-controls="appointment-bills-pane"
+                           th:attr="aria-selected=${activeTab == 'appointment'}">
+                            Appointment Bill Results
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           th:classappend="${activeTab == 'lab'} ? ' active'"
+                           id="lab-bills-tab"
+                           data-toggle="tab"
+                           href="#lab-bills-pane"
+                           role="tab"
+                           aria-controls="lab-bills-pane"
+                           th:attr="aria-selected=${activeTab == 'lab'}">
+                            Lab Bill Results
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="patientFinanceTabsContent">
+                <div class="tab-pane fade"
+                     th:classappend="${activeTab == 'appointment'} ? ' show active'"
+                     id="appointment-bills-pane"
+                     role="tabpanel"
+                     aria-labelledby="appointment-bills-tab">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">Appointment Bill Results</h6>
@@ -27,6 +60,7 @@
                     </div>
                     <div class="card-body">
                         <form method="get" th:action="@{/patient/dashboard/finances}" class="mb-4">
+                            <input type="hidden" name="activeTab" value="appointment" />
                             <input type="hidden" name="labFrom" th:value="${labFrom}" />
                             <input type="hidden" name="labEnd" th:value="${labEnd}" />
                             <input type="hidden" name="labMinAmount" th:value="${labMinAmount}" />
@@ -94,7 +128,8 @@
                                         labEnd=${labEnd},
                                         labMinAmount=${labMinAmount},
                                         labMaxAmount=${labMaxAmount},
-                                        labStatus=${labStatus})}"
+                                        labStatus=${labStatus},
+                                        activeTab='appointment')}"
                                    class="btn btn-secondary btn-sm">
                                     Reset
                                 </a>
@@ -127,7 +162,13 @@
                         </div>
                     </div>
                 </div>
+                </div>
 
+                <div class="tab-pane fade"
+                     th:classappend="${activeTab == 'lab'} ? ' show active'"
+                     id="lab-bills-pane"
+                     role="tabpanel"
+                     aria-labelledby="lab-bills-tab">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">Lab Bill Results</h6>
@@ -136,6 +177,7 @@
                     </div>
                     <div class="card-body">
                         <form method="get" th:action="@{/patient/dashboard/finances}" class="mb-4">
+                            <input type="hidden" name="activeTab" value="lab" />
                             <input type="hidden" name="appointmentFrom" th:value="${appointmentFrom}" />
                             <input type="hidden" name="appointmentEnd" th:value="${appointmentEnd}" />
                             <input type="hidden" name="appointmentMinAmount" th:value="${appointmentMinAmount}" />
@@ -203,7 +245,8 @@
                                         appointmentEnd=${appointmentEnd},
                                         appointmentMinAmount=${appointmentMinAmount},
                                         appointmentMaxAmount=${appointmentMaxAmount},
-                                        appointmentStatus=${appointmentStatus})}"
+                                        appointmentStatus=${appointmentStatus},
+                                        activeTab='lab')}"
                                    class="btn btn-secondary btn-sm">
                                     Reset
                                 </a>
@@ -235,6 +278,8 @@
                             </table>
                         </div>
                     </div>
+                </div>
+                </div>
                 </div>
 
             </div>
