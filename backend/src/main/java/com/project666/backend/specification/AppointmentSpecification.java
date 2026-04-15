@@ -1,6 +1,7 @@
 package com.project666.backend.specification;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.UUID;
 
 import org.springframework.data.jpa.domain.Specification;
@@ -49,6 +50,33 @@ public final class AppointmentSpecification {
         return (root, query, cb) -> 
             status == null ? null :
             cb.equal(root.get("status"), status);
+    }
+
+    public static Specification<Appointment> byStatuses(Collection<AppointmentStatusEnum> statuses) {
+        return (root, query, cb) ->
+            statuses == null || statuses.isEmpty() ? null :
+            root.get("status").in(statuses);
+    }
+
+    public static Specification<Appointment> withoutValidPrecheckByOtherNurse(UUID nurseId) {
+        return (root, query, cb) -> {
+            if (nurseId == null) {
+                return null;
+            }
+
+            query.distinct(true);
+
+            var subquery = query.subquery(UUID.class);
+            var precheckRoot = subquery.from(com.project666.backend.domain.entity.Precheck.class);
+            subquery.select(precheckRoot.get("appointment").get("id"));
+            subquery.where(
+                cb.equal(precheckRoot.get("appointment").get("id"), root.get("id")),
+                cb.equal(precheckRoot.get("status"), com.project666.backend.domain.entity.PrecheckStatusEnum.VALID),
+                cb.notEqual(precheckRoot.get("nurse").get("id"), nurseId)
+            );
+
+            return cb.not(cb.exists(subquery));
+        };
     }
 
     public static Specification<Appointment> byDateRange(

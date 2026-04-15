@@ -1,7 +1,7 @@
 package com.project666.frontend.controller;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -24,20 +23,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.project666.backend.domain.CreatePrecheckRequest;
 import com.project666.backend.domain.ListAppointmentRequest;
 import com.project666.backend.domain.ListPrecheckRequest;
 import com.project666.backend.domain.entity.Appointment;
-import com.project666.backend.domain.entity.AppointmentStatusEnum;
 import com.project666.backend.domain.entity.Precheck;
 import com.project666.backend.domain.entity.PrecheckStatusEnum;
+import com.project666.backend.domain.entity.RoleEnum;
 import com.project666.backend.domain.entity.User;
-import com.project666.backend.repository.AppointmentRepository;
 import com.project666.backend.repository.UserRepository;
 import com.project666.backend.service.AppointmentService;
 import com.project666.backend.service.PrecheckService;
-import com.project666.backend.specification.AppointmentSpecification;
 import com.project666.frontend.service.KeycloakService;
 import com.project666.frontend.util.OidcUserUtil;
 
@@ -53,7 +51,6 @@ public class NurseController {
 
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
-    private final AppointmentRepository appointmentRepository;
     private final AppointmentService appointmentService;
     private final PrecheckService precheckService;
 
@@ -62,82 +59,45 @@ public class NurseController {
     public String home(
         @AuthenticationPrincipal OidcUser oidcUser,
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
+        @RequestParam(required = false) UUID filterPatientId,
+        @RequestParam(required = false) UUID filterDoctorId,
         Model model
     ) {
         User user = requireActiveUser(oidcUser);
         keycloakService.syncUser(authorizedClient, user);
         userRepository.save(user);
 
+        UUID nurseId = user.getId();
         LocalDate today = LocalDate.now();
-
-        Specification<Appointment> spec = AppointmentSpecification.alwaysTrue()
-            .and((root, query, cb) -> root.get("status").in(
-                AppointmentStatusEnum.CONFIRMED,
-                AppointmentStatusEnum.COMPLETED
-            ))
-            .and(AppointmentSpecification.byDateRange(
-                today.atStartOfDay(),
-                today.atTime(LocalTime.MAX)
-            ));
-
         Pageable pageable = PageRequest.of(0, 200, Sort.by("startTime").ascending());
-        List<Appointment> todayAppointments = appointmentRepository.findAll(spec, pageable).getContent();
-
-        model.addAttribute("todayAppointments", todayAppointments);
-        model.addAttribute("today", today);
-
-        return "nurse/dashboard/home";
-    }
-
-
-    @GetMapping("/dashboard/appointments")
-    public String appointments(
-        @AuthenticationPrincipal OidcUser oidcUser,
-        @RequestParam(required = false) UUID filterPatientId,
-        @RequestParam(required = false) UUID filterDoctorId,
-        Model model
-    ) {
-        UUID nurseId = OidcUserUtil.getUserId(oidcUser);
-
-        LocalDate today = LocalDate.now();
         ListAppointmentRequest request = new ListAppointmentRequest();
+        request.setPatientId(filterPatientId);
+        request.setDoctorId(filterDoctorId);
         request.setFrom(today);
         request.setEnd(today);
-        Pageable pageable = PageRequest.of(0, 200, Sort.by("startTime").ascending());
         List<Appointment> appointments = appointmentService
             .listAppointmentForNurse(nurseId, request, pageable)
             .getContent();
 
-        List<Appointment> allVisibleToday = appointments.stream()
-            .filter(a -> a.getPrechecks().stream()
-                .noneMatch(p -> PrecheckStatusEnum.VALID.equals(p.getStatus())
-                    && !nurseId.equals(p.getNurse().getId())))
-            .collect(Collectors.toList());
-
-        List<User> patients = allVisibleToday.stream()
+        List<User> patients = appointments.stream()
             .map(Appointment::getPatient)
             .distinct()
             .sorted(Comparator.comparing(u -> u.getFirstName() + u.getLastName()))
             .collect(Collectors.toList());
 
-        List<User> doctors = allVisibleToday.stream()
+        List<User> doctors = appointments.stream()
             .map(Appointment::getDoctor)
             .distinct()
             .sorted(Comparator.comparing(u -> u.getFirstName() + u.getLastName()))
             .collect(Collectors.toList());
 
-        List<Appointment> visibleAppointments = allVisibleToday.stream()
-            .filter(a -> filterPatientId == null || filterPatientId.equals(a.getPatient().getId()))
-            .filter(a -> filterDoctorId == null || filterDoctorId.equals(a.getDoctor().getId()))
-            .collect(Collectors.toList());
-
-        Map<UUID, Precheck> precheckByAppointment = visibleAppointments.stream()
+        Map<UUID, Precheck> precheckByAppointment = appointments.stream()
             .flatMap(a -> a.getPrechecks().stream())
             .filter(p -> PrecheckStatusEnum.VALID.equals(p.getStatus()) && nurseId.equals(p.getNurse().getId()))
             .collect(Collectors.toMap(p -> p.getAppointment().getId(), p -> p));
 
         Map<String, List<Map<String, Object>>> historyByPatient = new LinkedHashMap<>();
-        for (Appointment a : visibleAppointments) {
+        for (Appointment a : appointments) {
             String patientId = a.getPatient().getId().toString();
             if (!historyByPatient.containsKey(patientId)) {
                 ListPrecheckRequest histReq = new ListPrecheckRequest();
@@ -173,7 +133,7 @@ public class NurseController {
             .map(u -> u.getFirstName() + " " + u.getLastName())
             .orElse("");
 
-        model.addAttribute("appointments", visibleAppointments);
+        model.addAttribute("appointments", appointments);
         model.addAttribute("precheckByAppointment", precheckByAppointment);
         model.addAttribute("historyByPatient", historyByPatient);
         model.addAttribute("patients", patients);
@@ -182,7 +142,8 @@ public class NurseController {
         model.addAttribute("filterDoctorId", filterDoctorId);
         model.addAttribute("filterPatientName", filterPatientName);
         model.addAttribute("filterDoctorName", filterDoctorName);
-        return "nurse/dashboard/appointments";
+        model.addAttribute("today", today);
+        return "nurse/dashboard/home";
     }
 
 
@@ -195,7 +156,8 @@ public class NurseController {
         @RequestParam Double height,
         @RequestParam Double weight,
         @RequestParam(required = false) String note,
-        @AuthenticationPrincipal OidcUser oidcUser
+        @AuthenticationPrincipal OidcUser oidcUser,
+        RedirectAttributes redirectAttributes
     ) {
         UUID nurseId = OidcUserUtil.getUserId(oidcUser);
 
@@ -210,30 +172,32 @@ public class NurseController {
 
         try {
             precheckService.createPrecheck(nurseId, request);
-            return "redirect:/nurse/dashboard/appointments?success";
+            return "redirect:/nurse/dashboard/home?success";
         } catch (Exception e) {
             log.error("Failed to create precheck for appointment {}: {}", appointmentId, e.getMessage(), e);
-            return "redirect:/nurse/dashboard/appointments?error";
+            redirectAttributes.addFlashAttribute("errorMessage", resolveErrorMessage(e, "Failed to submit precheck."));
+            return "redirect:/nurse/dashboard/home";
         }
     }
 
     @PostMapping("/dashboard/cancel-precheck")
     public String cancelPrecheck(
         @RequestParam UUID precheckId,
-        @AuthenticationPrincipal OidcUser oidcUser
+        @AuthenticationPrincipal OidcUser oidcUser,
+        RedirectAttributes redirectAttributes
     ) {
         UUID nurseId = OidcUserUtil.getUserId(oidcUser);
         try {
             precheckService.cancelPrecheck(nurseId, precheckId);
-            return "redirect:/nurse/dashboard/appointments?cancelled";
+            return "redirect:/nurse/dashboard/home?cancelled";
         } catch (Exception e) {
             log.error("Failed to cancel precheck {}: {}", precheckId, e.getMessage(), e);
-            return "redirect:/nurse/dashboard/appointments?error";
+            redirectAttributes.addFlashAttribute("errorMessage", resolveErrorMessage(e, "Failed to cancel precheck."));
+            return "redirect:/nurse/dashboard/home";
         }
     }
 
-
-@GetMapping("/dashboard/profile")
+    @GetMapping("/dashboard/profile")
     public String profile(
         @AuthenticationPrincipal OidcUser oidcUser,
         @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
@@ -244,6 +208,46 @@ public class NurseController {
         userRepository.save(user);
         model.addAttribute("user", user);
         return "nurse/dashboard/profile";
+    }
+
+    @GetMapping("/dashboard/prechecks")
+    public String prechecks(
+        @AuthenticationPrincipal OidcUser oidcUser,
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate end,
+        @RequestParam(required = false) UUID patientId,
+        @RequestParam(required = false) PrecheckStatusEnum status,
+        Model model
+    ) {
+        User user = requireActiveUser(oidcUser);
+        UUID nurseId = user.getId();
+
+        ListPrecheckRequest request = new ListPrecheckRequest();
+        request.setPatientId(patientId);
+        request.setStatus(status);
+        request.setMinDate(from);
+        request.setMaxDate(end);
+
+        Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
+
+        List<Precheck> prechecks = new ArrayList<>();
+        String filterError = null;
+        try {
+            prechecks = precheckService.listPrecheckForNurse(nurseId, request, pageable).getContent();
+        } catch (IllegalArgumentException e) {
+            filterError = e.getMessage();
+        }
+
+        model.addAttribute("prechecks", prechecks);
+        model.addAttribute("from", from);
+        model.addAttribute("end", end);
+        model.addAttribute("patientId", patientId);
+        model.addAttribute("status", status);
+        model.addAttribute("filterError", filterError);
+        model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
+        model.addAttribute("precheckStatuses", PrecheckStatusEnum.values());
+
+        return "nurse/dashboard/prechecks";
     }
 
     @PostMapping("/delete-account")
@@ -268,5 +272,10 @@ public class NurseController {
     private User requireActiveUser(OidcUser oidcUser) {
         UUID userId = OidcUserUtil.getUserId(oidcUser);
         return userRepository.findByIdAndDeletedFalse(userId).orElseThrow();
+    }
+
+    private String resolveErrorMessage(Exception exception, String fallback) {
+        String message = exception.getMessage();
+        return message == null || message.isBlank() ? fallback : message;
     }
 }

@@ -271,7 +271,7 @@ public class PrecheckServiceImpl implements PrecheckService {
 
     private void checkWithinAppointmentTimeRange(Appointment appointment, String message) {
         LocalDateTime now = LocalDateTime.now();
-        if (now.isAfter(appointment.getEndTime())) {
+        if (now.isBefore(appointment.getStartTime()) || now.isAfter(appointment.getEndTime())) {
             throw new IllegalArgumentException(message);
         }
     }
