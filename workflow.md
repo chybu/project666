@@ -370,3 +370,14 @@ Now we have the data delivered to the html, how to load it from model and put it
     </div>
 </div>
 ```
+
+drop table if exists appointment_bills;
+drop table if exists lab_bills;
+drop table if exists prescription_medicines;
+drop table if exists prechecks;
+drop table if exists lab_tests;
+drop table if exists prescriptions;
+drop table if exists patient_record_access;
+drop table if exists lab_requests;
+drop table if exists appointments;
+drop table if exists users;
