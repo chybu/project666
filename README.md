@@ -148,7 +148,7 @@ Windows:
 .\mvnw.cmd -f backend\pom.xml clean install
 ```
 ```powershell
-.\mvnw.cmd -f frontend\pom.xml spring-boot:run
+.\mvnw.cmd -f frontend\pom.xml clean spring-boot:run
 ```
 
 macOS/Linux:
