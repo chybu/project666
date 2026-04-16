@@ -156,7 +156,7 @@ macOS/Linux:
 ./mvnw -f backend/pom.xml clean install
 ```
 ```bash
-./mvnw -f frontend/pom.xml spring-boot:run
+./mvnw -f frontend/pom.xml clean spring-boot:run
 ```
 
 ## Application URLs
