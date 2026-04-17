@@ -57,15 +57,6 @@
         "attributes": {}
       },
       {
-        "id": "0b8cc5e2-9a28-49bc-a2e0-863cfed8f250",
-        "name": "ROLE_PHARMACIST",
-        "description": "",
-        "composite": false,
-        "clientRole": false,
-        "containerId": "a6a4d1c8-c2be-4b37-9361-5fa210f9159e",
-        "attributes": {}
-      },
-      {
         "id": "411e6da2-6d80-46c8-a938-8d4161598a5d",
         "name": "ROLE_NURSE",
         "description": "",
