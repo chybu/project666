@@ -125,6 +125,52 @@ Under `Choose the resources you want to import:` select `Users`, `Clients`, `Rea
 Under `If a resource already exists, specify what should be done:` select `Skip`.
 click `Import`.
 
+### 5. Create test users
+You can create any local users you want, but these accounts are handy for local testing:
+
+Patient
+username: testPatient
+password: 123TestPatient!
+email: testPatient501@gmail.com
+
+Doctor
+username: testDoctor
+password: 123TestDoctor!
+email: TestDoctor502@gmail.com
+
+Nurse
+username: testNurse
+password: 123TestNurse!
+email: TestNurse501@gmail.com
+
+Receptionist
+username: testRecep
+password: 123TestRecep!
+email: testRecep501@gmail.com
+
+Accountant
+Username: testAcc
+password: 123TestAcc!
+Email: testAccWork501@gmail.com
+
+Lab Technician
+Username: testLab
+password: 123TestLab!
+Email: testLabTech501@gmail.com
+
+You will have to go in keycloak to the users section and click create user, then add that information
+Here is how to give them a password and assign their roles:
+Set Password
+Go to Credentials
+Click Set Password
+Enter password
+Turn OFF "Temporary"
+Save
+Assign Roles
+Go to Role Mapping
+Click Realm Roles
+Assign appropriate role to each user
+
 ### 6. Run the insurance service
 
 Windows:
