@@ -174,13 +174,17 @@ Assign appropriate role to each user
 ### 6. Run the insurance service
 
 Windows:
-
+```powershell
+.\mvnw.cmd clean install
+```
 ```powershell
 .\mvnw.cmd -f insurance\pom.xml clean spring-boot:run
 ```
 
 macOS/Linux:
-
+```bash
+./mvnw -f clean install
+```
 ```bash
 ./mvnw -f insurance/pom.xml clean spring-boot:run
 ```
