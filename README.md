@@ -183,7 +183,7 @@ Windows:
 
 macOS/Linux:
 ```bash
-./mvnw -f clean install
+./mvnw clean install
 ```
 ```bash
 ./mvnw -f insurance/pom.xml clean spring-boot:run
