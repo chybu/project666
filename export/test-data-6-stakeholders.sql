@@ -2132,4 +2132,353 @@ SET
     version = EXCLUDED.version,
     lab_test_id = EXCLUDED.lab_test_id;
 
+-- ------------------------------------------------------------
+-- Extra fixtures: j.pinkman with dr.house
+-- ------------------------------------------------------------
+
+INSERT INTO appointments (
+    id, start_time, end_time, type, status, created_at, creator_id, last_updated,
+    canceller_id, cancellation_initiator, cancel_reason, cancelled_at,
+    confirm_receptionist_id, confirmed_at, doctor_id, patient_id, version
+)
+VALUES
+(
+    'a4000000-0000-0000-0000-000000000001'::uuid,
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '45 minutes',
+    'QUICK_CHECK',
+    'COMPLETED',
+    (SELECT now_ts FROM _seed_clock) - interval '10 days',
+    '1ce33e60-07ec-4ffa-8095-23d711ecf1a3'::uuid, -- recep.shilly
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '7 minutes',
+    NULL::uuid,
+    NULL::varchar(255),
+    NULL::varchar(255),
+    NULL::timestamp(6),
+    '1ce33e60-07ec-4ffa-8095-23d711ecf1a3'::uuid,
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '7 minutes',
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid, -- dr.house
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid, -- j.pinkman
+    0
+),
+(
+    'a4000000-0000-0000-0000-000000000002'::uuid,
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) + interval '2 days' + interval '14 hours',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) + interval '2 days' + interval '14 hours' + interval '75 minutes',
+    'MID_CHECK',
+    'CONFIRMED',
+    (SELECT now_ts FROM _seed_clock) - interval '1 day',
+    '1ce33e60-07ec-4ffa-8095-23d711ecf1a3'::uuid,
+    (SELECT now_ts FROM _seed_clock) - interval '10 hours',
+    NULL::uuid,
+    NULL::varchar(255),
+    NULL::varchar(255),
+    NULL::timestamp(6),
+    '1ce33e60-07ec-4ffa-8095-23d711ecf1a3'::uuid,
+    (SELECT now_ts FROM _seed_clock) - interval '10 hours',
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    0
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    start_time = EXCLUDED.start_time,
+    end_time = EXCLUDED.end_time,
+    type = EXCLUDED.type,
+    status = EXCLUDED.status,
+    created_at = EXCLUDED.created_at,
+    creator_id = EXCLUDED.creator_id,
+    last_updated = EXCLUDED.last_updated,
+    canceller_id = EXCLUDED.canceller_id,
+    cancellation_initiator = EXCLUDED.cancellation_initiator,
+    cancel_reason = EXCLUDED.cancel_reason,
+    cancelled_at = EXCLUDED.cancelled_at,
+    confirm_receptionist_id = EXCLUDED.confirm_receptionist_id,
+    confirmed_at = EXCLUDED.confirmed_at,
+    doctor_id = EXCLUDED.doctor_id,
+    patient_id = EXCLUDED.patient_id,
+    version = EXCLUDED.version;
+
+INSERT INTO prechecks (
+    id, appointment_id, patient_id, doctor_id, nurse_id, status,
+    pulse, sugar, temperature, height, weight, note, created_at, last_updated, version
+)
+VALUES
+(
+    'c4000000-0000-0000-0000-000000000001'::uuid,
+    'a4000000-0000-0000-0000-000000000001'::uuid,
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    '6f84464f-73f4-48a1-bbbc-cb668d4ebc37'::uuid, -- nurse.jared
+    'VALID',
+    86, 5.3, 36.9, 172.0, 68.4,
+    'Precheck for completed visit with dr.house',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '10 minutes',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '10 minutes',
+    0
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    appointment_id = EXCLUDED.appointment_id,
+    patient_id = EXCLUDED.patient_id,
+    doctor_id = EXCLUDED.doctor_id,
+    nurse_id = EXCLUDED.nurse_id,
+    status = EXCLUDED.status,
+    pulse = EXCLUDED.pulse,
+    sugar = EXCLUDED.sugar,
+    temperature = EXCLUDED.temperature,
+    height = EXCLUDED.height,
+    weight = EXCLUDED.weight,
+    note = EXCLUDED.note,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    version = EXCLUDED.version;
+
+INSERT INTO lab_requests (
+    id, status, created_at, last_updated, version, doctor_id, patient_id, appointment_id
+)
+VALUES
+(
+    'd4000000-0000-0000-0000-000000000001'::uuid,
+    'COMPLETED',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '20 minutes',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '12 hours',
+    0,
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    'a4000000-0000-0000-0000-000000000001'::uuid
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    status = EXCLUDED.status,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    version = EXCLUDED.version,
+    doctor_id = EXCLUDED.doctor_id,
+    patient_id = EXCLUDED.patient_id,
+    appointment_id = EXCLUDED.appointment_id;
+
+INSERT INTO lab_tests (
+    id, status, code, name, result, unit, lab_technician_note, doctor_note,
+    created_at, last_updated, lab_technician_id, lab_request_id, patient_id, version
+)
+VALUES
+(
+    'e4000000-0000-0000-0000-000000000001'::uuid,
+    'COMPLETED',
+    'LFT-HOUSE-01',
+    'Liver Function Panel',
+    'Within range',
+    'panel',
+    'Processed by labtech, no critical flags',
+    'Review with patient at next follow-up',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '25 minutes',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '12 hours',
+    '1f834870-ee09-4c54-89c6-14669f83f2c7'::uuid, -- labtech
+    'd4000000-0000-0000-0000-000000000001'::uuid,
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    0
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    status = EXCLUDED.status,
+    code = EXCLUDED.code,
+    name = EXCLUDED.name,
+    result = EXCLUDED.result,
+    unit = EXCLUDED.unit,
+    lab_technician_note = EXCLUDED.lab_technician_note,
+    doctor_note = EXCLUDED.doctor_note,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    lab_technician_id = EXCLUDED.lab_technician_id,
+    lab_request_id = EXCLUDED.lab_request_id,
+    patient_id = EXCLUDED.patient_id,
+    version = EXCLUDED.version;
+
+INSERT INTO prescriptions (
+    id, status, doctor_id, patient_id, appointment_id, start_date, end_date,
+    total_refills, remaining_refills, refill_interval_days,
+    next_eligible_refill_at, last_consumed_at, general_note, created_at, last_updated, version
+)
+VALUES
+(
+    'f4000000-0000-0000-0000-000000000001'::uuid,
+    'ACTIVE',
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    'a4000000-0000-0000-0000-000000000001'::uuid,
+    (SELECT now_ts FROM _seed_clock)::date - 2,
+    (SELECT now_ts FROM _seed_clock)::date + 30,
+    2,
+    2,
+    30,
+    (SELECT now_ts FROM _seed_clock) + interval '1 day',
+    NULL::timestamp(6),
+    'dr.house follow-up therapy plan for j.pinkman',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '10 hours',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '10 hours',
+    0
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    status = EXCLUDED.status,
+    doctor_id = EXCLUDED.doctor_id,
+    patient_id = EXCLUDED.patient_id,
+    appointment_id = EXCLUDED.appointment_id,
+    start_date = EXCLUDED.start_date,
+    end_date = EXCLUDED.end_date,
+    total_refills = EXCLUDED.total_refills,
+    remaining_refills = EXCLUDED.remaining_refills,
+    refill_interval_days = EXCLUDED.refill_interval_days,
+    next_eligible_refill_at = EXCLUDED.next_eligible_refill_at,
+    last_consumed_at = EXCLUDED.last_consumed_at,
+    general_note = EXCLUDED.general_note,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    version = EXCLUDED.version;
+
+INSERT INTO prescription_medicines (
+    id, prescription_id, medicine_name, dosage, frequency, route, instructions, quantity, created_at, last_updated
+)
+VALUES
+(
+    'aa400000-0000-0000-0000-000000000001'::uuid,
+    'f4000000-0000-0000-0000-000000000001'::uuid,
+    'Gabapentin',
+    '300mg',
+    'Once nightly',
+    'Oral',
+    'Avoid alcohol while taking this medication',
+    '30 capsules',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '10 hours',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '10 hours'
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    prescription_id = EXCLUDED.prescription_id,
+    medicine_name = EXCLUDED.medicine_name,
+    dosage = EXCLUDED.dosage,
+    frequency = EXCLUDED.frequency,
+    route = EXCLUDED.route,
+    instructions = EXCLUDED.instructions,
+    quantity = EXCLUDED.quantity,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated;
+
+INSERT INTO patient_record_access (
+    id, record_type, patient_id, doctor_id, status, created_at, last_updated
+)
+VALUES
+(
+    'b4000000-0000-0000-0000-000000000001'::uuid,
+    'PRECHECK',
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    'APPROVED',
+    (SELECT now_ts FROM _seed_clock) - interval '4 days',
+    (SELECT now_ts FROM _seed_clock) - interval '3 days'
+),
+(
+    'b4000000-0000-0000-0000-000000000002'::uuid,
+    'LAB_REQUEST',
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    'fdc76d3e-0e13-40ca-9954-164c70ed180f'::uuid,
+    'APPROVED',
+    (SELECT now_ts FROM _seed_clock) - interval '4 days',
+    (SELECT now_ts FROM _seed_clock) - interval '3 days'
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    record_type = EXCLUDED.record_type,
+    patient_id = EXCLUDED.patient_id,
+    doctor_id = EXCLUDED.doctor_id,
+    status = EXCLUDED.status,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated;
+
+INSERT INTO appointment_bills (
+    id, amount, insurance_cover_amount, patient_payment_amount, status, type,
+    patient_id, confirm_accountant_id, paid_on, created_at, last_updated, version, appointment_id
+)
+VALUES
+(
+    '95000000-0000-0000-0000-000000000001'::uuid,
+    15.00,
+    5.00,
+    10.00,
+    'PAID',
+    'QUICK_CHECK_FEE',
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    '2c354b57-9111-4806-a365-10ba3337d2fc'::uuid, -- acct.jarin
+    (SELECT now_ts FROM _seed_clock) - interval '2 days',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '9 hours' + interval '7 minutes',
+    (SELECT now_ts FROM _seed_clock) - interval '2 days',
+    0,
+    'a4000000-0000-0000-0000-000000000001'::uuid
+),
+(
+    '95000000-0000-0000-0000-000000000002'::uuid,
+    20.00,
+    NULL::numeric(38,2),
+    NULL::numeric(38,2),
+    'VIEWING',
+    'MID_CHECK_FEE',
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    NULL::uuid,
+    NULL::timestamp(6),
+    (SELECT now_ts FROM _seed_clock) - interval '10 hours',
+    (SELECT now_ts FROM _seed_clock) - interval '10 hours',
+    0,
+    'a4000000-0000-0000-0000-000000000002'::uuid
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    amount = EXCLUDED.amount,
+    insurance_cover_amount = EXCLUDED.insurance_cover_amount,
+    patient_payment_amount = EXCLUDED.patient_payment_amount,
+    status = EXCLUDED.status,
+    type = EXCLUDED.type,
+    patient_id = EXCLUDED.patient_id,
+    confirm_accountant_id = EXCLUDED.confirm_accountant_id,
+    paid_on = EXCLUDED.paid_on,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    version = EXCLUDED.version,
+    appointment_id = EXCLUDED.appointment_id;
+
+INSERT INTO lab_bills (
+    id, amount, insurance_cover_amount, patient_payment_amount, status, type,
+    patient_id, confirm_accountant_id, paid_on, created_at, last_updated, version, lab_test_id
+)
+VALUES
+(
+    '96000000-0000-0000-0000-000000000001'::uuid,
+    35.00,
+    20.00,
+    15.00,
+    'UNPAID',
+    'LAB_TEST_FEE',
+    '010e2010-95c7-460d-a39a-74c540158661'::uuid,
+    NULL::uuid,
+    NULL::timestamp(6),
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '12 hours',
+    date_trunc('day', (SELECT now_ts FROM _seed_clock)) - interval '3 days' + interval '12 hours',
+    0,
+    'e4000000-0000-0000-0000-000000000001'::uuid
+)
+ON CONFLICT (id) DO UPDATE
+SET
+    amount = EXCLUDED.amount,
+    insurance_cover_amount = EXCLUDED.insurance_cover_amount,
+    patient_payment_amount = EXCLUDED.patient_payment_amount,
+    status = EXCLUDED.status,
+    type = EXCLUDED.type,
+    patient_id = EXCLUDED.patient_id,
+    confirm_accountant_id = EXCLUDED.confirm_accountant_id,
+    paid_on = EXCLUDED.paid_on,
+    created_at = EXCLUDED.created_at,
+    last_updated = EXCLUDED.last_updated,
+    version = EXCLUDED.version,
+    lab_test_id = EXCLUDED.lab_test_id;
+
 COMMIT;

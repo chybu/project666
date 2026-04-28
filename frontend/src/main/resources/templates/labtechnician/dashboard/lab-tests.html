@@ -13,6 +13,9 @@
         .lab-test-summary > div {
             min-width: 0;
         }
+        .lab-test-second-row {
+            flex-basis: 100%;
+        }
         .lab-test-value {
             overflow-wrap: anywhere;
             word-break: break-word;
@@ -158,6 +161,10 @@
                                             <strong>Created:</strong>
                                             <span th:text="${#temporals.format(labTest.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
                                         </div>
+                                        <div class="lab-test-second-row">
+                                            <strong>Doctor Note:</strong>
+                                            <span class="lab-test-value" th:text="${labTest.doctorNote} ?: '-'"></span>
+                                        </div>
                                     </div>
                                     <form method="post"
                                           class="mb-0"
@@ -192,25 +199,16 @@
                                             <input type="hidden" name="maxDate" th:value="${maxDate}">
                                             <input type="hidden" name="page" th:value="${page}">
                                             <input type="hidden" name="size" th:value="${size}">
+                                            <input type="hidden" name="code" th:value="${labTest.code}">
+                                            <input type="hidden" name="name" th:value="${labTest.name}">
+                                            <input type="hidden" name="unit" th:value="${labTest.unit}">
 
                                             <div class="form-row align-items-end">
-                                                <div class="form-group col-md-2 mb-2">
-                                                    <label class="mb-1">Code</label>
-                                                    <input type="text" name="code" class="form-control" th:value="${labTest.code}">
-                                                </div>
-                                                <div class="form-group col-md-2 mb-2">
-                                                    <label class="mb-1">Name</label>
-                                                    <input type="text" name="name" class="form-control" th:value="${labTest.name}">
-                                                </div>
-                                                <div class="form-group col-md-2 mb-2">
-                                                    <label class="mb-1">Unit</label>
-                                                    <input type="text" name="unit" class="form-control" th:value="${labTest.unit}">
-                                                </div>
-                                                <div class="form-group col-md-3 mb-2">
+                                                <div class="form-group col-md-6 mb-2">
                                                     <label class="mb-1">Result</label>
                                                     <textarea name="result" class="form-control" rows="2" th:text="${labTest.result}"></textarea>
                                                 </div>
-                                                <div class="form-group col-md-3 mb-2">
+                                                <div class="form-group col-md-6 mb-2">
                                                     <label class="mb-1">Lab Technician Note</label>
                                                     <textarea name="labTechnicianNote" class="form-control" rows="2" th:text="${labTest.labTechnicianNote}"></textarea>
                                                 </div>
