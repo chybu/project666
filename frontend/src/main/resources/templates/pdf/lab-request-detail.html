@@ -112,13 +112,20 @@
             </tr>
             <tr>
                 <td>
+                    <strong>Appointment End:</strong>
+                    <span th:text="${lab.appointment != null and lab.appointment.endTime != null ? #temporals.format(lab.appointment.endTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                </td>
+                <td>
                     <strong>Appointment Type:</strong>
                     <span th:text="${lab.appointment != null ? lab.appointment.type : 'N/A'}"></span>
                 </td>
+            </tr>
+            <tr>
                 <td>
                     <strong>Created At:</strong>
                     <span th:text="${lab.createdAt != null ? #temporals.format(lab.createdAt, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
                 </td>
+                <td></td>
             </tr>
             <tr>
                 <td>

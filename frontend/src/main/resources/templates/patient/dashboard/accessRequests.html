@@ -49,6 +49,7 @@
                                 <div class="form-group col-md-2">
                                     <label for="status">Status</label>
                                     <select class="form-control" id="status" name="status">
+                                        <option value="" th:selected="${status == null}">All</option>
                                         <option th:each="statusOption : ${accessRequestStatuses}"
                                                 th:value="${statusOption}"
                                                 th:text="${statusOption}"
@@ -92,10 +93,20 @@
                                 <tr th:each="ar : ${accessRequests}">
                                     <td th:text="${ar.doctor.fullName}"></td>
                                     <td th:text="${ar.recordType}"></td>
-                                    <td th:text="${ar.status}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${ar.status.name() == 'APPROVED'} ? 'badge-success' :
+                                                (${ar.status.name() == 'PENDING'} ? 'badge-warning' :
+                                                (${ar.status.name() == 'REJECTED' or ar.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                (${ar.status.name() == 'REVOKED'} ? 'badge-primary' :
+                                                'badge-secondary')))"
+                                              th:text="${ar.status}">
+                                        </span>
+                                    </td>
                                     <td th:text="${#temporals.format(ar.createdAt, 'yyyy-MM-dd')}"></td>
                                     <td>
-                                        <div th:if="${status != null and status.name() == 'PENDING'}">
+                                        <div th:if="${ar.status != null and ar.status.name() == 'PENDING'}">
                                             <form th:action="@{/patient/dashboard/accessRequests/{id}/approve(id=${ar.id})}"
                                                   method="post"
                                                   class="d-inline">
@@ -117,7 +128,7 @@
                                                 <button type="submit" class="btn btn-sm btn-danger">Deny</button>
                                             </form>
                                         </div>
-                                        <div th:if="${status != null and status.name() == 'APPROVED'}">
+                                        <div th:if="${ar.status != null and ar.status.name() == 'APPROVED'}">
                                             <form th:action="@{/patient/dashboard/accessRequests/{id}/revoke(id=${ar.id})}"
                                                   method="post"
                                                   class="d-inline">
@@ -129,7 +140,7 @@
                                                 <button type="submit" class="btn btn-sm btn-warning">Revoke</button>
                                             </form>
                                         </div>
-                                        <span th:if="${status != null and status.name() != 'PENDING' and status.name() != 'APPROVED'}"
+                                        <span th:if="${ar.status == null or (ar.status.name() != 'PENDING' and ar.status.name() != 'APPROVED')}"
                                               class="text-muted small">
                                             No action
                                         </span>

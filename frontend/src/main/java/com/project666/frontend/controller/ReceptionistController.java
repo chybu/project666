@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
 
 import org.springframework.data.domain.Page;
@@ -691,6 +692,8 @@ public class ReceptionistController {
     private void addUserSelectors(Model model) {
         model.addAttribute("patients", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.PATIENT));
         model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        model.addAttribute("minStartTime", LocalDateTime.now().plusDays(3).format(fmt));
     }
 
     private User requireActiveUser(OidcUser oidcUser) {

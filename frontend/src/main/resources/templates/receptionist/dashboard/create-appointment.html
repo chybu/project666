@@ -41,7 +41,7 @@
                   <option value="">Select patient</option>
                   <option th:each="patient : ${patients}"
                           th:value="${patient.id}"
-                          th:text="${patient.firstName + ' ' + patient.lastName + ' (' + patient.email + ')'}"
+                          th:text="${patient.firstName + ' ' + patient.lastName}"
                           th:selected="${patientId != null and patientId == patient.id.toString()}">
                   </option>
                 </select>
@@ -88,6 +88,7 @@
                        id="startTime"
                        name="startTime"
                        th:value="${startTime != null ? #temporals.format(startTime, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                       th:min="${minStartTime}"
                        required>
 
                 <small class="form-text text-muted">

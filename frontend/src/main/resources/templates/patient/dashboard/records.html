@@ -128,9 +128,20 @@
                             <div th:each="pc, stat : ${prechecks}" class="mb-4">
                                 <hr th:if="${!stat.first}" class="my-4">
                                 <div class="mb-2">
-                                    <strong>Date:</strong> <span th:text="${pc.createdAt}"></span>
+                                    <strong>Date:</strong> <span th:text="${pc.createdAt != null ? #temporals.format(pc.createdAt, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
                                     &nbsp;|&nbsp;
-                                    <strong>Status:</strong> <span th:text="${pc.status}"></span>
+                                    <strong>Status:</strong>
+                                    <span class="badge"
+                                          th:classappend="
+                                            ${pc.status.name() == 'VALID' or pc.status.name() == 'COMPLETED' or pc.status.name() == 'APPROVED' or pc.status.name() == 'CONFIRMED'} ? 'badge-success' :
+                                            (${pc.status.name() == 'PENDING' or pc.status.name() == 'IN_PROGRESS'} ? 'badge-warning' :
+                                            (${pc.status.name() == 'CANCELLED' or pc.status.name() == 'REJECTED' or pc.status.name() == 'FAILED'} ? 'badge-danger' :
+                                            'badge-secondary'))"
+                                          th:text="${pc.status}">
+                                    </span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Appointment Start:</strong>
+                                    <span th:text="${pc.appointment != null and pc.appointment.startTime != null ? #temporals.format(pc.appointment.startTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
                                     &nbsp;|&nbsp;
                                     <strong>Nurse:</strong> <span th:text="${pc.nurse != null ? pc.nurse.fullName : 'N/A'}"></span>
                                 </div>
@@ -250,13 +261,22 @@
                                 <hr th:if="${!stat.first}" class="my-4">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
-                                        <strong>Date:</strong> <span th:text="${lr.createdAt}"></span>
+                                        <strong>Date:</strong> <span th:text="${lr.createdAt != null ? #temporals.format(lr.createdAt, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
                                         &nbsp;|&nbsp;
-                                        <strong>Status:</strong> <span th:text="${lr.status}"></span>
+                                        <strong>Status:</strong>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${lr.status.name() == 'COMPLETED' or lr.status.name() == 'APPROVED' or lr.status.name() == 'CONFIRMED'} ? 'badge-success' :
+                                                (${lr.status.name() == 'PENDING' or lr.status.name() == 'IN_PROGRESS' or lr.status.name() == 'REQUESTED'} ? 'badge-warning' :
+                                                (${lr.status.name() == 'CANCELLED' or lr.status.name() == 'REJECTED' or lr.status.name() == 'FAILED'} ? 'badge-danger' :
+                                                'badge-secondary'))"
+                                              th:text="${lr.status}">
+                                        </span>
                                         &nbsp;|&nbsp;
                                         <strong>Doctor:</strong> <span th:text="${lr.doctorFullName}"></span>
                                         &nbsp;|&nbsp;
-                                        <strong>Appointment:</strong> <span th:text="${lr.appointmentStartTime}"></span>
+                                        <strong>Appointment Start:</strong>
+                                        <span th:text="${lr.appointmentStartTime != null ? #temporals.format(lr.appointmentStartTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
                                     </div>
                                     <a th:href="@{/pdf/lab/patient(labId=${lr.id})}"
                                        class="btn btn-sm btn-outline-secondary ml-3">
@@ -279,7 +299,16 @@
                                             <td th:text="${labTest.name}"></td>
                                             <td th:text="${labTest.code}"></td>
                                             <td th:text="${labTest.unit}"></td>
-                                            <td th:text="${labTest.status}"></td>
+                                            <td>
+                                                <span class="badge"
+                                                      th:classappend="
+                                                        ${labTest.status.name() == 'COMPLETED' or labTest.status.name() == 'APPROVED' or labTest.status.name() == 'CONFIRMED' or labTest.status.name() == 'NORMAL'} ? 'badge-success' :
+                                                        (${labTest.status.name() == 'PENDING' or labTest.status.name() == 'IN_PROGRESS' or labTest.status.name() == 'REQUESTED'} ? 'badge-warning' :
+                                                        (${labTest.status.name() == 'CANCELLED' or labTest.status.name() == 'REJECTED' or labTest.status.name() == 'FAILED' or labTest.status.name() == 'ABNORMAL'} ? 'badge-danger' :
+                                                        'badge-secondary'))"
+                                                      th:text="${labTest.status}">
+                                                </span>
+                                            </td>
                                             <td th:text="${labTest.result}"></td>
                                             <td th:text="${labTest.labTechnicianFullName}"></td>
                                         </tr>

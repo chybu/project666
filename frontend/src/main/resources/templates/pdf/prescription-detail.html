@@ -117,6 +117,16 @@
             </tr>
             <tr>
                 <td>
+                    <strong>Appointment Start:</strong>
+                    <span th:text="${prescription.appointment != null and prescription.appointment.startTime != null ? #temporals.format(prescription.appointment.startTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                </td>
+                <td>
+                    <strong>Appointment End:</strong>
+                    <span th:text="${prescription.appointment != null and prescription.appointment.endTime != null ? #temporals.format(prescription.appointment.endTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>
                     <strong>Start Date:</strong>
                     <span th:text="${prescription.startDate}"></span>
                 </td>

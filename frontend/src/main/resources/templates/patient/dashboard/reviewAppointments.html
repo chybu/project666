@@ -84,7 +84,9 @@
                                            class="form-control"
                                            id="from"
                                            name="from"
-                                           th:value="${from}">
+                                           th:value="${from}"
+                                           th:min="${filter == 'upcoming' ? today : null}"
+                                           th:max="${filter == 'past' ? yesterday : null}">
                                 </div>
 
                                 <div class="form-group col-md-2">
@@ -93,13 +95,15 @@
                                            class="form-control"
                                            id="end"
                                            name="end"
-                                           th:value="${end}">
+                                           th:value="${end}"
+                                           th:min="${filter == 'upcoming' ? today : null}"
+                                           th:max="${filter == 'past' ? yesterday : null}">
                                 </div>
 
-                                <div class="form-group col-md-2" th:if="${filter == 'past'}">
+                                <div class="form-group col-md-2">
                                     <label for="status">Status</label>
                                     <select class="form-control" id="status" name="status">
-                                        <option value="">All statuses</option>
+                                        <option value="">All</option>
                                         <option th:each="appointmentStatus : ${appointmentStatuses}"
                                                 th:value="${appointmentStatus}"
                                                 th:text="${appointmentStatus}"
@@ -142,7 +146,17 @@
                                         <td th:text="${#temporals.format(appointment.endTime, 'HH:mm')}"></td>
                                         <td th:text="${appointment.doctor != null ? appointment.doctor.firstName + ' ' + appointment.doctor.lastName : 'N/A'}"></td>
                                         <td th:text="${appointment.type}"></td>
-                                        <td th:text="${appointment.status}"></td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="
+                                                    ${appointment.status.name() == 'CONFIRMED'} ? 'badge-success' :
+                                                    (${appointment.status.name() == 'COMPLETED'} ? 'badge-primary' :
+                                                    (${appointment.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                    (${appointment.status.name() == 'NO_SHOW'} ? 'badge-warning' :
+                                                    'badge-secondary')))"
+                                                  th:text="${appointment.status}">
+                                            </span>
+                                        </td>
 
                                         <td th:if="${filter == 'upcoming'}">
                                             <form th:action="@{/patient/dashboard/cancel-appointment}" method="post">
@@ -152,7 +166,14 @@
                                                 <input type="hidden" name="type" th:value="${type}" />
                                                 <input type="hidden" name="from" th:value="${from}" />
                                                 <input type="hidden" name="end" th:value="${end}" />
-                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                                <input type="hidden" name="status" th:value="${status}" />
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-danger"
+                                                    th:disabled="${appointment.status.name() != 'CONFIRMED'}"
+                                                    th:title="${appointment.status.name() != 'CONFIRMED'} ? 'Only CONFIRMED appointments can be cancelled' : 'Cancel appointment'">
+                                                    Cancel
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>

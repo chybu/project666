@@ -45,6 +45,7 @@ public interface LabMapper {
     @Mapping(target = "patientFullName", source = "patient.fullName")
     @Mapping(target = "doctorFullName", source = "doctor.fullName")
     @Mapping(target = "appointmentStartTime", source = "appointment.startTime")
+    @Mapping(target = "appointmentEndTime", source = "appointment.endTime")
     @Mapping(target = "labTests", source = "labTests")
     PatientLabRequestResponseDto toPatientLabRequestResponseDto(LabRequest labRequest);
 

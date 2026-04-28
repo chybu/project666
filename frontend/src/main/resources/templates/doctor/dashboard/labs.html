@@ -120,8 +120,10 @@
                                         <span class="badge"
                                               th:classappend="
                                                 ${lab.status.name() == 'REQUESTED'} ? 'badge-warning' :
+                                                (${lab.status.name() == 'IN_PROGRESS'} ? 'badge-info' :
                                                 (${lab.status.name() == 'COMPLETED'} ? 'badge-success' :
-                                                'badge-secondary')"
+                                                (${lab.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                'badge-secondary')))"
                                               th:text="${lab.status}">
                                         </span>
                                     </td>

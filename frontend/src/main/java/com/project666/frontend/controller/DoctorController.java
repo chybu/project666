@@ -259,7 +259,7 @@ public String prechecks(
     LocalDate effectiveMinDate = minDate != null ? minDate : from;
     LocalDate effectiveMaxDate = maxDate != null ? maxDate : end;
 
-    PrecheckStatusEnum effectiveStatus = status != null ? status : PrecheckStatusEnum.VALID;
+    PrecheckStatusEnum effectiveStatus = status;
 
     ListPrecheckRequest request = new ListPrecheckRequest();
     request.setPatientId(patientId);

@@ -146,6 +146,8 @@
                                                     class="btn btn-primary btn-sm"
                                                     data-toggle="modal"
                                                     data-target="#intakeModal"
+                                                    th:disabled="${appointment.status.name() != 'COMPLETED'}"
+                                                    th:title="${appointment.status.name() != 'COMPLETED'} ? 'Vitals can only be entered for COMPLETED appointments' : 'Enter vitals'"
                                                     th:attr="data-appointment-id=${appointment.id},
                                                              data-patient-name=${appointment.patient.firstName + ' ' + appointment.patient.lastName}">
                                                 Enter Vitals

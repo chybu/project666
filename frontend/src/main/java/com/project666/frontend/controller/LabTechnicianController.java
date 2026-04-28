@@ -54,20 +54,6 @@ public class LabTechnicianController {
     public String home(
             @AuthenticationPrincipal OidcUser oidcUser,
             @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
-            Model model
-    ) {
-        User user = requireActiveUser(oidcUser);
-
-        keycloakService.syncUser(authorizedClient, user);
-        userRepository.save(user);
-
-        model.addAttribute("user", user);
-        return "labtechnician/dashboard/home";
-    }
-
-    @GetMapping("/dashboard/lab-requests")
-    public String labRequests(
-            @AuthenticationPrincipal OidcUser oidcUser,
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) UUID doctorId,
             @RequestParam(required = false) LocalDate minDate,
@@ -77,6 +63,9 @@ public class LabTechnicianController {
             Model model
     ) {
         User user = requireActiveUser(oidcUser);
+
+        keycloakService.syncUser(authorizedClient, user);
+        userRepository.save(user);
 
         Pageable pageable = PageRequest.of(page, size);
         Page<?> labRequestsPage = Page.empty(pageable);
@@ -94,6 +83,7 @@ public class LabTechnicianController {
             filterError = e.getMessage();
         }
 
+        model.addAttribute("user", user);
         model.addAttribute("labRequestsPage", labRequestsPage);
         model.addAttribute("patientId", patientId);
         model.addAttribute("doctorId", doctorId);
@@ -108,7 +98,7 @@ public class LabTechnicianController {
         model.addAttribute("doctors",
                 userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
 
-        return "labtechnician/dashboard/lab-requests";
+        return "labtechnician/dashboard/home";
     }
 
     @PostMapping("/dashboard/lab-tests/{labTestId}/claim")
@@ -131,7 +121,7 @@ public class LabTechnicianController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/labtechnician/dashboard/lab-requests"
+        return "redirect:/labtechnician/dashboard/home"
                 + buildLabRequestQueryString(patientId, doctorId, minDate, maxDate, page, size);
     }
 

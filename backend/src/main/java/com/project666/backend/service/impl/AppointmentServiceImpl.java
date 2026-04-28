@@ -365,6 +365,13 @@ public class AppointmentServiceImpl implements AppointmentService{
 
     private void checkTimeInWorkingHour(LocalDateTime startTime, LocalDateTime endTime){
 
+        // Appointment windows must stay within the same clinic day.
+        // Without this, overnight windows can bypass pure LocalTime checks
+        // (e.g., 23:30 -> 01:15).
+        if (!startTime.toLocalDate().equals(endTime.toLocalDate())) {
+            throw new TimeNotInWorkingHourException();
+        }
+
         if (startTime.toLocalTime().isBefore(OPENING_TIME)) throw new TimeNotInWorkingHourException();
 
         if (endTime.toLocalTime().isAfter(CLOSING_TIME)) throw new TimeNotInWorkingHourException();

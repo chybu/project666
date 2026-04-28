@@ -94,7 +94,13 @@
                                     <span th:text="${#temporals.format(pc.createdAt, 'MMM dd, yyyy h:mm a')}"></span>
                                     &nbsp;|&nbsp;
                                     <strong>Status:</strong>
-                                    <span th:text="${pc.status}"></span>
+                                    <span class="badge"
+                                          th:classappend="
+                                            ${pc.status.name() == 'VALID'} ? 'badge-success' :
+                                            (${pc.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                            'badge-secondary')"
+                                          th:text="${pc.status}">
+                                    </span>
                                     &nbsp;|&nbsp;
                                     <strong>Patient:</strong>
                                     <span th:text="${pc.patient != null ? pc.patient.firstName + ' ' + pc.patient.lastName : 'N/A'}"></span>

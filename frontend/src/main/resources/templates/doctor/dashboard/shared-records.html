@@ -137,7 +137,8 @@
                                         <span class="badge"
                                               th:classappend="
                                                 ${p.status.name() == 'VALID'} ? 'badge-success' :
-                                                'badge-secondary'"
+                                                (${p.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                'badge-secondary')"
                                               th:text="${p.status}">
                                         </span>
                                     </td>
@@ -224,7 +225,17 @@
                                             N/A
                                         </span>
                                     </td>
-                                    <td th:text="${l.status}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${l.status.name() == 'REQUESTED'} ? 'badge-warning' :
+                                                (${l.status.name() == 'IN_PROGRESS'} ? 'badge-info' :
+                                                (${l.status.name() == 'COMPLETED'} ? 'badge-success' :
+                                                (${l.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                'badge-secondary')))"
+                                              th:text="${l.status}">
+                                        </span>
+                                    </td>
                                     <td>
                                         <a class="btn btn-sm btn-info mr-2"
                                            th:href="@{/doctor/dashboard/shared-records/labs/view(labId=${l.id})}">
@@ -326,7 +337,9 @@
                                               th:classappend="
                                                 ${pr.status.name() == 'ACTIVE'} ? 'badge-success' :
                                                 (${pr.status.name() == 'COMPLETED'} ? 'badge-primary' :
-                                                'badge-secondary')"
+                                                (${pr.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                (${pr.status.name() == 'EXPIRED'} ? 'badge-warning' :
+                                                'badge-secondary')))"
                                               th:text="${pr.status}">
                                         </span>
                                     </td>

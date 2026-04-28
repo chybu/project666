@@ -155,7 +155,17 @@
                                     <tr th:each="bill : ${appointmentBills}">
                                         <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd')}"></td>
                                         <td th:text="${bill.amount}"></td>
-                                        <td th:text="${bill.status}"></td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="
+                                                    ${bill.status.name() == 'PAID'} ? 'badge-success' :
+                                                    (${bill.status.name() == 'UNPAID'} ? 'badge-warning' :
+                                                    (${bill.status.name() == 'VIEWING'} ? 'badge-primary' :
+                                                    (${bill.status.name() == 'CANCELLED' or bill.status.name() == 'VOIDED'} ? 'badge-danger' :
+                                                    'badge-secondary')))"
+                                                  th:text="${bill.status}">
+                                            </span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -272,7 +282,17 @@
                                     <tr th:each="bill : ${labBills}">
                                         <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd')}"></td>
                                         <td th:text="${bill.amount}"></td>
-                                        <td th:text="${bill.status}"></td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="
+                                                    ${bill.status.name() == 'PAID'} ? 'badge-success' :
+                                                    (${bill.status.name() == 'UNPAID'} ? 'badge-warning' :
+                                                    (${bill.status.name() == 'VIEWING'} ? 'badge-primary' :
+                                                    (${bill.status.name() == 'CANCELLED' or bill.status.name() == 'VOIDED'} ? 'badge-danger' :
+                                                    'badge-secondary')))"
+                                                  th:text="${bill.status}">
+                                            </span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

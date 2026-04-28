@@ -182,7 +182,17 @@
                                     <td th:text="${bill.amount}"></td>
                                     <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
                                     <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
-                                    <td th:text="${bill.status}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${bill.status.name() == 'PAID'} ? 'badge-success' :
+                                                (${bill.status.name() == 'UNPAID'} ? 'badge-warning' :
+                                                (${bill.status.name() == 'VIEWING'} ? 'badge-primary' :
+                                                (${bill.status.name() == 'CANCELLED' or bill.status.name() == 'VOIDED'} ? 'badge-danger' :
+                                                'badge-secondary')))"
+                                              th:text="${bill.status}">
+                                        </span>
+                                    </td>
                                     <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                                     <td>
                                         <form th:if="${bill.status.name() == 'UNPAID'}"
@@ -334,7 +344,17 @@
                                     <td th:text="${bill.amount}"></td>
                                     <td th:text="${bill.insuranceCoverAmount != null ? bill.insuranceCoverAmount : '-'}"></td>
                                     <td th:text="${bill.patientPaymentAmount != null ? bill.patientPaymentAmount : '-'}"></td>
-                                    <td th:text="${bill.status}"></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="
+                                                ${bill.status.name() == 'PAID'} ? 'badge-success' :
+                                                (${bill.status.name() == 'UNPAID'} ? 'badge-warning' :
+                                                (${bill.status.name() == 'VIEWING'} ? 'badge-primary' :
+                                                (${bill.status.name() == 'CANCELLED' or bill.status.name() == 'VOIDED'} ? 'badge-danger' :
+                                                'badge-secondary')))"
+                                              th:text="${bill.status}">
+                                        </span>
+                                    </td>
                                     <td th:text="${#temporals.format(bill.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                                     <td>
                                         <form th:if="${bill.status.name() == 'UNPAID'}"

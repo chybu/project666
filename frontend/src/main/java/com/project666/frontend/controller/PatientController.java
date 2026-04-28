@@ -2,6 +2,7 @@ package com.project666.frontend.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -61,6 +62,9 @@ import com.project666.backend.domain.entity.PrecheckStatusEnum;
 import com.project666.backend.domain.entity.Prescription;
 import com.project666.backend.domain.entity.PrescriptionStatusEnum;
 import com.project666.backend.domain.entity.RoleEnum;
+import com.project666.backend.exception.InvalidCreateAppointmentTimeWindowException;
+import com.project666.backend.exception.OverlapAppointmentException;
+import com.project666.backend.exception.TimeNotInWorkingHourException;
 
 import com.project666.backend.domain.ListPatientRecordAccessRequest;
 import com.project666.backend.domain.entity.PatientRecordAccess;
@@ -172,7 +176,7 @@ public class PatientController {
     }
 
    @GetMapping("/dashboard/reviewAppointments")
-    public String reviewAppointments(
+public String reviewAppointments(
     @AuthenticationPrincipal OidcUser oidcUser,
     @RequestParam(required = false) String filter,
     @RequestParam(required = false) UUID doctorId,
@@ -185,6 +189,8 @@ public class PatientController {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
     String activeFilter = normalizeAppointmentFilter(filter);
+    LocalDate today = LocalDate.now();
+    LocalDate yesterday = today.minusDays(1);
 
     ListAppointmentRequest request = new ListAppointmentRequest();
     request.setDoctorId(doctorId);
@@ -192,16 +198,27 @@ public class PatientController {
 
     LocalDate effectiveFrom = from;
     LocalDate effectiveEnd = end;
-    AppointmentStatusEnum effectiveStatus = null;
+    AppointmentStatusEnum effectiveStatus = status;
 
     if ("past".equals(activeFilter)) {
-        if (effectiveEnd == null) {
-            effectiveEnd = LocalDate.now().minusDays(1);
+        if (effectiveFrom != null && effectiveFrom.isAfter(yesterday)) {
+            effectiveFrom = yesterday;
         }
-        effectiveStatus = status;
+        if (effectiveEnd != null && effectiveEnd.isAfter(yesterday)) {
+            effectiveEnd = yesterday;
+        }
+        if (effectiveEnd == null) {
+            effectiveEnd = yesterday;
+        }
     } else {
+        if (effectiveFrom != null && effectiveFrom.isBefore(today)) {
+            effectiveFrom = today;
+        }
+        if (effectiveEnd != null && effectiveEnd.isBefore(today)) {
+            effectiveEnd = today;
+        }
         if (effectiveFrom == null) {
-            effectiveFrom = LocalDate.now();
+            effectiveFrom = today;
         }
     }
 
@@ -226,6 +243,8 @@ public class PatientController {
     model.addAttribute("doctors", userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR));
     model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
     model.addAttribute("appointmentStatuses", AppointmentStatusEnum.values());
+    model.addAttribute("today", today);
+    model.addAttribute("yesterday", yesterday);
 
     return "patient/dashboard/reviewAppointments";
 }
@@ -475,8 +494,7 @@ public String accessRequests(
 ) {
     User user = requireActiveUser(oidcUser);
     UUID patientId = user.getId();
-    PatientRecordAccessStatusEnum effectiveStatus =
-        status != null ? status : PatientRecordAccessStatusEnum.PENDING;
+    PatientRecordAccessStatusEnum effectiveStatus = status;
 
     Pageable pageable = PageRequest.of(0, 1000, Sort.by("createdAt").descending());
     List<PatientRecordAccess> accessRequests = new ArrayList<>();
@@ -582,6 +600,7 @@ public String cancelAppointment(
         @RequestParam(required = false) String filter,
         @RequestParam(required = false) UUID doctorId,
         @RequestParam(required = false) AppointmentTypeEnum type,
+        @RequestParam(required = false) AppointmentStatusEnum status,
         @RequestParam(required = false) LocalDate from,
         @RequestParam(required = false) LocalDate end,
         @AuthenticationPrincipal OidcUser oidcUser,
@@ -605,7 +624,7 @@ public String cancelAppointment(
         redirectAttributes.addFlashAttribute("error", e.getMessage());
     }
 
-    return buildReviewAppointmentsRedirect(filter, doctorId, type, from, end);
+    return buildReviewAppointmentsRedirect(filter, doctorId, type, status, from, end);
 }
 
 @PostMapping("/profile/update-name")
@@ -666,13 +685,7 @@ public String redirectToKeycloakPassword() {
     ) {
         requireActiveUser(oidcUser);
 
-        List<User> doctors = userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR);
-
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        model.addAttribute("minDateTime", java.time.LocalDateTime.now().plusDays(3).format(fmt));
-        model.addAttribute("maxDateTime", java.time.LocalDateTime.now().plusDays(31).format(fmt));
-        model.addAttribute("doctors", doctors);
-        model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
+        populateBookAppointmentModel(model, null, null, null);
 
         return "patient/dashboard/bookAppointment";
     }
@@ -680,28 +693,87 @@ public String redirectToKeycloakPassword() {
     @PostMapping("/dashboard/book-appointment")
     public String bookAppointment(
             @AuthenticationPrincipal OidcUser oidcUser,
-            @RequestParam UUID doctorId,
-            @RequestParam AppointmentTypeEnum type,
+            @RequestParam String doctorId,
+            @RequestParam String type,
             @RequestParam String startTime,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            Model model
     ) {
         User user = requireActiveUser(oidcUser);
+        String doctorIdError = null;
+        String typeError = null;
+        String startTimeError = null;
+        UUID parsedDoctorId = null;
+        AppointmentTypeEnum parsedType = null;
+        LocalDateTime parsedStartTime = null;
+
+        if (doctorId == null || doctorId.isBlank()) {
+            doctorIdError = "Doctor is required.";
+        } else {
+            try {
+                parsedDoctorId = UUID.fromString(doctorId.trim());
+            } catch (IllegalArgumentException e) {
+                doctorIdError = "Invalid doctor selection.";
+            }
+        }
+
+        if (type == null || type.isBlank()) {
+            typeError = "Appointment type is required.";
+        } else {
+            try {
+                parsedType = AppointmentTypeEnum.valueOf(type.trim());
+            } catch (IllegalArgumentException e) {
+                typeError = "Invalid appointment type.";
+            }
+        }
+
+        if (startTime == null || startTime.isBlank()) {
+            startTimeError = "Date and time is required.";
+        } else {
+            try {
+                parsedStartTime = LocalDateTime.parse(startTime.trim());
+            } catch (Exception e) {
+                startTimeError = "Invalid date/time format.";
+            }
+        }
+
+        if (doctorIdError != null || typeError != null || startTimeError != null) {
+            populateBookAppointmentModel(model, doctorId, type, startTime);
+            model.addAttribute("doctorIdError", doctorIdError);
+            model.addAttribute("typeError", typeError);
+            model.addAttribute("startTimeError", startTimeError);
+            return "patient/dashboard/bookAppointment";
+        }
 
         try {
             CreateAppointmentRequest request = new CreateAppointmentRequest();
             request.setPatientId(user.getId());
-            request.setDoctorId(doctorId);
-            request.setType(type);
-            request.setStartTime(java.time.LocalDateTime.parse(startTime));
+            request.setDoctorId(parsedDoctorId);
+            request.setType(parsedType);
+            request.setStartTime(parsedStartTime);
 
             appointmentService.createAppointmentForPatient(user.getId(), request);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/patient/dashboard/bookAppointment";
+            populateBookAppointmentModel(model, doctorId, type, startTime);
+            model.addAttribute("errorMessage", resolveBookAppointmentErrorMessage(e));
+            return "patient/dashboard/bookAppointment";
         }
 
         redirectAttributes.addFlashAttribute("successMessage", "Appointment booked successfully.");
         return "redirect:/patient/dashboard/reviewAppointments";
+    }
+
+    private void populateBookAppointmentModel(Model model, String doctorId, String type, String startTime) {
+        List<User> doctors = userRepository.findAllByRoleAndDeletedFalse(RoleEnum.DOCTOR);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+
+        model.addAttribute("minDateTime", LocalDateTime.now().plusDays(3).format(fmt));
+        model.addAttribute("maxDateTime", LocalDateTime.now().plusDays(31).format(fmt));
+        model.addAttribute("doctors", doctors);
+        model.addAttribute("appointmentTypes", AppointmentTypeEnum.values());
+        model.addAttribute("doctorId", doctorId);
+        model.addAttribute("type", type);
+        model.addAttribute("startTime", startTime);
     }
 
     private User requireActiveUser(OidcUser oidcUser) {
@@ -714,10 +786,42 @@ public String redirectToKeycloakPassword() {
         return "past".equalsIgnoreCase(filter) ? "past" : "upcoming";
     }
 
+    private String resolveBookAppointmentErrorMessage(Exception e) {
+        if (e == null) {
+            return "Unable to book appointment. Please try again.";
+        }
+
+        Throwable t = e;
+        while (t.getCause() != null && t.getCause() != t) {
+            t = t.getCause();
+        }
+
+        if (t instanceof TimeNotInWorkingHourException) {
+            return "Appointment must be within clinic hours (8:00 AM to 6:00 PM) and within the same day.";
+        }
+
+        if (t instanceof InvalidCreateAppointmentTimeWindowException) {
+            return t.getMessage() != null && !t.getMessage().isBlank()
+                ? t.getMessage()
+                : "Appointment must be booked 3 to 31 days in advance.";
+        }
+
+        if (t instanceof OverlapAppointmentException) {
+            return "Selected time overlaps with an existing appointment. Please choose another time.";
+        }
+
+        String message = t.getMessage();
+        if (message == null || message.isBlank()) {
+            return "Unable to book appointment. Please check your inputs and try again.";
+        }
+        return message;
+    }
+
     private String buildReviewAppointmentsRedirect(
         String filter,
         UUID doctorId,
         AppointmentTypeEnum type,
+        AppointmentStatusEnum status,
         LocalDate from,
         LocalDate end
     ) {
@@ -731,6 +835,10 @@ public String redirectToKeycloakPassword() {
 
         if (type != null) {
             redirectUrl.append("&type=").append(type);
+        }
+
+        if (status != null) {
+            redirectUrl.append("&status=").append(status);
         }
 
         if (from != null) {

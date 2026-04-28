@@ -28,31 +28,47 @@
 
                             <div class="form-group">
                                 <label for="doctorId">Doctor</label>
-                                <select id="doctorId" name="doctorId" class="form-control" required>
-                                    <option value="" disabled selected>Select a doctor</option>
+                                <select id="doctorId" name="doctorId" class="form-control"
+                                        th:classappend="${doctorIdError} ? ' is-invalid' : ''" required>
+                                    <option value="" disabled th:selected="${doctorId == null or doctorId == ''}">Select a doctor</option>
                                     <option th:each="doctor : ${doctors}"
                                             th:value="${doctor.id}"
-                                            th:text="${doctor.firstName + ' ' + doctor.lastName}">
+                                            th:text="${doctor.firstName + ' ' + doctor.lastName}"
+                                            th:selected="${doctorId != null and doctorId == doctor.id.toString()}">
                                     </option>
                                 </select>
+                                <div class="invalid-feedback d-block"
+                                     th:if="${doctorIdError}"
+                                     th:text="${doctorIdError}"></div>
                             </div>
 
                             <div class="form-group">
                                 <label for="type">Appointment Type</label>
-                                <select id="type" name="type" class="form-control" required>
-                                    <option value="" disabled selected>Select a type</option>
+                                <select id="type" name="type" class="form-control"
+                                        th:classappend="${typeError} ? ' is-invalid' : ''" required>
+                                    <option value="" disabled th:selected="${type == null or type == ''}">Select a type</option>
                                     <option th:each="apptType : ${appointmentTypes}"
                                             th:value="${apptType}"
-                                            th:text="${apptType}">
+                                            th:text="${apptType}"
+                                            th:selected="${type != null and type == apptType.name()}">
                                     </option>
                                 </select>
+                                <div class="invalid-feedback d-block"
+                                     th:if="${typeError}"
+                                     th:text="${typeError}"></div>
                             </div>
 
                             <div class="form-group">
                                 <label for="startTime">Date &amp; Time</label>
                                 <input type="datetime-local" id="startTime" name="startTime"
-                                       class="form-control" required
+                                       class="form-control"
+                                       th:classappend="${startTimeError} ? ' is-invalid' : ''"
+                                       th:value="${startTime}"
+                                       required
                                        th:min="${minDateTime}" th:max="${maxDateTime}" />
+                                <div class="invalid-feedback d-block"
+                                     th:if="${startTimeError}"
+                                     th:text="${startTimeError}"></div>
                                 <small class="form-text text-muted">
                                     Must be 3–31 days from today, between 8:00 AM and 6:00 PM.
                                 </small>

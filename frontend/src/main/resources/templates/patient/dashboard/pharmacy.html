@@ -91,7 +91,16 @@
                             <hr th:if="${!stat.first}" class="my-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div>
-                                    <strong>Status:</strong> <span th:text="${p.status}"></span>
+                                    <strong>Status:</strong>
+                                    <span class="badge"
+                                          th:classappend="
+                                            ${p.status.name() == 'ACTIVE'} ? 'badge-success' :
+                                            (${p.status.name() == 'COMPLETED'} ? 'badge-primary' :
+                                            (${p.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                            (${p.status.name() == 'EXPIRED'} ? 'badge-warning' :
+                                            'badge-secondary')))"
+                                          th:text="${p.status}">
+                                    </span>
                                     &nbsp;|&nbsp;
                                     <strong>Doctor:</strong>
                                     <span th:text="${p.doctor != null ? p.doctor.firstName + ' ' + p.doctor.lastName : 'N/A'}"></span>
@@ -99,6 +108,8 @@
                                     <strong>Start:</strong> <span th:text="${p.startDate}"></span>
                                     &nbsp;|&nbsp;
                                     <strong>End:</strong> <span th:text="${p.endDate}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Remaining Refills:</strong> <span th:text="${p.remainingRefills}"></span>
                                     <br>
                                     <strong>Next Eligible Refill:</strong>
                                     <span th:if="${p.remainingRefills != null and p.remainingRefills <= 0}">
@@ -113,6 +124,12 @@
                                     <span th:if="${p.remainingRefills != null and p.remainingRefills > 0 and p.nextEligibleRefillAt == null}">
                                         Not available
                                     </span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Appointment Start:</strong>
+                                    <span th:text="${p.appointment != null and p.appointment.startTime != null ? #temporals.format(p.appointment.startTime, 'yyyy-MM-dd h:mm a') : 'N/A'}"></span>
+                                    &nbsp;|&nbsp;
+                                    <strong>Created Date:</strong>
+                                    <span th:text="${p.createdAt != null ? #temporals.format(p.createdAt, 'yyyy-MM-dd') : 'N/A'}"></span>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <a th:href="@{/pdf/prescription/patient(prescriptionId=${p.id})}"
@@ -142,8 +159,6 @@
                                         <th>Frequency</th>
                                         <th>Route</th>
                                         <th>Instructions</th>
-                                        <th>Remaining Refills</th>
-                                        <th>Created Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,8 +168,6 @@
                                         <td th:text="${med.frequency}"></td>
                                         <td th:text="${med.route}"></td>
                                         <td th:text="${med.instructions}"></td>
-                                        <td th:text="${p.remainingRefills}"></td>
-                                        <td th:text="${p.createdAt != null ? #temporals.format(p.createdAt, 'yyyy-MM-dd') : 'N/A'}"></td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -20,6 +20,7 @@ public class PatientLabRequestResponseDto {
     private LabRequestStatusEnum status;
     private LocalDateTime createdAt;
     private LocalDateTime appointmentStartTime;
+    private LocalDateTime appointmentEndTime;
     private String patientFullName;
     private String doctorFullName;
     private List<PatientLabTestResponseDto> labTests = new ArrayList<>();

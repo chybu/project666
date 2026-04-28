@@ -43,6 +43,10 @@
                                 <span th:text="${lab.appointment != null ? #temporals.format(lab.appointment.startTime, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <strong>Appointment End:</strong>
+                                <span th:text="${lab.appointment != null and lab.appointment.endTime != null ? #temporals.format(lab.appointment.endTime, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <strong>Appointment Type:</strong>
                                 <span th:text="${lab.appointment != null ? lab.appointment.type : 'N/A'}"></span>
                             </div>

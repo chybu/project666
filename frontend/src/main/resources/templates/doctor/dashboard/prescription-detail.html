@@ -39,6 +39,14 @@
                                 <span th:text="${prescription.endDate != null ? #temporals.format(prescription.endDate, 'MMM dd, yyyy') : 'N/A'}"></span>
                             </div>
                             <div class="col-md-6 mb-3">
+                                <strong>Appointment Start:</strong>
+                                <span th:text="${prescription.appointment != null and prescription.appointment.startTime != null ? #temporals.format(prescription.appointment.startTime, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Appointment End:</strong>
+                                <span th:text="${prescription.appointment != null and prescription.appointment.endTime != null ? #temporals.format(prescription.appointment.endTime, 'MMM dd, yyyy h:mm a') : 'N/A'}"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <strong>Total Refills:</strong>
                                 <span th:text="${prescription.totalRefills}"></span>
                             </div>

@@ -76,6 +76,7 @@
                                 <div class="form-group col-md-3">
                                     <label for="status">Status</label>
                                     <select class="form-control" id="status" name="status">
+                                        <option value="" th:selected="${status == null}">All</option>
                                         <option th:each="statusOption : ${precheckStatuses}"
                                                 th:value="${statusOption}"
                                                 th:text="${statusOption}"
@@ -136,7 +137,8 @@
                                         <span class="badge"
                                               th:classappend="
                                                 ${pc.status.name() == 'VALID'} ? 'badge-success' :
-                                                'badge-secondary'"
+                                                (${pc.status.name() == 'CANCELLED'} ? 'badge-danger' :
+                                                'badge-secondary')"
                                               th:text="${pc.status}">
                                         </span>
                                     </td>
